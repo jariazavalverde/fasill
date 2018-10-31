@@ -1,5 +1,5 @@
-:- use_module(parser).
-:- use_module(semantics).
+:- use_module('../src/parser').
+:- use_module('../src/semantics').
 
 
 
@@ -29,8 +29,8 @@ program_case_1(
 lattice_real([
     member(member_real),
     leq(leq_real),
-    top(1.0),
-    bot(0.0),
+    top(num(1.0)),
+    bot(num(0.0)),
     and_godel, and_luka, and_prod,
     or_godel, or_luka, or_prod,
     agr_aver, agr_very
@@ -56,28 +56,35 @@ agr_very(X,Y) :- Y is X*X.
 
 % Similarity relations
 %%% sim_case_1
-sim_case_1(X, X, _, 1).   % Identity
-sim_case_1(p, q, 1, 0.5). % p/1 ~ q/1 = 0.5
-sim_case_1(a, b, 0, 0.3). % a/1 ~ b/1 = 0.3
+sim_case_1(X, X, _, num(1.0)). % Identity
+sim_case_1(p, q, 1, num(0.5)). % p/1 ~ q/1 = 0.5
+sim_case_1(a, b, 0, num(0.3)). % a/0 ~ b/0 = 0.3
 
 % Test weak unification
 test_wmgu(ID, X, Y, Sim, ShouldBe) :-
     (wmgu(X, Y, Sim, state(TD, _)), Result = td(TD) ; Result = fail), !,
-    (ShouldBe \= Result -> throw(test_error(ID, expected(ShouldBe), result(Result))) ; true).
+    (ShouldBe \= Result -> throw(test_error(test_wmgu/ID, expected(ShouldBe), result(Result))) ; true).
 
     % (sim_case_1) a &prod b = 0.3
-    ?- test_wmgu(1, term(a, []), term(b,[]), sim_case_1+and_prod, td(0.3)).
+    ?- test_wmgu(1, term(a,[]), term(b,[]), sim_case_1+and_prod, td(num(0.3))).
     % (sim_case_1) p(a) &prod q(b) = 0.15
-    ?- test_wmgu(2, term(p,[term(a, [])]), term(q,[term(b, [])]), sim_case_1+and_prod, td(0.15)).
+    ?- test_wmgu(2, term(p,[term(a, [])]), term(q,[term(b, [])]), sim_case_1+and_prod, td(num(0.15))).
     % (sim_case_1) p(X) &prod q(Y) = 0.5
-    ?- test_wmgu(3, term(p,[var('X')]), term(q,[var('Y')]), sim_case_1+and_prod, td(0.5)).
+    ?- test_wmgu(3, term(p,[var('X')]), term(q,[var('Y')]), sim_case_1+and_prod, td(num(0.5))).
     % (sim_case_1) p(p(a)) &prod q(q(b)) = 0.15
-    ?- test_wmgu(4, term(p,[term(p, [term(a, [])])]), term(q,[term(q, [term(b, [])])]), sim_case_1+and_prod, td(0.075)).
+    ?- test_wmgu(4, term(p,[term(p, [term(a, [])])]), term(q,[term(q, [term(b, [])])]), sim_case_1+and_prod, td(num(0.075))).
     % (sim_case_1) p(1,a) &prod p(X,b) = 0.3
-    ?- test_wmgu(5, term(p, [num(1),term(a,[])]), term(p,[var('X'),term(b,[])]), sim_case_1+and_prod, td(0.3)).
+    ?- test_wmgu(5, term(p, [num(1),term(a,[])]), term(p,[var('X'),term(b,[])]), sim_case_1+and_prod, td(num(0.3))).
     % (sim_case_1) p(X,X) &prod p(a,c) = 0.3
     ?- test_wmgu(6, term(p, [var('X'),var('X')]), term(p,[term(a, []),term(c,[])]), sim_case_1+and_prod, fail).
 
 % Test admissible steps
+test_admissible_step(ID, Program, State, ShouldBe) :-
+    admissible_step(Program, State, Result, _),
+    (ShouldBe \= Result -> throw(test_error(test_admissible_step/ID, expected(ShouldBe), result(Result))) ; true).
 
-    %?- test_admissible_step(1, program(Pi,R,L)).
+    % (program_case_1) <p(X),{}> \rightarrow_{AS} <1 & q(Y),{X/Y}>
+    ?- program_case_1(Program), test_admissible_step(1, Program,
+        state(term(p,[var('X')]),[]),
+        state(term(&(and_prod),[num(1.0),term(q,[var('Y')])]),['X'/var('Y')])
+    ).

@@ -4,10 +4,48 @@
 
 % VISIBLE PREDICATES
 
+% to_prolog/2
+% to_prolog(+FASILL, ?Prolog)
+%
+% This function takes the FASILL object +FASILL
+% and returns the object ?Prolog in Prolog notation.
+to_prolog([], []) :- !.
+to_prolog([X|Xs], [Y|Ys]) :-
+    !, to_prolog(X,Y),
+    to_prolog(Xs,Ys).
+to_prolog(num(X), X) :- !.
+to_prolog(term(X,Xs), Term) :-
+    !, to_prolog(Xs, Ys),
+    Term =.. [X|Ys].
+
+% from_prolog/2
+% from_prolog(+Prolog, ?FASILL)
+%
+% This function takes the Prolog object +Prolog
+% and returns the object ?FASILL in FASILL notation.
+from_prolog([], term([], [])) :- !.
+from_prolog([X|Xs], term('.', [Y,Ys])) :-
+    !, from_prolog(X,Y),
+    from_prolog(Xs,Ys).
+from_prolog(X, num(X)) :- number(X), !.
+from_prolog(X, term(X, [])) :- atom(X), !.
+from_prolog(X, term(H,Args)) :-
+    compound(X), !,
+    X =.. [H|T],
+    maplist(from_prolog, T, Args).
+
 % wmgu/4
-% return the weak most general unifier
+% wmgu(+ExpressionA, +ExpressionB, +SimilarityRelation, ?State)
+%
+% This function returns the weak most general unifier (wmgu)
+% ?State of the expressions +ExpressionA and +ExpressionB
+% with the similarity relation +SimilarityRelation. The
+% similarity relation +SimilarityRelation is a term
+% '+'(Sim,Tnorm) where Sim is an atom representing
+% a similarity relation predicate and Tnorm is an atom
+% representing a conjunction operator.
 wmgu(ExprA, ExprB, Sim+Tnorm, State) :-
-    call(Sim, X, X, _, Top),
+    call(Sim, X, X, _, Top), !,
     wmgu(ExprA, ExprB, Sim+Tnorm, state(Top,[]), State).
 %%% var with expression
 wmgu(var(X), Y, Similarity, state(TD,Subs), State_) :-
@@ -23,7 +61,10 @@ wmgu(term(X,Xs), term(Y,Ys), Sim+Tnorm, state(TD, Subs), State) :- !,
     length(Xs, Length),
     length(Ys, Length),
     call(Sim, X, Y, Length, TDxy),
-    call(Tnorm, TD, TDxy, TD2),
+    to_prolog(TD, PLtd),
+    to_prolog(TDxy, PLtdxy),
+    call(Tnorm, PLtd, PLtdxy, PLtd2),
+    from_prolog(PLtd2, TD2),
     wmgu(Xs, Ys, Sim+Tnorm, state(TD2, Subs), State).
 %%% arguments
 wmgu([], [], _, State, State) :- !.
@@ -32,8 +73,11 @@ wmgu([X|Xs], [Y|Ys], Sim, State, State_) :- !,
     wmgu(Xs, Ys, Sim, StateXY, State_).
 
 % select_atom/4
-% select_atom(+Expr, ?ExprVar, ?Var, ?Atom)
-% select an atom from an expression
+% select_atom(+Expression, ?ExprVar, ?Var, ?Atom)
+%
+% This function selects an atom ?Atom from the expression
+% +Expression, where ?ExprVar is the expression +Expression
+% with the variable ?Var instead of the atom ?Atom.
 select_atom(term(Term, Args), term(Term, Args_), Var, Atom) :-
     ( Term =.. [Op, _], member(Op, ['@','&','|']) ;
       member(Term, ['@','&','|']) ), !,
@@ -44,7 +88,8 @@ select_atom([Term|Args], [Term|Args_], Var, Atom) :- select_atom(Args, Args_, Va
 
 % select_expression/5
 % select_expression(+Expr, ?ExprVar, ?Var, ?Atom, +Members)
-% select an interpretable expression
+%
+% This function selects an interpretable expression.
 select_expression(term(Term, Args), Var, Var, term(Term, Args), Members) :-
     ( Term =.. [Op, _], member(Op, ['@','&','|']) ;
       member(Term, ['@','&','|']) ),
@@ -75,7 +120,7 @@ derivation(program(_,_,Lattice), state(Goal,Subs), state(Goal,Subs), []) :-
 % inference/4
 % inference(+Program, +State, -NewState, -Info)
 % perform an inference step
-inference(Program, State, State_, Info) :- admissible_step(Program, State, State_, Info).
+inference(Program, State, State_, Info) :- admissible_step(Program, State, State_, Info), !.
 inference(Program, state(Goal,Subs), State_, Info) :- interpretable(Goal), interpretive_step(Program, state(Goal,Subs), State_, Info).
 
 % admissible_step/4
@@ -96,12 +141,12 @@ admissible_step(program(Pi,Sim+Tnorm,_), state(Goal,Subs), state(Goal_,Subs_), I
 interpretive_step(program(_,_,Lattice), state(Goal,Subs), state(Goal_,Subs), 'IS') :-
     member(member(Member), Lattice),
     select_expression(Goal, Goal_, Var, Expr, Member),
-    interprete(Expr, Var, Lattice).
+    interpret(Expr, Var, Lattice).
 
-% interprete/3
+% interpret/3
 %
 %
-interprete(term(Op, Args), Expr_, Lattice) :-
+interpret(term(Op, Args), Expr_, Lattice) :-
     Op =.. [_, Name],
     member(Name, Lattice),
     append(Args, [Expr_], ArgsCall),
