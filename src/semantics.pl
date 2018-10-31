@@ -79,7 +79,7 @@ wmgu([X|Xs], [Y|Ys], Sim, State, State_) :- !,
 % +Expression, where ?ExprVar is the expression +Expression
 % with the variable ?Var instead of the atom ?Atom.
 select_atom(term(Term, Args), term(Term, Args_), Var, Atom) :-
-    ( Term =.. [Op, _], member(Op, ['@','&','|']) ;
+    ( Term =.. [Op,_], member(Op, ['@','&','|']) ;
       member(Term, ['@','&','|']) ), !,
     select_atom(Args, Args_, Var, Atom).
 select_atom(term(Term, Args), Var, Var, term(Term, Args)).
@@ -87,11 +87,15 @@ select_atom([Term|Args], [Term_|Args], Var, Atom) :- select_atom(Term, Term_, Va
 select_atom([Term|Args], [Term|Args_], Var, Atom) :- select_atom(Args, Args_, Var, Atom).
 
 % select_expression/5
-% select_expression(+Expr, ?ExprVar, ?Var, ?Atom, +Members)
+% select_expression(+Expression, ?ExprVar, ?Var, ?Atom, +Members)
 %
-% This function selects an interpretable expression.
+% This function selects an interpretable expression ?Atom
+% from the expression +Expression, where ?ExprVar is the
+% expression +Expression with the variable ?Var instead of
+% the atom ?Atom. +Members is an atom representing  the
+% members predicate of a lattice.
 select_expression(term(Term, Args), Var, Var, term(Term, Args), Members) :-
-    ( Term =.. [Op, _], member(Op, ['@','&','|']) ;
+    ( Term =.. [Op,_], member(Op, ['@','&','|']) ;
       member(Term, ['@','&','|']) ),
     all_members(Args, Members), !.
 select_expression(term(Term, Args), term(Term, Args_), Var, Expr, Members) :- select_expression(Args, Args_, Var, Expr, Members).
@@ -128,12 +132,18 @@ inference(Program, state(Goal,Subs), State_, Info) :- interpretable(Goal), inter
 % perform an admissible step
 admissible_step(program(Pi,Sim+Tnorm,_), state(Goal,Subs), state(Goal_,Subs_), Info) :-
     select_atom(Goal, ExprVar, Var, Expr),
-    member(Rule, Pi),
-    rename(Rule, rule(head(Head),Body,_)),
-    wmgu(Expr, Head, Sim+Tnorm, state(TD,SubsExpr)),
-    (Body = empty -> Var = TD ; (Body = body(Body_), Var = term('&'(Tnorm), [TD,Body_]))),
-    apply(ExprVar, SubsExpr, Goal_), compose(Subs, SubsExpr, Subs_),
-    rule_id(Rule, RuleId), atom_number(InfoId,RuleId), atom_concat('R', InfoId, Info).
+    Expr = term(Name, Args),
+    length(Args, Arity),
+    (eval_builtin_predicate(Name/Arity, state(Goal,Subs), state(Goal_,Subs_)) -> (
+        Info = Name
+    ) ; (
+        member(Rule, Pi),
+        rename(Rule, rule(head(Head),Body,_)),
+        wmgu(Expr, Head, Sim+Tnorm, state(TD,SubsExpr)),
+        (Body = empty -> Var = TD ; (Body = body(Body_), Var = term('&'(Tnorm), [TD,Body_]))),
+        apply(ExprVar, SubsExpr, Goal_), compose(Subs, SubsExpr, Subs_),
+        rule_id(Rule, RuleId), atom_number(InfoId,RuleId), atom_concat('R', InfoId, Info)
+    )).
 
 % interpretive_step/4
 % interpretive_step(+Program, +State, -NewState, -Info)
@@ -147,7 +157,7 @@ interpretive_step(program(_,_,Lattice), state(Goal,Subs), state(Goal_,Subs), 'IS
 %
 %
 interpret(term(Op, Args), Expr_, Lattice) :-
-    Op =.. [_, Name],
+    Op =.. [_,Name],
     member(Name, Lattice),
     append(Args, [Expr_], ArgsCall),
     Call =.. [Name|ArgsCall],
@@ -207,3 +217,15 @@ reset_variable_id :- retract(current_variable_id(_)), assertz(current_variable_i
 
 
 % BUILT-IN PREDICATES
+
+% atom_concat/3
+% atom_concat(+First, +Second, -Concat).
+%
+%
+eval_builtin_predicate(atom_concat/3, state(Goal, Subs), state(ExprVar, Subs)) :-
+    select_atom(Goal, ExprVar, Var, Expr),
+    Expr = term(atom_concat, [X,Y,Z]),
+    X = term(AtomX, []),
+    Y = term(AtomY, []),
+    atom_concat(AtomX, AtomY, AtomZ),
+    Var = term(=, [Z, term(AtomZ, [])]).

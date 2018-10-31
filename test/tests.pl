@@ -16,6 +16,8 @@ parser_case_1(
 % SEMANTICS
 
 % Programs
+program_empty(program([], sim_case_1+and_prod, Lattice)) :- lattice_real(Lattice).
+
 program_case_1(
     program([
         rule(head(term(p, [var('Y')])), body(term(q, [var('Y')])), [id(1),syntax(fasill)]),
@@ -80,11 +82,21 @@ test_wmgu(ID, X, Y, Sim, ShouldBe) :-
 
 % Test admissible steps
 test_admissible_step(ID, Program, State, ShouldBe) :-
-    admissible_step(Program, State, Result, _),
+    (admissible_step(Program, State, Result, _), ! ; Result = fail),
     (ShouldBe \= Result -> throw(test_error(test_admissible_step/ID, expected(ShouldBe), result(Result))) ; true).
 
-    % (program_case_1) <p(X),{}> \rightarrow_{AS} <1 & q(Y),{X/Y}>
+    % (program_case_1) <p(X),{}> \rightarrow_{AS} <1.0 &prod q(Y),{X/Y}>
     ?- program_case_1(Program), test_admissible_step(1, Program,
         state(term(p,[var('X')]),[]),
         state(term(&(and_prod),[num(1.0),term(q,[var('Y')])]),['X'/var('Y')])
+    ).
+    % (program_case_1) <0.5 &godel p(X),{}> \rightarrow_{AS} <0.5 &godel (1.0 &prod q(Y)),{X/Y}>
+    ?- program_case_1(Program), test_admissible_step(2, Program,
+        state(term(&(and_godel), [num(0.5), term(p,[var('X')])]),[]),
+        state(term(&(and_godel), [num(0.5), term(&(and_prod),[num(1.0),term(q,[var('Y')])])]),['X'/var('Y')])
+    ).
+    % (builtin) <atom_concat(ab, cd, X),{}> \rightarrow_{AS} <X = abcd,{}>
+    ?- program_empty(Program), test_admissible_step(3, Program,
+        state(term(atom_concat, [term(ab, []), term(cd, []), var('X')]),[]),
+        state(term(=, [var('X'), term(abcd, [])]),[])
     ).
