@@ -97,19 +97,20 @@ select_atom([Term|Args], [Term|Args_], Var, Atom) :- select_atom(Args, Args_, Va
 select_expression(term(Term, Args), Var, Var, term(Term, Args), Members) :-
     ( Term =.. [Op,_], member(Op, ['@','&','|']) ;
       member(Term, ['@','&','|']) ),
-    all_members(Args, Members), !.
+    maplist(is_member(Members), Args), !.
 select_expression(term(Term, Args), term(Term, Args_), Var, Expr, Members) :- select_expression(Args, Args_, Var, Expr, Members).
 select_expression([Term|Args], [Term_|Args], Var, Atom, Members) :- select_expression(Term, Term_, Var, Atom, Members), !.
 select_expression([Term|Args], [Term|Args_], Var, Atom, Members) :- select_expression(Args, Args_, Var, Atom, Members).
 
-% all_members/2
-% all_members(+Elements, +Members)
+% is_member/2
+% is_member(+Member, +Element)
 %
-% This predicate succeeds when all members in the
-% list +Elements are members of the lattice. +Members is
-% an atom representing the member predicate of a lattice.
-all_members([], _).
-all_members([X|Xs], Members) :- call(Members, X), all_members(Xs, Members).
+% This predicate succeeds when the element +Element
+% is a member of the lattice. +Member is an atom
+% representing the member predicate of the lattice.
+is_member(_, bot).
+is_member(_, top).
+is_member(Member, X) :- to_prolog(X, Y), call(Member, Y).
 
 % interpretable/1
 % interpretable(+Expression)
@@ -151,6 +152,8 @@ admissible_step(program(Pi,Sim+Tnorm,_), state(Goal,Subs), state(Goal_,Subs_), I
         apply(ExprVar, SubsExpr, Goal_), compose(Subs, SubsExpr, Subs_),
         rule_id(Rule, RuleId), atom_number(InfoId,RuleId), atom_concat('R', InfoId, Info)
     )).
+admissible_step(_, state(Goal,Subs), state(Goal_,Subs), 'FS') :-
+    select_atom(Goal, Goal_, bot, _).
 
 % interpretive_step/4
 % interpretive_step(+Program, +State, -NewState, -Info)
@@ -163,41 +166,14 @@ interpretive_step(program(_,_,Lattice), state(Goal,Subs), state(Goal_,Subs), 'IS
 % interpret/3
 %
 %
-interpret(term(Op, Args), Expr_, Lattice) :-
+interpret(term(Op, Args), Result, Lattice) :-
     Op =.. [_,Name],
     member(Name, Lattice),
-    append(Args, [Expr_], ArgsCall),
+    maplist(to_prolog, Args, ArgsProlog),
+    append(ArgsProlog, [ResultProlog], ArgsCall),
     Call =.. [Name|ArgsCall],
-    call(Call).
-
-% current_fresh_variable_id/1
-% current_fresh_variable_id(?Identifier)
-%
-% This predicate stores the current identifier ?Identifier
-% to be used in a fresh variable.
-:- dynamic current_fresh_variable_id/1.
-?- retractall(current_fresh_variable_id(_)).
-current_fresh_variable_id(1).
-
-% auto_fresh_variable_id/1
-% auto_fresh_variable_id(?Identifier)
-%
-% This predicate updates the current variable identifier 
-% ?Identifier and returns it.
-auto_fresh_variable_id(Id) :-
-    current_fresh_variable_id(Id),
-    retract(current_fresh_variable_id(_)),
-    N is Id+1,
-    assertz(current_fresh_variable_id(N)).
-
-% reset_fresh_variable_id/0
-% reset_fresh_variable_id
-%
-% This predicate resets the current ?Identifier identifier
-% to the first.
-reset_fresh_variable_id :-
-    retract(current_fresh_variable_id(_)),
-    assertz(current_fresh_variable_id(1)).
+    call(Call),
+    from_prolog(ResultProlog, Result).
 
 % rename/2
 % rename(+Expression, ?Renamed)
@@ -245,25 +221,34 @@ rule_id(rule(_,_,Info), Id) :- member(id(Id), Info).
 
 % VARIABLES
 
-% current_variable_id/1
-% store the current identifier to be used in renaming
-:- dynamic current_variable_id/1.
-?- retractall(current_variable_id(_)).
-current_variable_id(1).
+% current_fresh_variable_id/1
+% current_fresh_variable_id(?Identifier)
+%
+% This predicate stores the current identifier ?Identifier
+% to be used in a fresh variable.
+:- dynamic current_fresh_variable_id/1.
+?- retractall(current_fresh_variable_id(_)).
+current_fresh_variable_id(1).
 
-% auto_variable_id/1
-% update the current variable identifier and return it
-auto_rule_id(Id) :-
-    current_variable_id(Y),
-    retract(current_variable_id(_)),
+% auto_fresh_variable_id/1
+% auto_fresh_variable_id(?Identifier)
+%
+% This predicate updates the current variable identifier 
+% ?Identifier and returns it.
+auto_fresh_variable_id(Id) :-
+    current_fresh_variable_id(Id),
+    retract(current_fresh_variable_id(_)),
     N is Id+1,
-    assertz(current_variable_id(N)),
-    atom_number(X,Id),
-    atom_concat('_',X,Y).
+    assertz(current_fresh_variable_id(N)).
 
-% reset_variable_id/0
-% reset the current variable identifier to the first
-reset_variable_id :- retract(current_variable_id(_)), assertz(current_variable_id(1)).
+% reset_fresh_variable_id/0
+% reset_fresh_variable_id
+%
+% This predicate resets the current ?Identifier identifier
+% to the first.
+reset_fresh_variable_id :-
+    retract(current_fresh_variable_id(_)),
+    assertz(current_fresh_variable_id(1)).
 
 
 
