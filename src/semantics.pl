@@ -15,6 +15,7 @@ to_prolog([X|Xs], [Y|Ys]) :-
     to_prolog(Xs,Ys).
 to_prolog(num(X), X) :- !.
 to_prolog(term(X,Xs), Term) :-
+    atom(X),
     !, to_prolog(Xs, Ys),
     Term =.. [X|Ys].
 
@@ -126,7 +127,8 @@ derivation(Program, State, State_, [X|Xs]) :-
     derivation(Program, State1, State_, Xs).
 derivation(program(_,_,Lattice), state(Goal,Subs), state(Goal,Subs), []) :-
     member(member(Members), Lattice),
-    call(Members, Goal).
+    to_prolog(Goal, GoalProlog),
+    call(Members, GoalProlog).
 
 % inference/4
 % inference(+Program, +State, -NewState, -Info)
@@ -165,7 +167,7 @@ interpretive_step(program(_,_,Lattice), state(Goal,Subs), state(Goal_,Subs), 'IS
 
 % interpret/3
 %
-%
+% 
 interpret(term(Op, Args), Result, Lattice) :-
     Op =.. [_,Name],
     member(Name, Lattice),
@@ -195,12 +197,19 @@ rename([X|Xs], [Y|Ys], Subs, Subs3) :-
 rename(X, X, Subs, Subs).
 
 % compose/3
-% compose two substitutions
+% compose(+Substitution1, +Substitution2, ?SubstitutionOut)
+%
+% This predicate composes both substitutions, +Substitution1
+% and +Substitution2 in ?SubstitutionOut.
 compose([], Xs, Xs).
 compose([X/Y|Xs], Subs, [X/Y_|Ys]) :- apply(Y, Subs, Y_), apply(Xs, Subs, Ys).
 
 % apply/3
-% apply a substitution to an expression
+% apply(+ExpressionIn, +Substitution, ?ExpressionOut)
+%
+% This predicate applies the substitution +Substitution to
+% the expression +ExpressionIn. ?ExpressionOut is the resulting
+% expression.
 apply(term(T,Args), Subs, term(T,Args_)) :- !, apply(Args, Subs, Args_).
 apply(var(X), X/Y, Y) :- !. 
 apply([], _, []) :- !.
