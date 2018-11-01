@@ -6,15 +6,17 @@
     lattice_call_top/1,
     lattice_call_member/1,
     lattice_call_connective/3,
+    lattice_consult/1,
     similarity_tnorm/1,
-    similarity_between/4
+    similarity_between/4,
+    similarity_consult/1
 ]).
 
 :- dynamic(
     fasill_rule/3,
     fasill_lattice_tnorm/1,
-    fasill_similarity_tnorm/1,
-    fasill_similarity_between/4
+    '~'/1,
+    '~'/2
 ).
 
 
@@ -79,7 +81,7 @@ program_rule_id(rule(_,_,Info), Id) :- member(id(Id), Info).
 %
 % This predicate succeeds when ?Tnorm is the current
 % t-norm asserted in the environment.
-lattice_tnorm(Tnorm) :- lattice:tnorm(Tnorm).
+lattice_tnorm(Tnorm) :- tnorm(Tnorm).
 
 % lattice_call_bot/1
 % lattice_call_bot(-Bot)
@@ -88,7 +90,7 @@ lattice_tnorm(Tnorm) :- lattice:tnorm(Tnorm).
 % bottom member of the lattice loaded into
 % the environment.
 lattice_call_bot(Bot) :-
-    lattice:bot(Prolog),
+    bot(Prolog),
     from_prolog(Prolog, Bot).
 
 % lattice_call_top/1
@@ -98,7 +100,7 @@ lattice_call_bot(Bot) :-
 % bottom member of the lattice loaded into
 % the environment.
 lattice_call_top(Top) :-
-    lattice:top(Prolog),
+    top(Prolog),
     from_prolog(Prolog, Top).
 
 % lattice_call_member/1
@@ -108,7 +110,7 @@ lattice_call_top(Top) :-
 % of the lattice loaded into the environment.
 lattice_call_member(Member) :-
     to_prolog(Member, Prolog),
-    lattice:member(Prolog).
+    member(Prolog).
 
 % lattice_call_connective/3
 % lattice_call_connective(+Name, +Arguments, ?Result)
@@ -118,19 +120,54 @@ lattice_call_member(Member) :-
 % +Arguments of the lattice loaded into the environment.
 lattice_call_connective(Name, Args, Result) :-
     maplist(to_prolog, Args, Args_),
-    call(lattice:Name, Args_, Prolog),
+    append(Args_, [Prolog], ArgsCall),
+    Call =.. [Name|ArgsCall],
+    call(environment:Call),
     from_prolog(Prolog, Result).
+
+% lattice_consult/1
+% lattice_consult(+Path)
+%
+% This predicate loads the lattice of the file +Path into
+% the environment. This predicate cleans the previous lattice.
+lattice_consult(Path) :-
+    consult(Path).
 
 
 
 % SIMILARITY RELATIONS
+
+% ~/1
+% ~(+Assignment)
+%
+% This predicate succeeds when +Assignment is a valid 
+% assignment of a t-norm. A valid assignment is of the 
+% form ~tnorm = Atom, where Atom is an atom. This predicate
+% asserts Atom in the current environment as the current
+% t-norm for similarities. This predicate retracts the
+% current t-norm, if exists.
+:- op(750, fx, ~).
+:- multifile('~'/1).
+
+% ~/2
+% ~(+SimilarityEquation)
+%
+% This predicate succeeds when +SimilarityEquation is a
+% valid similarity equation and asserts it in the current
+% environment. A valid similarity equation is of the form
+% AtomA/Length ~ AtomB/Length = TD, where AtomA and AtomB
+% are atoms and Length is a non-negative integer. Note that
+% this equation is parsed with the default table operator
+% as '~'('/'(AtomA,Length), '='('/'(AtomB,Length),TD)).
+:- op(800, xfx, ~).
+:- multifile('~'/2).
 
 % similarity_tnorm/1
 % similarity_tnorm(?Tnorm)
 %
 % This predicate succeeds when ?Tnorm is the current
 % t-norm asserted in the environment.
-similarity_tnorm(Tnorm) :- fasill_similarity_tnorm(Tnorm).
+similarity_tnorm(Tnorm) :- ~(tnorm=Tnorm).
 
 % similarity_between/4
 % similarity_between(?AtomA, ?AtomB, ?Length, ?TD)
@@ -139,5 +176,19 @@ similarity_tnorm(Tnorm) :- fasill_similarity_tnorm(Tnorm).
 % to ?AtomB/?Length with truth degree ?TD, using the current
 % similarity relation in the environment.
 similarity_between(AtomA, AtomB, Length, TD) :-
-    fasill_similarity_between(AtomA, AtomB, Length, Prolog),
+    environment:'~'(AtomA/Length, '='(AtomB/Length, Prolog)),
     from_prolog(Prolog, TD).
+similarity_between(AtomA, AtomB, 0, TD) :-
+    environment:'~'(AtomA, '='(AtomB, Prolog)),
+    from_prolog(Prolog, TD).
+
+% similarity_consult/1
+% similarity_consult(+Path)
+%
+% This predicate loads the similarities equations of the
+% file +Path into the environment. This predicate cleans
+% the previous similarity relations.
+similarity_consult(Path) :-
+    retractall(~(_, _)),
+    retractall(~(_)),
+    consult(Path).

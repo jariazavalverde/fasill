@@ -1,17 +1,29 @@
-:- module(semantics, [wmgu/3, derivation/3, inference/3, admissible_step/3, interpretive_step/3, apply/3, compose/3, rename/2]).
+:- module(semantics, [
+    wmgu/3,
+    derivation/3,
+    inference/3,
+    admissible_step/3,
+    interpretive_step/3,
+    apply/3,
+    compose/3,
+    rename/2
+]).
+
 :- use_module('environment').
 :- use_module('builtin').
 
 
 
-% VISIBLE PREDICATES
+% UNIFICATION
 
 % wmgu/3
 % wmgu(+ExpressionA, +ExpressionB, ?State)
 %
 % This predicate returns the weak most general unifier (wmgu)
 % ?State of the expressions +ExpressionA and +ExpressionB.
-wmgu(ExprA, ExprB, State_) :- wmg(ExprA, ExprB, [], State_).
+wmgu(ExprA, ExprB, State) :-
+    lattice_call_top(Top),
+    wmgu(ExprA, ExprB, state(Top,[]), State).
 %%% var with expression
 wmgu(var(X), Y, state(TD,Subs), State_) :-
     member(X/Z, Subs), !,
@@ -34,6 +46,10 @@ wmgu([], [], State, State) :- !.
 wmgu([X|Xs], [Y|Ys], State, State_) :- !,
     wmgu(X, Y, State, StateXY),
     wmgu(Xs, Ys, StateXY, State_).
+
+
+
+% DERIVATIONS
 
 % select_atom/4
 % select_atom(+Expression, ?ExprVar, ?Var, ?Atom)
@@ -219,7 +235,7 @@ apply(Expr, _/_, Expr) :- !.
 %
 % This predicate stores the current identifier ?Identifier
 % to be used in a fresh variable.
-:- dynamic current_fresh_variable_id/1.
+:- dynamic(current_fresh_variable_id/1).
 ?- retractall(current_fresh_variable_id(_)).
 current_fresh_variable_id(1).
 

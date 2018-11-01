@@ -1,4 +1,7 @@
-:- module(builtin, [is_builtin_predicate/1, eval_builtin_predicate/4]).
+:- module(builtin, [
+    is_builtin_predicate/1,
+    eval_builtin_predicate/4
+]).
 
 
 

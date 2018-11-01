@@ -1,4 +1,7 @@
-:- module(parser, [parse_consult/2, parse_query/2]).
+:- module(parser, [
+    parse_consult/2,
+    parse_query/2
+]).
 
 
 
