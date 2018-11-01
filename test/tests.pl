@@ -31,8 +31,8 @@ program_case_1(
 lattice_real([
     member(member_real),
     leq(leq_real),
-    top(num(1.0)),
-    bot(num(0.0)),
+    top(top_real),
+    bot(bot_real),
     and_godel, and_luka, and_prod,
     or_godel, or_luka, or_prod,
     agr_aver, agr_very
@@ -41,6 +41,8 @@ lattice_real([
 % Membering and Ordering relations
 member_real(X) :- number(X), X >= 0, X =< 1.
 leq_real(X,Y) :- X =< Y.
+bot_real(0.0).
+top_real(1.0).
 
 % T-norms
 and_prod(X,Y,Z) :- Z is X*Y.

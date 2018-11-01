@@ -95,6 +95,8 @@ select_atom([Term|Args], [Term|Args_], Var, Atom) :- select_atom(Args, Args_, Va
 % expression +Expression with the variable ?Var instead of
 % the atom ?Atom. +Members is an atom representing the
 % members predicate of a lattice.
+select_expression(top, Var, Var, top, _) :- !.
+select_expression(top, Var, Var, bot, _) :- !.
 select_expression(term(Term, Args), Var, Var, term(Term, Args), Members) :-
     ( Term =.. [Op,_], member(Op, ['@','&','|']) ;
       member(Term, ['@','&','|']) ),
@@ -109,8 +111,6 @@ select_expression([Term|Args], [Term|Args_], Var, Atom, Members) :- select_expre
 % This predicate succeeds when the element +Element
 % is a member of the lattice. +Member is an atom
 % representing the member predicate of the lattice.
-is_member(_, bot).
-is_member(_, top).
 is_member(Member, X) :- to_prolog(X, Y), call(Member, Y).
 
 % interpretable/1
@@ -121,7 +121,12 @@ is_member(Member, X) :- to_prolog(X, Y), call(Member, Y).
 interpretable(Expr) :- \+select_atom(Expr, _, _, _).
 
 % derivation/4
-% perform a complete derivation
+% derivation(+Program, +State1, ?State2, ?Info)
+%
+% This predicate performs a complete derivation from
+% an initial state ?State1 to the final state ?State2,
+% using the program +Program. ?Info is a list containing
+% the information of each step.
 derivation(Program, State, State_, [X|Xs]) :-
     inference(Program, State, State1, X),
     derivation(Program, State1, State_, Xs).
@@ -131,15 +136,40 @@ derivation(program(_,_,Lattice), state(Goal,Subs), state(Goal,Subs), []) :-
     call(Members, GoalProlog).
 
 % inference/4
-% inference(+Program, +State, -NewState, -Info)
-% perform an inference step
+% inference(+Program, +State1, ?State2, ?Info)
+%
+% This predicate performs an inference step from the
+% initial state +State1 to the final step ?State2. ?Info
+% is an atom containg information about the rule used in
+% the derivation.
 inference(Program, State, State_, Info) :- admissible_step(Program, State, State_, Info).
 inference(Program, state(Goal,Subs), State_, Info) :- interpretable(Goal), interpretive_step(Program, state(Goal,Subs), State_, Info).
 
 % admissible_step/4
-% admissible_step(+Program, +State, -NewState, -Info)
-% perform an admissible step
-admissible_step(program(Pi,Sim+Tnorm,_), state(Goal,Subs), state(Goal_,Subs_), Info) :-
+% admissible_step(+Program, +State1, ?State2, ?Info)
+%
+% This predicate performs an admissible step from the
+% state +State1 to the state ?State2 using the program
+% +Program. ?Info is an atom containg information about
+% the rule used in the derivation.
+:- dynamic(check_success/0).
+admissible_step(Program, State1, State2, Info) :-
+    assertz(check_success),
+    success_step(Program, State1, State2, Info),
+    retractall(check_success).
+admissible_step(Program, State1, State2, Info) :-
+    check_success,
+    retractall(check_success),
+    failure_step(Program, State1, State2, Info).
+
+% success_step/4
+% success_step(+Program, +State1, ?State2, ?Info)
+%
+% This predicate performs a successful admissible step
+% from the state +State1 to the state ?State2 using the
+% program +Program. ?Info is an atom containg information
+% about the rule used in the derivation.
+success_step(program(Pi,Sim+Tnorm,_), state(Goal,Subs), state(Goal_,Subs_), Info) :-
     select_atom(Goal, ExprVar, Var, Expr),
     Expr = term(Name, Args),
     length(Args, Arity),
@@ -154,20 +184,44 @@ admissible_step(program(Pi,Sim+Tnorm,_), state(Goal,Subs), state(Goal_,Subs_), I
         apply(ExprVar, SubsExpr, Goal_), compose(Subs, SubsExpr, Subs_),
         rule_id(Rule, RuleId), atom_number(InfoId,RuleId), atom_concat('R', InfoId, Info)
     )).
-admissible_step(_, state(Goal,Subs), state(Goal_,Subs), 'FS') :-
+
+% failure_step/4
+% failure_step(+Program, +State1, ?State2, ?Info)
+%
+% This predicate performs an unsuccessful admissible step
+% from the state +State1 to the state ?State2 using the
+% program +Program. ?Info is an atom containg information
+% about the failure.
+failure_step(_, state(Goal,Subs), state(Goal_,Subs), 'FS') :-
     select_atom(Goal, Goal_, bot, _).
 
 % interpretive_step/4
-% interpretive_step(+Program, +State, -NewState, -Info)
-% perform an interpretive step
+% interpretive_step(+Program, +State1, ?State2, ?Info)
+%
+% This predicate performs an interpretive step from the
+% state +State1 to the state ?State2 using the program
+% +Program. ?Info is an atom containg information about
+% the derivation. This steps only can be performed when
+% there is no atoms to perform admissible steps.
 interpretive_step(program(_,_,Lattice), state(Goal,Subs), state(Goal_,Subs), 'IS') :-
     member(member(Member), Lattice),
     select_expression(Goal, Goal_, Var, Expr, Member),
     interpret(Expr, Var, Lattice).
 
 % interpret/3
-%
+% interpret(+Expression, ?Result, +Lattice)
 % 
+% This predicate interprets the expression +Expression
+% using the lattice +Lattice to evaluate the operations
+% in the expression. ?Result is the resulting expression.
+interpret(bot, BotMember, Lattice) :-
+    !, member(bot(Bot), Lattice),
+    call(Bot, BotProlog),
+    from_prolog(BotProlog, BotMember).
+interpret(top, TopMember, Lattice) :-
+    !, member(top(Top), Lattice),
+    call(Top, TopProlog),
+    from_prolog(TopProlog, TopMember).
 interpret(term(Op, Args), Result, Lattice) :-
     Op =.. [_,Name],
     member(Name, Lattice),
@@ -223,7 +277,10 @@ apply(Expr, _/_, Expr) :- !.
 % RULES MANIPULATION
 
 % rule_id/2
-% return the identifier of a rule
+% rule_id(+Rule, ?Id)
+%
+% This predicate succeeds when ?Id is the identifier
+% of the rule +Rule.
 rule_id(rule(_,_,Info), Id) :- member(id(Id), Info).
 
 
