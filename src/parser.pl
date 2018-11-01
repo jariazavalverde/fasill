@@ -1,22 +1,22 @@
-:- module(parser, [consult/2, query/2]).
+:- module(parser, [parse_consult/2, parse_query/2]).
 
 
 
 % VISIBLE PREDICATES
 
-% consult/2
+% parse_consult/2
 % consult a program
-consult(Input, Program) :-
+parse_consult(Input, Program) :-
     reset_rule_id,
     atom_chars(Input, Stream),
     parse_program(Program, Stream, []).
 
-% query/2
+% parse_query/2
 % query a goal
-query([Input|.], Goal) :-
+parse_query(Input, Goal) :-
     reset_rule_id,
     atom_chars(Input, Stream),
-    parse_expr(1300, Stream, Goal).
+    parse_expr(1300, Stream, Goal, []).
 
 
 
@@ -69,12 +69,12 @@ parse_program([]) --> [].
 % parse a malp or fasill rule
 parse_rule(rule(head(Head), Body, [id(Id)|Info])) -->
     parse_expr(1300, T),
-    {( T = term('<-', [Head, term(with, [BodyWith,TD])]), Body = body(term('&', [TD,BodyWith])), Info = [syntax(malp)] ;
-       T = term('<'(Implication), [Head, term(with, [BodyWith,TD])]), Body = body(term('&'(Implication), [TD,BodyWith])), Info = [syntax(malp)] ;
-       T = term('<-', [Head,Body_]), Body = body(Body_), Info = [syntax(fasill)] ;
-       T = term('<'(_), [Head,Body_]), Body = body(Body_), Info = [syntax(malp)] ;
-       T = Head, Body = empty, Info = [syntax(fasill)]
-    )}, dot, !, {auto_rule_id(Id)}.
+    {( T = term('<-', [Head, term(with, [BodyWith,TD])]), Body = body(term('&', [TD,BodyWith])), Info = [syntax(malp)], ! ;
+       T = term('<'(Implication), [Head, term(with, [BodyWith,TD])]), Body = body(term('&'(Implication), [TD,BodyWith])), Info = [syntax(malp)], ! ;
+       T = term('<-', [Head,Body_]), Body = body(Body_), Info = [syntax(fasill)], ! ;
+       T = term('<'(_), [Head,Body_]), Body = body(Body_), Info = [syntax(malp)], ! ;
+       T = Head, Body = empty, Info = [syntax(fasill)], !
+    )}, dot, {auto_rule_id(Id)}.
 
 % parse_operator/6
 % parse an operator T with Priority, Specifier and Name 
@@ -232,10 +232,9 @@ comma --> blanks, [','].
 dot --> blanks, ['.'].
 
 % Blanks
-blanks --> blank, blanks.
+blanks --> blank, !, blanks.
 blanks --> [].
 blank --> [' '].
-blank --> ['    '].
 blank --> ['\\','\n'].
 blank --> ['\n'].
 blank --> ['\t'].
