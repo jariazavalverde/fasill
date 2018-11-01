@@ -1,78 +1,39 @@
-:- module(semantics, [wmgu/4, derivation/4, inference/4, admissible_step/4, interpretive_step/4, apply/3, compose/3, rename/2]).
+:- module(semantics, [wmgu/3, derivation/3, inference/3, admissible_step/3, interpretive_step/3, apply/3, compose/3, rename/2]).
+:- use_module('environment').
 :- use_module('builtin').
 
 
 
 % VISIBLE PREDICATES
 
-% to_prolog/2
-% to_prolog(+FASILL, ?Prolog)
-%
-% This predicate takes the FASILL object +FASILL
-% and returns the object ?Prolog in Prolog notation.
-to_prolog([], []) :- !.
-to_prolog([X|Xs], [Y|Ys]) :-
-    !, to_prolog(X,Y),
-    to_prolog(Xs,Ys).
-to_prolog(num(X), X) :- !.
-to_prolog(term(X,Xs), Term) :-
-    atom(X),
-    !, to_prolog(Xs, Ys),
-    Term =.. [X|Ys].
-
-% from_prolog/2
-% from_prolog(+Prolog, ?FASILL)
-%
-% This predicate takes the Prolog object +Prolog
-% and returns the object ?FASILL in FASILL notation.
-from_prolog([], term([], [])) :- !.
-from_prolog([X|Xs], term('.', [Y,Ys])) :-
-    !, from_prolog(X,Y),
-    from_prolog(Xs,Ys).
-from_prolog(X, num(X)) :- number(X), !.
-from_prolog(X, term(X, [])) :- atom(X), !.
-from_prolog(X, term(H,Args)) :-
-    compound(X), !,
-    X =.. [H|T],
-    maplist(from_prolog, T, Args).
-
-% wmgu/4
-% wmgu(+ExpressionA, +ExpressionB, +SimilarityRelation, ?State)
+% wmgu/3
+% wmgu(+ExpressionA, +ExpressionB, ?State)
 %
 % This predicate returns the weak most general unifier (wmgu)
-% ?State of the expressions +ExpressionA and +ExpressionB
-% with the similarity relation +SimilarityRelation. The
-% similarity relation +SimilarityRelation is a term
-% '+'(Sim,Tnorm) where Sim is an atom representing
-% a similarity relation predicate and Tnorm is an atom
-% representing a conjunction operator.
-wmgu(ExprA, ExprB, Sim+Tnorm, State) :-
-    call(Sim, X, X, _, Top), !,
-    wmgu(ExprA, ExprB, Sim+Tnorm, state(Top,[]), State).
+% ?State of the expressions +ExpressionA and +ExpressionB.
+wmgu(ExprA, ExprB, State_) :- wmg(ExprA, ExprB, [], State_).
 %%% var with expression
-wmgu(var(X), Y, Similarity, state(TD,Subs), State_) :-
+wmgu(var(X), Y, state(TD,Subs), State_) :-
     member(X/Z, Subs), !,
-    wmgu(Z, Y, Similarity, state(TD,Subs), State_).
-wmgu(var(X), Y, _, state(TD,Subs), state(TD,[X/Y|Subs])) :- !.
+    wmgu(Z, Y, state(TD,Subs), State_).
+wmgu(var(X), Y, state(TD,Subs), state(TD,[X/Y|Subs])) :- !.
 %%% expression with var
-wmgu(X, var(Y), Similarity, State, State_) :- !, wmgu(var(Y), X, Similarity, State, State_).
+wmgu(X, var(Y), State, State_) :- !, wmgu(var(Y), X, State, State_).
 %%% num with num
-wmgu(num(X), num(X), _, State, State) :- !.
+wmgu(num(X), num(X), State, State) :- !.
 %%% term with term
-wmgu(term(X,Xs), term(Y,Ys), Sim+Tnorm, state(TD, Subs), State) :- !,
+wmgu(term(X,Xs), term(Y,Ys), state(TD, Subs), State) :- !,
     length(Xs, Length),
     length(Ys, Length),
-    call(Sim, X, Y, Length, TDxy),
-    to_prolog(TD, PLtd),
-    to_prolog(TDxy, PLtdxy),
-    call(Tnorm, PLtd, PLtdxy, PLtd2),
-    from_prolog(PLtd2, TD2),
-    wmgu(Xs, Ys, Sim+Tnorm, state(TD2, Subs), State).
+    similarity_between(X, Y, Length, TDxy),
+    similarity_tnorm(Tnorm),
+    lattice_call_connective(Tnorm, [TD, TDxy], TD2),
+    wmgu(Xs, Ys, state(TD2, Subs), State).
 %%% arguments
-wmgu([], [], _, State, State) :- !.
-wmgu([X|Xs], [Y|Ys], Sim, State, State_) :- !,
-    wmgu(X, Y, Sim, State, StateXY),
-    wmgu(Xs, Ys, Sim, StateXY, State_).
+wmgu([], [], State, State) :- !.
+wmgu([X|Xs], [Y|Ys], State, State_) :- !,
+    wmgu(X, Y, State, StateXY),
+    wmgu(Xs, Ys, StateXY, State_).
 
 % select_atom/4
 % select_atom(+Expression, ?ExprVar, ?Var, ?Atom)
@@ -88,31 +49,22 @@ select_atom(term(Term, Args), Var, Var, term(Term, Args)).
 select_atom([Term|Args], [Term_|Args], Var, Atom) :- select_atom(Term, Term_, Var, Atom), !.
 select_atom([Term|Args], [Term|Args_], Var, Atom) :- select_atom(Args, Args_, Var, Atom).
 
-% select_expression/5
-% select_expression(+Expression, ?ExprVar, ?Var, ?Atom, +Members)
+% select_expression/4
+% select_expression(+Expression, ?ExprVar, ?Var, ?Atom)
 %
 % This predicate selects an interpretable expression ?Atom
 % from the expression +Expression, where ?ExprVar is the
 % expression +Expression with the variable ?Var instead of
-% the atom ?Atom. +Members is an atom representing the
-% members predicate of a lattice.
-select_expression(top, Var, Var, top, _) :- !.
-select_expression(top, Var, Var, bot, _) :- !.
-select_expression(term(Term, Args), Var, Var, term(Term, Args), Members) :-
+% the atom ?Atom.
+select_expression(top, Var, Var, top) :- !.
+select_expression(top, Var, Var, bot) :- !.
+select_expression(term(Term, Args), Var, Var, term(Term, Args)) :-
     ( Term =.. [Op,_], member(Op, ['@','&','|']) ;
       member(Term, ['@','&','|']) ),
-    maplist(is_member(Members), Args), !.
-select_expression(term(Term, Args), term(Term, Args_), Var, Expr, Members) :- select_expression(Args, Args_, Var, Expr, Members).
-select_expression([Term|Args], [Term_|Args], Var, Atom, Members) :- select_expression(Term, Term_, Var, Atom, Members), !.
-select_expression([Term|Args], [Term|Args_], Var, Atom, Members) :- select_expression(Args, Args_, Var, Atom, Members).
-
-% is_member/2
-% is_member(+Member, +Element)
-%
-% This predicate succeeds when the element +Element
-% is a member of the lattice. +Member is an atom
-% representing the member predicate of the lattice.
-is_member(Member, X) :- to_prolog(X, Y), call(Member, Y).
+    maplist(lattice_call_member, Args), !.
+select_expression(term(Term, Args), term(Term, Args_), Var, Expr) :- select_expression(Args, Args_, Var, Expr).
+select_expression([Term|Args], [Term_|Args], Var, Atom) :- select_expression(Term, Term_, Var, Atom), !.
+select_expression([Term|Args], [Term|Args_], Var, Atom) :- select_expression(Args, Args_, Var, Atom).
 
 % interpretable/1
 % interpretable(+Expression)
@@ -121,56 +73,53 @@ is_member(Member, X) :- to_prolog(X, Y), call(Member, Y).
 % can be interpreted (i.e., there is no atoms in the expression).
 interpretable(Expr) :- \+select_atom(Expr, _, _, _).
 
-% derivation/4
-% derivation(+Program, +State1, ?State2, ?Info)
+% derivation/3
+% derivation(+State1, ?State2, ?Info)
 %
 % This predicate performs a complete derivation from
 % an initial state ?State1 to the final state ?State2,
 % using the program +Program. ?Info is a list containing
 % the information of each step.
-derivation(Program, State, State_, [X|Xs]) :-
-    inference(Program, State, State1, X),
-    derivation(Program, State1, State_, Xs).
-derivation(program(_,_,Lattice), state(Goal,Subs), state(Goal,Subs), []) :-
-    member(member(Members), Lattice),
-    to_prolog(Goal, GoalProlog),
-    call(Members, GoalProlog).
+derivation(State, State_, [X|Xs]) :-
+    inference(State, State1, X),
+    derivation(State1, State_, Xs).
+derivation(state(Goal,Subs), state(Goal,Subs), []) :-
+    lattice_call_member(Goal).
 
-% inference/4
-% inference(+Program, +State1, ?State2, ?Info)
+% inference/3
+% inference(+State1, ?State2, ?Info)
 %
 % This predicate performs an inference step from the
 % initial state +State1 to the final step ?State2. ?Info
 % is an atom containg information about the rule used in
 % the derivation.
-inference(Program, State, State_, Info) :- admissible_step(Program, State, State_, Info).
-inference(Program, state(Goal,Subs), State_, Info) :- interpretable(Goal), interpretive_step(Program, state(Goal,Subs), State_, Info).
+inference(State, State_, Info) :- admissible_step(State, State_, Info).
+inference(state(Goal,Subs), State_, Info) :- interpretable(Goal), interpretive_step(state(Goal,Subs), State_, Info).
 
-% admissible_step/4
-% admissible_step(+Program, +State1, ?State2, ?Info)
+% admissible_step/3
+% admissible_step(+State1, ?State2, ?Info)
 %
 % This predicate performs an admissible step from the
-% state +State1 to the state ?State2 using the program
-% +Program. ?Info is an atom containg information about
-% the rule used in the derivation.
+% state +State1 to the state ?State2. ?Info is an atom
+% containg information about the rule used in the derivation.
 :- dynamic(check_success/0).
-admissible_step(Program, State1, State2, Info) :-
+admissible_step(State1, State2, Info) :-
     assertz(check_success),
-    success_step(Program, State1, State2, Info),
+    success_step(State1, State2, Info),
     retractall(check_success).
-admissible_step(Program, State1, State2, Info) :-
+admissible_step(State1, State2, Info) :-
     check_success,
     retractall(check_success),
-    failure_step(Program, State1, State2, Info).
+    failure_step(State1, State2, Info).
 
-% success_step/4
-% success_step(+Program, +State1, ?State2, ?Info)
+% success_step/3
+% success_step(+State1, ?State2, ?Info)
 %
 % This predicate performs a successful admissible step
-% from the state +State1 to the state ?State2 using the
-% program +Program. ?Info is an atom containg information
-% about the rule used in the derivation.
-success_step(program(Pi,Sim+Tnorm,_), state(Goal,Subs), state(Goal_,Subs_), Info) :-
+% from the state +State1 to the state ?State2. ?Info is
+% an atom containg information about the rule used in
+% the derivation.
+success_step(state(Goal,Subs), state(Goal_,Subs_), Info) :-
     select_atom(Goal, ExprVar, Var, Expr),
     Expr = term(Name, Args),
     length(Args, Arity),
@@ -178,59 +127,47 @@ success_step(program(Pi,Sim+Tnorm,_), state(Goal,Subs), state(Goal_,Subs_), Info
         eval_builtin_predicate(Name/Arity, state(Goal,Subs), selected(ExprVar, Var, Expr), state(Goal_,Subs_)),
         Info = Name
     ) ; (
-        member(Rule, Pi),
+        lattice_tnorm(Tnorm),
+        program_clause(Name/Arity, Rule),
         rename(Rule, rule(head(Head),Body,_)),
-        wmgu(Expr, Head, Sim+Tnorm, state(TD,SubsExpr)),
+        wmgu(Expr, Head, state(TD,SubsExpr)),
         (Body = empty -> Var = TD ; (Body = body(Body_), Var = term('&'(Tnorm), [TD,Body_]))),
-        apply(ExprVar, SubsExpr, Goal_), compose(Subs, SubsExpr, Subs_),
-        rule_id(Rule, RuleId), atom_number(InfoId,RuleId), atom_concat('R', InfoId, Info)
+        apply(ExprVar, SubsExpr, Goal_),
+        compose(Subs, SubsExpr, Subs_),
+        program_rule_id(Rule, RuleId),
+        atom_number(InfoId, RuleId),
+        atom_concat('R', InfoId, Info)
     )).
 
-% failure_step/4
-% failure_step(+Program, +State1, ?State2, ?Info)
+% failure_step/3
+% failure_step(+State1, ?State2, ?Info)
 %
 % This predicate performs an unsuccessful admissible step
-% from the state +State1 to the state ?State2 using the
-% program +Program. ?Info is an atom containg information
-% about the failure.
-failure_step(_, state(Goal,Subs), state(Goal_,Subs), 'FS') :-
+% from the state +State1 to the state ?State2. ?Info is an
+% atom containg information about the failure.
+failure_step(state(Goal,Subs), state(Goal_,Subs), 'FS') :-
     select_atom(Goal, Goal_, bot, _).
 
-% interpretive_step/4
-% interpretive_step(+Program, +State1, ?State2, ?Info)
+% interpretive_step/3
+% interpretive_step(+State1, ?State2, ?Info)
 %
 % This predicate performs an interpretive step from the
-% state +State1 to the state ?State2 using the program
-% +Program. ?Info is an atom containg information about
-% the derivation. This steps only can be performed when
-% there is no atoms to perform admissible steps.
-interpretive_step(program(_,_,Lattice), state(Goal,Subs), state(Goal_,Subs), 'IS') :-
-    member(member(Member), Lattice),
-    select_expression(Goal, Goal_, Var, Expr, Member),
-    interpret(Expr, Var, Lattice).
+% state +State1 to the state ?State2 ?Info is an atom
+% containg information about the derivation. This steps
+% only can be performed when there is no atoms to perform
+% admissible steps.
+interpretive_step(state(Goal,Subs), state(Goal_,Subs), 'IS') :-
+    select_expression(Goal, Goal_, Var, Expr),
+    interpret(Expr, Var).
 
-% interpret/3
-% interpret(+Expression, ?Result, +Lattice)
+% interpret/2
+% interpret(+Expression, ?Result)
 % 
 % This predicate interprets the expression +Expression
-% using the lattice +Lattice to evaluate the operations
 % in the expression. ?Result is the resulting expression.
-interpret(bot, BotMember, Lattice) :-
-    !, member(bot(Bot), Lattice),
-    call(Bot, BotProlog),
-    from_prolog(BotProlog, BotMember).
-interpret(top, TopMember, Lattice) :-
-    !, member(top(Top), Lattice),
-    call(Top, TopProlog),
-    from_prolog(TopProlog, TopMember).
-interpret(term(Op, Args), Result, Lattice) :-
-    Op =.. [_,Name],
-    member(Name, Lattice),
-    maplist(to_prolog, Args, ArgsProlog),
-    append(ArgsProlog, [ResultProlog], ArgsCall),
-    Call =.. [Name|ArgsCall],
-    call(Call),
-    from_prolog(ResultProlog, Result).
+interpret(bot, Bot) :- !, lattice_call_bot(Bot).
+interpret(top, Top) :- !, lattice_call_top(Top).
+interpret(term(Op, Args), Result) :- Op =.. [_,Name], lattice_call_connective(Name, Args, Result).
 
 % rename/2
 % rename(+Expression, ?Renamed)
@@ -272,17 +209,6 @@ apply([H|T], Subs, [H_|T_]) :- !, apply(H, Subs, H_), apply(T, Subs, T_).
 apply(Expr, [], Expr) :- !.
 apply(Expr, [H|T], Expr_) :- !, apply(Expr, H, ExprH), apply(ExprH, T, Expr_).
 apply(Expr, _/_, Expr) :- !.
-
-
-
-% RULES MANIPULATION
-
-% rule_id/2
-% rule_id(+Rule, ?Id)
-%
-% This predicate succeeds when ?Id is the identifier
-% of the rule +Rule.
-rule_id(rule(_,_,Info), Id) :- member(id(Id), Info).
 
 
 
