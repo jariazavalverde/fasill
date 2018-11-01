@@ -2,7 +2,6 @@
 :- use_module('../src/semantics').
 
 
-
 % PARSER
 
 parser_case_1(
