@@ -3,6 +3,8 @@
     eval_builtin_predicate/4
 ]).
 
+:- use_module('exceptions').
+
 
 
 % is_builtin_predicate/1
@@ -36,6 +38,8 @@ is_builtin_predicate(Name/Arity) :-
 % ?State2 is the resulting state of performing a
 % step over the state +State1 with selected atom
 % +Atom whose indicator is +Indicator.
+
+
 
 % TYPE TESTING
 
@@ -76,6 +80,8 @@ eval_builtin_predicate(float/1, state(_, Subs), selected(ExprVar, top, Atom), st
 eval_builtin_predicate(integer/1, state(_, Subs), selected(ExprVar, top, Atom), state(ExprVar, Subs)) :-
     Atom = term(integer, [num(X)]),
     integer(X).
+
+
 
 % ATOM PROCESSING 
 

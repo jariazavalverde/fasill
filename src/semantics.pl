@@ -10,6 +10,7 @@
 ]).
 
 :- use_module('environment').
+:- use_module('exceptions').
 :- use_module('builtin').
 
 
