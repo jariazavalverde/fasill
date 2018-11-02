@@ -1,1 +1,2 @@
+*.pl linguist-language=Prolog
 *.fpl linguist-language=FASILL
