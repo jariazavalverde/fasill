@@ -33,3 +33,9 @@
     term(is,[var('X'),term('/',[num(4),num(0)])]),
     [exception(error(evaluation_error(zero_division), is/2))]
 ).
+
+% (real) <X is op(3.0),{}> -> error(type_error(evaluable, op/1), is/2)
+?- test_builtin(1, '../../sample/lat/real.lat.pl',
+    term(is,[var('X'),term(op,[num(3.0)])]),
+    [exception(error(type_error(evaluable, op/1), is/2))]
+).

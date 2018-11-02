@@ -69,7 +69,10 @@ eval_builtin_predicate(is/2, state(_, Subs), selected(ExprVar, Var, Atom), state
     catch(
         (arithmetic_evaluation(Expression, Result), Var = term('=', [Variable, Result])),
         Error,
-        (evaluation_error(Error, is/2, Exception), throw(Exception))
+        (Error = '/'(_,_) ->
+            (type_error(evaluable, Error, is/2, Exception), throw(Exception)) ;
+            (evaluation_error(Error, is/2, Exception), throw(Exception))
+        )
     ).
 
 

@@ -244,7 +244,7 @@ arithmetic_evaluation(term(Op,Args), Result) :-
     maplist(arithmetic_evaluation, Args, Args_),
     maplist(arithmetic_type, Args_, Types),
     maplist(to_prolog, Args_, Prolog),
-    arithmetic_op(Op, Prolog, Types, Result).
+    arithmetic_op(Op, Prolog, Types, Result), !.
 
 % arithmetic_type/2
 % arithmetic_type(+Number, ?Type)
@@ -266,6 +266,7 @@ arithmetic_op('*', [X,Y], [_,_], num(Z)) :- Z is X*Y.
 arithmetic_op('/', [_,0], [_,_], _) :- !, throw(zero_division).
 arithmetic_op('/', [_,0.0], [_,_], _) :- !, throw(zero_division).
 arithmetic_op('/', [X,Y], [_,_], num(Z)) :- Z is float(X/Y).
+arithmetic_op(Op, Args, _, _) :- length(Args, Length), throw(Op/Length).
 
 
 % VARIABLES
