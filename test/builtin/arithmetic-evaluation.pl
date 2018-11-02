@@ -69,3 +69,45 @@
     term(is,[var('X'),term(op,[num(3.0)])]),
     [exception(error(type_error(evaluable, op/1), is/2))]
 ).
+
+% (real) <X is mod(3,2),{}> -> [<1.0,{X/1}>]
+?- test_builtin(12, '../../sample/lat/real.lat.pl',
+    term(is,[var('X'),term(mod,[num(3),num(2)])]),
+    [state(num(1.0), ['X'/num(1)])]
+).
+
+% (real) <X is mod(4,2),{}> -> [<1.0,{X/1}>]
+?- test_builtin(13, '../../sample/lat/real.lat.pl',
+    term(is,[var('X'),term(mod,[num(4),num(2)])]),
+    [state(num(1.0), ['X'/num(0)])]
+).
+
+% (real) <X is mod(4,0),{}> -> error(evaluation_error(zero_division), is/2)
+?- test_builtin(14, '../../sample/lat/real.lat.pl',
+    term(is,[var('X'),term(mod,[num(4),num(0)])]),
+    [exception(error(evaluation_error(zero_division), is/2))]
+).
+
+% (real) <X is log(1),{}> -> [<1.0,{X/0.0}>]
+?- test_builtin(15, '../../sample/lat/real.lat.pl',
+    term(is,[var('X'),term(log,[num(1)])]),
+    [state(num(1.0), ['X'/num(0.0)])]
+).
+
+% (real) <X is log(0),{}> -> error(evaluation_error(undefined), is/2)
+?- test_builtin(16, '../../sample/lat/real.lat.pl',
+    term(is,[var('X'),term(log,[num(0)])]),
+    [exception(error(evaluation_error(undefined), is/2))]
+).
+
+% (real) <X is float_integer_part(2.3),{}> -> [<1.0,{X/2.0}>]
+?- test_builtin(17, '../../sample/lat/real.lat.pl',
+    term(is,[var('X'),term(float_integer_part,[num(2.3)])]),
+    [state(num(1.0), ['X'/num(2.0)])]
+).
+
+% (real) <X is float_fractional_part(2.5),{}> -> [<1.0,{X/0.5}>]
+?- test_builtin(18, '../../sample/lat/real.lat.pl',
+    term(is,[var('X'),term(float_fractional_part,[num(2.5)])]),
+    [state(num(1.0), ['X'/num(0.5)])]
+).

@@ -279,7 +279,7 @@ arithmetic_op('+', [X], _, num(Z)) :- Z is X.
 arithmetic_op('-', [X], _, num(Z)) :- Z is -X.
 arithmetic_op(exp, [X], _, num(Z)) :- Z is exp(X).
 arithmetic_op(sqrt, [X], _, num(Z)) :- Z is sqrt(X).
-arithmetic_op(log, [X], _, num(Z)) :- X < 0 -> throw(evaluation(undefined)) ; Z is log(X).
+arithmetic_op(log, [X], _, num(Z)) :- X =< 0 -> throw(evaluation(undefined)) ; Z is log(X).
 arithmetic_op(sin, [X], _, num(Z)) :- Z is sin(X).
 arithmetic_op(cos, [X], _, num(Z)) :- Z is cos(X).
 arithmetic_op(tan, [X], _, num(Z)) :- Z is tan(X).
@@ -303,9 +303,11 @@ arithmetic_op(float_fractional_part, [X], _, num(Z)) :- Z is float_fractional_pa
 arithmetic_op(abs, [X], _, num(Z)) :- Z is abs(X).
 arithmetic_op(rem, [X,_], [float,_], _) :- throw(type(integer, X)).
 arithmetic_op(rem, [_,Y], [_,float], _) :- throw(type(integer, Y)).
+arithmetic_op(rem, [_,0], _, _) :- !, throw(evaluation(zero_division)).
 arithmetic_op(rem, [X,Y], _, num(Z)) :- Z is rem(X,Y).
 arithmetic_op(mod, [X,_], [float,_], _) :- throw(type(integer, X)).
 arithmetic_op(mod, [_,Y], [_,float], _) :- throw(type(integer, Y)).
+arithmetic_op(mod, [_,0], _, _) :- !, throw(evaluation(zero_division)).
 arithmetic_op(mod, [X,Y], _, num(Z)) :- Z is mod(X,Y).
 arithmetic_op('<<', [X,_], [float,_], _) :- throw(type(integer, X)).
 arithmetic_op('<<', [_,Y], [_,float], _) :- throw(type(integer, Y)).
@@ -322,6 +324,7 @@ arithmetic_op('/\\', [X,Y], _, num(Z)) :- Z is '/\\'(X,Y).
 arithmetic_op('\\', [X], [float], _) :- throw(type(integer, X)).
 arithmetic_op('\\', [X], _, num(Z)) :- Z is '\\'(X).
 arithmetic_op(Op, Args, _, _) :- length(Args, Length), throw(type(evaluable, Op/Length)).
+
 
 
 % VARIABLES
