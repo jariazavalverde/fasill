@@ -239,7 +239,8 @@ apply(Expr, _/_, Expr) :- !.
 % This predicate succeeds when ?Result is the result
 % of evaluating the expression +Expression. This predicate
 % throws an arithmetical exception if there is any problem.
-arithmetic_evaluation(num(X), num(X)).
+arithmetic_evaluation(var(_), _) :- !, throw(instantiation).
+arithmetic_evaluation(num(X), num(X)) :- !.
 arithmetic_evaluation(term(Op,Args), Result) :-
     maplist(arithmetic_evaluation, Args, Args_),
     maplist(arithmetic_type, Args_, Types),
@@ -263,10 +264,10 @@ arithmetic_type(num(X), float) :- float(X).
 arithmetic_op('+', [X,Y], [_,_], num(Z)) :- Z is X+Y.
 arithmetic_op('-', [X,Y], [_,_], num(Z)) :- Z is X-Y.
 arithmetic_op('*', [X,Y], [_,_], num(Z)) :- Z is X*Y.
-arithmetic_op('/', [_,0], [_,_], _) :- !, throw(zero_division).
-arithmetic_op('/', [_,0.0], [_,_], _) :- !, throw(zero_division).
+arithmetic_op('/', [_,0], [_,_], _) :- !, throw(evaluation(zero_division)).
+arithmetic_op('/', [_,0.0], [_,_], _) :- !, throw(evaluation(zero_division)).
 arithmetic_op('/', [X,Y], [_,_], num(Z)) :- Z is float(X/Y).
-arithmetic_op(Op, Args, _, _) :- length(Args, Length), throw(Op/Length).
+arithmetic_op(Op, Args, _, _) :- length(Args, Length), throw(type(Op/Length)).
 
 
 % VARIABLES
