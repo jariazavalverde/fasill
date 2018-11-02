@@ -1,8 +1,17 @@
 :- module(environment, [
+    to_prolog/2,
+    from_prolog/2,
+    fasill_atom/1,
+    fasill_float/1,
+    fasill_integer/1,
+    fasill_number/1,
+    fasill_term/1,
+    fasill_var/1,
     program_clause/2,
     program_rule_id/2,
     program_consult/1,
     lattice_tnorm/1,
+    lattice_tconorm/1,
     lattice_call_bot/1,
     lattice_call_top/1,
     lattice_call_member/1,
@@ -24,7 +33,7 @@
 
 
 
-% OBJECTS CONVERSION
+% OBJECT MANIPULATION
 
 % to_prolog/2
 % to_prolog(+FASILL, ?Prolog)
@@ -36,6 +45,7 @@ to_prolog([X|Xs], [Y|Ys]) :-
     !, to_prolog(X,Y),
     to_prolog(Xs,Ys).
 to_prolog(num(X), X) :- !.
+to_prolog(var(_), _).
 to_prolog(term(X,Xs), Term) :-
     atom(X),
     !, to_prolog(Xs, Ys),
@@ -56,6 +66,42 @@ from_prolog(X, term(H,Args)) :-
     compound(X), !,
     X =.. [H|T],
     maplist(from_prolog, T, Args).
+
+% fasill_number/1
+% fasill_number(+Term)
+%
+% This predicate succeeds when +Term is a FASILL number.
+fasill_number(num(_)).
+
+% fasill_integer/1
+% fasill_integer(+Term)
+%
+% This predicate succeeds when +Term is a FASILL integer.
+fasill_integer(num(X)) :- integer(X).
+
+% fasill_float/1
+% fasill_float(+Term)
+%
+% This predicate succeeds when +Term is a FASILL float.
+fasill_float(num(X)) :- float(X).
+
+% fasill_atom/1
+% fasill_atom(+Term)
+%
+% This predicate succeeds when +Term is a FASILL atom.
+fasill_atom(term(_,[])).
+
+% fasill_term/1
+% fasill_term(+Term)
+%
+% This predicate succeeds when +Term is a FASILL term.
+fasill_term(term(_,_)).
+
+% fasill_var/1
+% fasill_var(+Term)
+%
+% This predicate succeeds when +Term is a FASILL variable.
+fasill_var(var(_)).
 
 
 
@@ -97,6 +143,13 @@ program_consult(Path) :-
 % current t-norm asserted in the environment.
 lattice_tnorm(Tnorm) :- tnorm(Tnorm).
 
+% lattice_tconorm/1
+% lattice_tconorm(?Tconorm)
+%
+% This predicate succeeds when ?Tconorm is the
+% current t-conorm asserted in the environment.
+lattice_tconorm(Tconorm) :- tconorm(Tconorm).
+
 % lattice_call_bot/1
 % lattice_call_bot(-Bot)
 %
@@ -132,6 +185,16 @@ lattice_call_member(Member) :-
 % This predicate succeeds when ?Result is the result
 % of evaluate the connective ?Name with the arguments
 % +Arguments of the lattice loaded into the environment.
+lattice_call_connective('&', Args, Result) :- !,
+    (lattice_tnorm(Tnorm) ;
+    current_predicate(Tnorm/3),
+    sub_atom(Tnorm, 0, 4, _, and_)), !,
+    lattice_call_connective(Tnorm, Args, Result).
+lattice_call_connective('|', Args, Result) :- !,
+    (lattice_tnorm(Tconorm) ;
+    current_predicate(Tconorm/3),
+    sub_atom(Tconorm, 0, 3, _, or_)), !,
+    lattice_call_connective(Tconorm, Args, Result).
 lattice_call_connective(Name, Args, Result) :-
     maplist(to_prolog, Args, Args_),
     append(Args_, [Prolog], ArgsCall),

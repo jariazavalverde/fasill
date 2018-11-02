@@ -35,6 +35,10 @@ wmgu(X, var(Y), State, State_) :- !, wmgu(var(Y), X, State, State_).
 %%% num with num
 wmgu(num(X), num(X), State, State) :- !.
 %%% term with term
+wmgu(term(X,Xs), term(X,Ys), State, State_) :- !,
+    length(Xs, Length),
+    length(Ys, Length),
+    wmgu(Xs, Ys, State, State_).
 wmgu(term(X,Xs), term(Y,Ys), state(TD, Subs), State) :- !,
     length(Xs, Length),
     length(Ys, Length),
@@ -59,7 +63,7 @@ wmgu([X|Xs], [Y|Ys], State, State_) :- !,
 % +Expression, where ?ExprVar is the expression +Expression
 % with the variable ?Var instead of the atom ?Atom.
 select_atom(term(Term, Args), term(Term, Args_), Var, Atom) :-
-    ( Term =.. [Op,_], member(Op, ['@','&','|']) ;
+    ( (Term =.. [Op,_] ; Term =.. [Op]), member(Op, ['@','&','|']) ;
       member(Term, ['@','&','|']) ), !,
     select_atom(Args, Args_, Var, Atom).
 select_atom(term(Term, Args), Var, Var, term(Term, Args)).
@@ -76,7 +80,7 @@ select_atom([Term|Args], [Term|Args_], Var, Atom) :- select_atom(Args, Args_, Va
 select_expression(top, Var, Var, top) :- !.
 select_expression(bot, Var, Var, bot) :- !.
 select_expression(term(Term, Args), Var, Var, term(Term, Args)) :-
-    ( Term =.. [Op,_], member(Op, ['@','&','|']) ;
+    ( (Term =.. [Op,_] ; Term =.. [Op]), member(Op, ['@','&','|']) ;
       member(Term, ['@','&','|']) ),
     maplist(lattice_call_member, Args), !.
 select_expression(term(Term, Args), term(Term, Args_), Var, Expr) :- select_expression(Args, Args_, Var, Expr).
@@ -184,7 +188,7 @@ interpretive_step(state(Goal,Subs), state(Goal_,Subs), 'IS') :-
 % in the expression. ?Result is the resulting expression.
 interpret(bot, Bot) :- !, lattice_call_bot(Bot).
 interpret(top, Top) :- !, lattice_call_top(Top).
-interpret(term(Op, Args), Result) :- Op =.. [_,Name], lattice_call_connective(Name, Args, Result).
+interpret(term(Op, Args), Result) :- (Op =.. [_,Name] ; Op =.. [Name]), lattice_call_connective(Name, Args, Result).
 
 % rename/2
 % rename(+Expression, ?Renamed)

@@ -1,6 +1,6 @@
 :- module(exceptions, [
     throw_exception/1,
-    instantation_error/2,
+    instantiation_error/2,
     type_error/4
 ]).
 
@@ -18,15 +18,15 @@ throw_exception(Exception) :- throw(Exception).
 
 % FORMAT ERRORS
 
-% instantation_error/2
-% instantation_error(+Indicator, ?Error)
+% instantiation_error/2
+% instantiation_error(+Indicator, ?Error)
 %
 % This predicate succeeds when ?Error is the instantiation
 % error produced by the predicate +Indicator. This error
-% is produced when when an argument or one of its components
+% is produced when an argument or one of its components
 % is a variable, and an instantiated argument or component
 % is required.
-instantation_error(Indicator, error(instantiation_error, Indicator)).
+instantiation_error(Indicator, error(instantiation_error, Indicator)).
 
 % type_error/4
 % type_error(+Type, +Term, +Indicator, ?Error)

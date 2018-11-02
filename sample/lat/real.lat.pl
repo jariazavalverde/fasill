@@ -24,5 +24,6 @@ or_luka(X,Y,Z) :- Z is min(X+Y,1).
 agr_aver(X,Y,Z) :- Z is (X+Y)/2.
 agr_very(X,Y) :- Y is X*X.
 
-% t-norm
+% Default connectives
 tnorm(and_godel).
+tconorm(or_godel).

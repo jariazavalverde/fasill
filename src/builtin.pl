@@ -3,7 +3,9 @@
     eval_builtin_predicate/4
 ]).
 
+:- use_module('environment').
 :- use_module('exceptions').
+:- use_module('semantics').
 
 
 
@@ -16,6 +18,8 @@
 % and Arity is a non-negative integer.
 is_builtin_predicate(Name/Arity) :-
     member(Name/Arity, [
+        % term unification
+        '='/2,
         % type testing
         atom/1,
         compound/1,
@@ -25,6 +29,7 @@ is_builtin_predicate(Name/Arity) :-
         var/1,
         nonvar/1,
         % atom processing
+        atom_length/2,
         atom_concat/3
     ]).
 
@@ -38,6 +43,18 @@ is_builtin_predicate(Name/Arity) :-
 % ?State2 is the resulting state of performing a
 % step over the state +State1 with selected atom
 % +Atom whose indicator is +Indicator.
+
+
+
+% TERM UNIFICATION
+
+% '='/2
+% '='(@term, @term)
+eval_builtin_predicate('='/2, state(_, Subs), selected(ExprVar, TD, Term), state(ExprSubs, Subs_)) :-
+    Term = term('=', [X,Y]),
+    wmgu(X, Y, state(TD, SubsUnification)),
+    apply(ExprVar, SubsUnification, ExprSubs),
+    compose(Subs, SubsUnification, Subs_).
 
 
 
@@ -84,6 +101,21 @@ eval_builtin_predicate(integer/1, state(_, Subs), selected(ExprVar, top, Atom), 
 
 
 % ATOM PROCESSING 
+
+% atom_length/2
+% atom_length(+Atom, ?Length)
+eval_builtin_predicate(atom_length/2, state(_, Subs), selected(ExprVar, Var, Term), state(ExprVar, Subs)) :-
+    Term = term(atom_length, [Atom,Length]),
+    ( fasill_var(Atom) -> instantiation_error(atom_length/2, Error), throw_exception(Error) ;
+        ( \+fasill_atom(Atom) -> type_error(atom, Atom, atom_length/2, Error), throw_exception(Error) ;
+            ( \+fasill_var(Length), \+fasill_integer(Length) -> type_error(integer, Length, atom_length/2, Error), throw_exception(Error) ;
+                to_prolog(Atom, X), to_prolog(Length, Y),
+                atom_length(X,Y),
+                from_prolog(X, Fx), from_prolog(Y, Fy),
+                Var = term('&', [term('=',[Atom, Fx]), term('=',[Length, Fy])])
+            )
+        )
+    ).
 
 % atom_concat/3
 % atom_concat(+First, +Second, -Concat).
