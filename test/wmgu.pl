@@ -4,7 +4,7 @@
 
 
 % test_wmgu/5
-% test_wmgu(+Sim, +ID, +TermA, +TermB, +ShouldBe)
+% test_wmgu(+Identifier, +Sim, +TermA, +TermB, +ShouldBe)
 %
 % This predicate succeeds when terms +TermA and +TermB
 % weakly unifies with truth degree +ShouldBe using the

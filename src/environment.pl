@@ -1,6 +1,7 @@
 :- module(environment, [
     program_clause/2,
     program_rule_id/2,
+    program_consult/1,
     lattice_tnorm/1,
     lattice_call_bot/1,
     lattice_call_top/1,
@@ -11,6 +12,8 @@
     similarity_between/4,
     similarity_consult/1
 ]).
+
+:- use_module(parser).
 
 :- dynamic(
     fasill_rule/3,
@@ -72,6 +75,17 @@ program_clause(Name/Arity, rule(term(Name, Arity, Args), Body, Info)) :-
 % of the rule +Rule.
 program_rule_id(rule(_,_,Info), Id) :- member(id(Id), Info).
 
+% program_consult/1
+% program_consult(+Path)
+%
+% This predicate loads the FASILL program from
+% the file +Path into the environment. This
+% predicate cleans the previous rules.
+program_consult(Path) :-
+    retractall(rule(_,_,_)),
+    file_consult(Path, Rules),
+    (member(Rule, Rules), assertz(Rule), fail ; true).
+
 
 
 % LATTICES
@@ -79,8 +93,8 @@ program_rule_id(rule(_,_,Info), Id) :- member(id(Id), Info).
 % lattice_tnorm/1
 % lattice_tnorm(?Tnorm)
 %
-% This predicate succeeds when ?Tnorm is the current
-% t-norm asserted in the environment.
+% This predicate succeeds when ?Tnorm is the
+% current t-norm asserted in the environment.
 lattice_tnorm(Tnorm) :- tnorm(Tnorm).
 
 % lattice_call_bot/1

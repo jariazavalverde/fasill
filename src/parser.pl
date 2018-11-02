@@ -1,25 +1,42 @@
 :- module(parser, [
+    file_consult/2,
     parse_consult/2,
     parse_query/2
 ]).
 
 
 
-% VISIBLE PREDICATES
+% stream_to_list/2
+% stream_to_list(+Stream, ?List)
+%
+% This predicate succeeds when ?List is the lists
+% of characters reads from the stream +Stream.
+stream_to_list(Stream, []) :-
+    at_end_of_stream(Stream), !.
+stream_to_list(Stream, [Char|Input]) :-
+    get_code(Stream, Code),
+    char_code(Char, Code),
+    stream_to_list(Stream, Input).
+
+% file_consult/2
+% consult a program
+file_consult(Path, Program) :-
+    open(Path, read, Stream),
+    stream_to_list(Stream, Input),
+    close(Stream),
+    parse_consult(Input, Program).
 
 % parse_consult/2
 % consult a program
 parse_consult(Input, Program) :-
     reset_rule_id,
-    atom_chars(Input, Stream),
-    parse_program(Program, Stream, []).
+    parse_program(Program, Input, []).
 
 % parse_query/2
 % query a goal
 parse_query(Input, Goal) :-
     reset_rule_id,
-    atom_chars(Input, Stream),
-    parse_expr(1300, Stream, Goal, []).
+    parse_expr(1300, Input, Goal, []).
 
 
 
@@ -65,19 +82,19 @@ reset_rule_id :- retract(current_rule_id(_)), assertz(current_rule_id(1)).
 
 % parse_program/3
 % parse a fuzzy logic program
-parse_program([H|T]) --> parse_rule(H), !, parse_program(T).
+parse_program([H|T]) --> parse_rule(H), !, parse_program(T), blanks.
 parse_program([]) --> [].
 
 % parse_rule/3
 % parse a malp or fasill rule
 parse_rule(rule(head(Head), Body, [id(Id)|Info])) -->
     parse_expr(1300, T),
-    {( T = term('<-', [Head, term(with, [BodyWith,TD])]), Body = body(term('&', [TD,BodyWith])), Info = [syntax(malp)], ! ;
-       T = term('<'(Implication), [Head, term(with, [BodyWith,TD])]), Body = body(term('&'(Implication), [TD,BodyWith])), Info = [syntax(malp)], ! ;
-       T = term('<-', [Head,Body_]), Body = body(Body_), Info = [syntax(fasill)], ! ;
-       T = term('<'(_), [Head,Body_]), Body = body(Body_), Info = [syntax(malp)], ! ;
-       T = Head, Body = empty, Info = [syntax(fasill)], !
-    )}, dot, {auto_rule_id(Id)}.
+    {( T = term('<-', [Head, term(with, [BodyWith,TD])]), Body = body(term('&', [TD,BodyWith])), Info = [syntax(malp)] ;
+       T = term('<'(Implication), [Head, term(with, [BodyWith,TD])]), Body = body(term('&'(Implication), [TD,BodyWith])), Info = [syntax(malp)] ;
+       T = term('<-', [Head,Body_]), Body = body(Body_), Info = [syntax(fasill)] ;
+       T = term('<'(_), [Head,Body_]), Body = body(Body_), Info = [syntax(malp)] ;
+       T = Head, Body = empty, Info = [syntax(fasill)]
+    )}, dot, !, {auto_rule_id(Id)}.
 
 % parse_operator/6
 % parse an operator T with Priority, Specifier and Name 
@@ -166,7 +183,7 @@ mayus(X) --> [X], {char_code(X,C), C >= 65, C =< 90}.
 letter(X) --> minus(X).
 letter(X) --> mayus(X).
 letter(X) --> number(X).
-letter(['_']) --> ['_'].
+letter('_') --> ['_'].
 
 % Graphics
 token_graphics(T) --> graphics(G), {atom_chars(T,G)}.
