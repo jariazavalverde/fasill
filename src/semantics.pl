@@ -101,8 +101,9 @@ interpretable(Expr) :- \+select_atom(Expr, _, _, _).
 % an initial state ?State1 to the final state ?State2,
 % using the program +Program. ?Info is a list containing
 % the information of each step.
-derivation(State, State_, [X|Xs]) :-
-    inference(State, State1, X),
+derivation(exception(Error,Subs), exception(Error,Subs), []) :- !.
+derivation(state(Goal,Subs), State_, [X|Xs]) :-
+    catch(inference(state(Goal,Subs), State1, X), Error, (State1 = exception(Error,Subs), !)),
     derivation(State1, State_, Xs).
 derivation(state(Goal,Subs), state(Goal,Subs), []) :-
     lattice_call_member(Goal).
