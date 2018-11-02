@@ -261,19 +261,66 @@ arithmetic_type(num(X), float) :- float(X).
 % This predicate succeeds when ?Result is the result
 % of evaluating the operator +Operator with the arguments
 % +Arguments with types +Types.
-arithmetic_op(pi, [], [], num(Z)) :- Z is pi.
-arithmetic_op(e, [], [], num(Z)) :- Z is e.
-arithmetic_op('+', [X,Y], [_,_], num(Z)) :- Z is X+Y.
-arithmetic_op('-', [X,Y], [_,_], num(Z)) :- Z is X-Y.
-arithmetic_op('*', [X,Y], [_,_], num(Z)) :- Z is X*Y.
-arithmetic_op('/', [_,0], [_,_], _) :- !, throw(evaluation(zero_division)).
-arithmetic_op('/', [_,0.0], [_,_], _) :- !, throw(evaluation(zero_division)).
-arithmetic_op('/', [X,Y], [_,_], num(Z)) :- Z is float(X/Y).
+arithmetic_op(pi, [], _, num(Z)) :- Z is pi.
+arithmetic_op(e, [], _, num(Z)) :- Z is e.
+arithmetic_op('+', [X,Y], _, num(Z)) :- Z is X+Y.
+arithmetic_op('-', [X,Y], _, num(Z)) :- Z is X-Y.
+arithmetic_op('*', [X,Y], _, num(Z)) :- Z is X*Y.
+arithmetic_op('**', [X,Y], _, num(Z)) :- Z is float(X**Y).
+arithmetic_op('/', [_,0], _, _) :- !, throw(evaluation(zero_division)).
+arithmetic_op('/', [_,0.0], _, _) :- !, throw(evaluation(zero_division)).
+arithmetic_op('/', [X,Y], _, num(Z)) :- Z is float(X/Y).
 arithmetic_op('//', [X,_], [float,_], _) :- throw(type(integer, X)).
 arithmetic_op('//', [_,Y], [_,float], _) :- throw(type(integer, Y)).
-arithmetic_op('//', [_,0], [_,_], _) :- !, throw(evaluation(zero_division)).
-arithmetic_op('//', [_,0.0], [_,_], _) :- !, throw(evaluation(zero_division)).
-arithmetic_op('//', [X,Y], [_,_], num(Z)) :- Z is X//Y.
+arithmetic_op('//', [_,0], _, _) :- !, throw(evaluation(zero_division)).
+arithmetic_op('//', [_,0.0], _, _) :- !, throw(evaluation(zero_division)).
+arithmetic_op('//', [X,Y], _, num(Z)) :- Z is X//Y.
+arithmetic_op('+', [X], _, num(Z)) :- Z is X.
+arithmetic_op('-', [X], _, num(Z)) :- Z is -X.
+arithmetic_op(exp, [X], _, num(Z)) :- Z is exp(X).
+arithmetic_op(sqrt, [X], _, num(Z)) :- Z is sqrt(X).
+arithmetic_op(log, [X], _, num(Z)) :- X < 0 -> throw(evaluation(undefined)) ; Z is log(X).
+arithmetic_op(sin, [X], _, num(Z)) :- Z is sin(X).
+arithmetic_op(cos, [X], _, num(Z)) :- Z is cos(X).
+arithmetic_op(tan, [X], _, num(Z)) :- Z is tan(X).
+arithmetic_op(asin, [X], _, num(Z)) :- Z is asin(X).
+arithmetic_op(acos, [X], _, num(Z)) :- Z is acos(X).
+arithmetic_op(atan, [X], _, num(Z)) :- Z is atan(X).
+arithmetic_op(sign, [X], _, num(Z)) :- Z is sign(X).
+arithmetic_op(float, [X], _, num(Z)) :- Z is float(X).
+arithmetic_op(floor, [X], [integer], _) :- throw(type(float, X)).
+arithmetic_op(floor, [X], _, num(Z)) :- Z is floor(X).
+arithmetic_op(round, [X], [integer], _) :- throw(type(float, X)).
+arithmetic_op(round, [X], _, num(Z)) :- Z is round(X).
+arithmetic_op(truncate, [X], [integer], _) :- throw(type(float, X)).
+arithmetic_op(truncate, [X], _, num(Z)) :- Z is truncate(X).
+arithmetic_op(ceiling, [X], [integer], _) :- throw(type(float, X)).
+arithmetic_op(ceiling, [X], _, num(Z)) :- Z is ceiling(X).
+arithmetic_op(float_integer_part, [X], [integer], _) :- throw(type(float, X)).
+arithmetic_op(float_integer_part, [X], _, num(Z)) :- Z is float_integer_part(X).
+arithmetic_op(float_fractional_part, [X], [integer], _) :- throw(type(float, X)).
+arithmetic_op(float_fractional_part, [X], _, num(Z)) :- Z is float_fractional_part(X).
+arithmetic_op(abs, [X], _, num(Z)) :- Z is abs(X).
+arithmetic_op(rem, [X,_], [float,_], _) :- throw(type(integer, X)).
+arithmetic_op(rem, [_,Y], [_,float], _) :- throw(type(integer, Y)).
+arithmetic_op(rem, [X,Y], _, num(Z)) :- Z is rem(X,Y).
+arithmetic_op(mod, [X,_], [float,_], _) :- throw(type(integer, X)).
+arithmetic_op(mod, [_,Y], [_,float], _) :- throw(type(integer, Y)).
+arithmetic_op(mod, [X,Y], _, num(Z)) :- Z is mod(X,Y).
+arithmetic_op('<<', [X,_], [float,_], _) :- throw(type(integer, X)).
+arithmetic_op('<<', [_,Y], [_,float], _) :- throw(type(integer, Y)).
+arithmetic_op('<<', [X,Y], _, num(Z)) :- Z is X << Y.
+arithmetic_op('>>', [X,_], [float,_], _) :- throw(type(integer, X)).
+arithmetic_op('>>', [_,Y], [_,float], _) :- throw(type(integer, Y)).
+arithmetic_op('>>', [X,Y], _, num(Z)) :- Z is X >> Y.
+arithmetic_op('\\/', [X,_], [float,_], _) :- throw(type(integer, X)).
+arithmetic_op('\\/', [_,Y], [_,float], _) :- throw(type(integer, Y)).
+arithmetic_op('\\/', [X,Y], _, num(Z)) :- Z is '\\/'(X,Y).
+arithmetic_op('/\\', [X,_], [float,_], _) :- throw(type(integer, X)).
+arithmetic_op('/\\', [_,Y], [_,float], _) :- throw(type(integer, Y)).
+arithmetic_op('/\\', [X,Y], _, num(Z)) :- Z is '/\\'(X,Y).
+arithmetic_op('\\', [X], [float], _) :- throw(type(integer, X)).
+arithmetic_op('\\', [X], _, num(Z)) :- Z is '\\'(X).
 arithmetic_op(Op, Args, _, _) :- length(Args, Length), throw(type(evaluable, Op/Length)).
 
 
