@@ -47,17 +47,17 @@ eval_builtin_predicate(atom/1, state(_, Subs), selected(ExprVar, top, Atom), sta
 % compound/1
 % compound(@term)
 eval_builtin_predicate(compound/1, state(_, Subs), selected(ExprVar, top, Atom), state(ExprVar, Subs)) :-
-    Atom = term(atom, [term(_, [_|_])]).
+    Atom = term(compound, [term(_, [_|_])]).
 
 % var/1
 % var(@term)
 eval_builtin_predicate(var/1, state(_, Subs), selected(ExprVar, top, Atom), state(ExprVar, Subs)) :-
-    Atom = term(number, [var(_)]).
+    Atom = term(var, [var(_)]).
 
 % nonvar/1
 % nonvar(@term)
 eval_builtin_predicate(nonvar/1, state(_, Subs), selected(ExprVar, top, Atom), state(ExprVar, Subs)) :-
-    Atom = term(number, [X]),
+    Atom = term(nonvar, [X]),
     X \= var(_).
 
 % number/1

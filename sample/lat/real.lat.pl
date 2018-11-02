@@ -23,3 +23,6 @@ or_luka(X,Y,Z) :- Z is min(X+Y,1).
 % Aggregators
 agr_aver(X,Y,Z) :- Z is (X+Y)/2.
 agr_very(X,Y) :- Y is X*X.
+
+% t-norm
+tnorm(and_godel).

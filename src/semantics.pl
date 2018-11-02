@@ -73,7 +73,7 @@ select_atom([Term|Args], [Term|Args_], Var, Atom) :- select_atom(Args, Args_, Va
 % expression +Expression with the variable ?Var instead of
 % the atom ?Atom.
 select_expression(top, Var, Var, top) :- !.
-select_expression(top, Var, Var, bot) :- !.
+select_expression(bot, Var, Var, bot) :- !.
 select_expression(term(Term, Args), Var, Var, term(Term, Args)) :-
     ( Term =.. [Op,_], member(Op, ['@','&','|']) ;
       member(Term, ['@','&','|']) ),

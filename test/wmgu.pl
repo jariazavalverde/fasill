@@ -3,13 +3,16 @@
 
 
 
-% test_wmgu/5
-% test_wmgu(+Identifier, +Sim, +TermA, +TermB, +ShouldBe)
+% test_wmgu/6
+% test_wmgu(+Identifier, +Lattice, +Sim, +TermA, +TermB, +ShouldBe)
 %
 % This predicate succeeds when terms +TermA and +TermB
 % weakly unifies with truth degree +ShouldBe using the
-% similarity relation +Sim. +Sim is an atom representing
-% the name of the file that contains the similarity equations.
+% similarity relation +Sim and the lattice +Lattice.
+% +Sim is an atom representing the name of the file that
+% contains the similarity equations, and +Lattice is an
+% atom representing the name of the file that contains
+% the lattice.
 test_wmgu(ID, Lattice, Sim, X, Y, ShouldBe) :-
     (   lattice_consult(Lattice),
         similarity_consult(Sim),
