@@ -1,7 +1,8 @@
 :- module(exceptions, [
     throw_exception/1,
     instantiation_error/2,
-    type_error/4
+    type_error/4,
+    evaluation_error/3
 ]).
 
 
@@ -37,3 +38,12 @@ instantiation_error(Indicator, error(instantiation_error, Indicator)).
 % type of an argument or of one of its components is
 % incorrect, but not a variable.
 type_error(Type, Term, Indicator, error(type_error(Type, Term), Indicator)).
+
+% evaluation_error/3
+% evaluation_error(+Cause, +Indicator, ?Error)
+%
+% This predicate succeeds when ?Error is the evaluation
+% error produced by the casue +Cuase in the predicate
+% +Indicator. This error is produced when the operands
+% of an evaluable functor has an exceptional value. 
+evaluation_error(Cause, Indicator, error(evaluation_error(Cause), Indicator)).

@@ -6,7 +6,8 @@
     interpretive_step/3,
     apply/3,
     compose/3,
-    rename/2
+    rename/2,
+    arithmetic_evaluation/2
 ]).
 
 :- use_module('environment').
@@ -101,9 +102,9 @@ interpretable(Expr) :- \+select_atom(Expr, _, _, _).
 % an initial state ?State1 to the final state ?State2,
 % using the program +Program. ?Info is a list containing
 % the information of each step.
-derivation(exception(Error,Subs), exception(Error,Subs), []) :- !.
-derivation(state(Goal,Subs), State_, [X|Xs]) :-
-    catch(inference(state(Goal,Subs), State1, X), Error, (State1 = exception(Error,Subs), !)),
+derivation(exception(Error), exception(Error), []) :- !.
+derivation(State, State_, [X|Xs]) :-
+    catch(inference(State, State1, X), Error, (State1 = exception(Error), !)),
     derivation(State1, State_, Xs).
 derivation(state(Goal,Subs), state(Goal,Subs), []) :-
     lattice_call_member(Goal).
@@ -232,6 +233,39 @@ apply(Expr, [], Expr) :- !.
 apply(Expr, [H|T], Expr_) :- !, apply(Expr, H, ExprH), apply(ExprH, T, Expr_).
 apply(Expr, _/_, Expr) :- !.
 
+% arithmetic_evaluation/2
+% arithmetic_evaluation(+Expression, ?Result)
+%
+% This predicate succeeds when ?Result is the result
+% of evaluating the expression +Expression. This predicate
+% throws an arithmetical exception if there is any problem.
+arithmetic_evaluation(num(X), num(X)).
+arithmetic_evaluation(term(Op,Args), Result) :-
+    maplist(arithmetic_evaluation, Args, Args_),
+    maplist(arithmetic_type, Args_, Types),
+    maplist(to_prolog, Args_, Prolog),
+    arithmetic_op(Op, Prolog, Types, Result).
+
+% arithmetic_type/2
+% arithmetic_type(+Number, ?Type)
+%
+% This predicate succeeds when +Number has the type
+% ?Type (integer or float).
+arithmetic_type(num(X), integer) :- integer(X).
+arithmetic_type(num(X), float) :- float(X).
+
+% arithmetic_op/2
+% arithmetic_op(+Operator, +Arguments, +Types, ?Result)
+%
+% This predicate succeeds when ?Result is the result
+% of evaluating the operator +Operator with the arguments
+% +Arguments with types +Types.
+arithmetic_op('+', [X,Y], [_,_], num(Z)) :- Z is X+Y.
+arithmetic_op('-', [X,Y], [_,_], num(Z)) :- Z is X-Y.
+arithmetic_op('*', [X,Y], [_,_], num(Z)) :- Z is X*Y.
+arithmetic_op('/', [_,0], [_,_], _) :- !, throw(zero_division).
+arithmetic_op('/', [_,0.0], [_,_], _) :- !, throw(zero_division).
+arithmetic_op('/', [X,Y], [_,_], num(Z)) :- Z is float(X/Y).
 
 
 % VARIABLES

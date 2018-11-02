@@ -20,6 +20,8 @@ is_builtin_predicate(Name/Arity) :-
     member(Name/Arity, [
         % term unification
         '='/2,
+        % arithmetic evaluation
+        is/2,
         % type testing
         atom/1,
         compound/1,
@@ -56,6 +58,19 @@ eval_builtin_predicate('='/2, state(_, Subs), selected(ExprVar, TD, Term), state
     apply(ExprVar, SubsUnification, ExprSubs),
     compose(Subs, SubsUnification, Subs_).
 
+
+
+% ARITHMETIC EVALUATION
+
+% is/2
+% is(?term, @evaluable)
+eval_builtin_predicate(is/2, state(_, Subs), selected(ExprVar, Var, Atom), state(ExprVar, Subs)) :-
+    Atom = term(is, [Variable, Expression]),
+    catch(
+        (arithmetic_evaluation(Expression, Result), Var = term('=', [Variable, Result])),
+        Error,
+        (evaluation_error(Error, is/2, Exception), throw(Exception))
+    ).
 
 
 % TYPE TESTING
@@ -100,7 +115,7 @@ eval_builtin_predicate(integer/1, state(_, Subs), selected(ExprVar, top, Atom), 
 
 
 
-% ATOM PROCESSING 
+% ATOM PROCESSING
 
 % atom_length/2
 % atom_length(+Atom, ?Length)
