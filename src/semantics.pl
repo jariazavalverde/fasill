@@ -261,13 +261,20 @@ arithmetic_type(num(X), float) :- float(X).
 % This predicate succeeds when ?Result is the result
 % of evaluating the operator +Operator with the arguments
 % +Arguments with types +Types.
+arithmetic_op(pi, [], [], num(Z)) :- Z is pi.
+arithmetic_op(e, [], [], num(Z)) :- Z is e.
 arithmetic_op('+', [X,Y], [_,_], num(Z)) :- Z is X+Y.
 arithmetic_op('-', [X,Y], [_,_], num(Z)) :- Z is X-Y.
 arithmetic_op('*', [X,Y], [_,_], num(Z)) :- Z is X*Y.
 arithmetic_op('/', [_,0], [_,_], _) :- !, throw(evaluation(zero_division)).
 arithmetic_op('/', [_,0.0], [_,_], _) :- !, throw(evaluation(zero_division)).
 arithmetic_op('/', [X,Y], [_,_], num(Z)) :- Z is float(X/Y).
-arithmetic_op(Op, Args, _, _) :- length(Args, Length), throw(type(Op/Length)).
+arithmetic_op('//', [X,_], [float,_], _) :- throw(type(integer, X)).
+arithmetic_op('//', [_,Y], [_,float], _) :- throw(type(integer, Y)).
+arithmetic_op('//', [_,0], [_,_], _) :- !, throw(evaluation(zero_division)).
+arithmetic_op('//', [_,0.0], [_,_], _) :- !, throw(evaluation(zero_division)).
+arithmetic_op('//', [X,Y], [_,_], num(Z)) :- Z is X//Y.
+arithmetic_op(Op, Args, _, _) :- length(Args, Length), throw(type(evaluable, Op/Length)).
 
 
 % VARIABLES
