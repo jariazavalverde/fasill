@@ -47,9 +47,11 @@ parse_query(Input, Goal) :-
 :- dynamic current_op/4.
 current_op(1300, xfx, '<-',   no).
 current_op(1300, xfx, '<',    yes).
-current_op(1200, xfx, 'with', yes).
+current_op(1200, xfx, 'with', no).
 current_op(1100, xfy, '|',    yes).
+current_op(1100, xfy, '|',    no).
 current_op(1050, xfy, '&',    yes).
+current_op(1050, xfy, '&',    no).
 current_op(700,  xfx, 'is',   no).
 current_op(700,  xfx, '=',    no).
 current_op(700,  xfx, '\\=',  no).
@@ -88,20 +90,23 @@ parse_program([]) --> [].
 
 % parse_rule/3
 % parse a malp or fasill rule
-parse_rule(fasill_rule(head(Head), Body, [id(Id)|Info])) -->
-    parse_expr(1300, T),
-    {( T = term('<-', [Head, term(with, [BodyWith,TD])]), Body = body(term('&', [TD,BodyWith])), Info = [syntax(malp)] ;
-       T = term('<'(Implication), [Head, term(with, [BodyWith,TD])]), Body = body(term('&'(Implication), [TD,BodyWith])), Info = [syntax(malp)] ;
-       T = term('<-', [Head,Body_]), Body = body(Body_), Info = [syntax(fasill)] ;
-       T = term('<'(_), [Head,Body_]), Body = body(Body_), Info = [syntax(malp)] ;
-       T = Head, Body = empty, Info = [syntax(fasill)]
-    )}, dot, !, {auto_rule_id(Id)}.
+parse_rule(fasill_rule(head(Head), Body, [id(Id),Info])) -->
+    parse_expr(1300, T), dot,
+    {( T = term(with, [Head, TD]), Body = body(TD), Info = syntax(malp) ;
+       T = term('<-', [Head, term(with, [BodyWith,TD])]), Body = body(term('&', [TD,BodyWith])), Info = syntax(malp) ;
+       T = term('<'(Implication), [Head, term(with, [BodyWith,TD])]), Body = body(term('&'(Implication), [TD,BodyWith])), Info = syntax(malp) ;
+       T = term('<-', [Head,Body_]), Body = body(Body_), Info = syntax(fasill) ;
+       T = term('<'(_), [Head,Body_]), Body = body(Body_), Info = syntax(malp) ;
+       T = Head, Body = empty, Info = syntax(fasill)
+    )}, !, {auto_rule_id(Id)}.
 
 % parse_operator/6
 % parse an operator T with Priority, Specifier and Name 
-parse_operator(Priority, Specifier, T, Name) -->
-    blanks, {current_op(Priority, Specifier, Op, Name), atom_chars(Op, Chars)}, Chars,
-    ({Name = yes}, token_minus_identifier(Identifier), {T =.. [Op, Identifier]} ; {T = Op}).
+parse_operator(Priority, Specifier, T, yes) -->
+    blanks, {current_op(Priority, Specifier, Op, yes), atom_chars(Op, Chars)}, Chars,
+    token_minus_identifier(Identifier), {T =.. [Op, Identifier]}.
+parse_operator(Priority, Specifier, Op, no) -->
+    blanks, {current_op(Priority, Specifier, Op, no), atom_chars(Op, Chars)}, Chars.
 
 % next_priority/2
 % give the next priority to derivate an expression
