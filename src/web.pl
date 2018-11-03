@@ -12,7 +12,9 @@ web_write([]).
 web_write(num(X)) :- write(X).
 web_write(var(X)) :- write(X).
 web_write(X/Y) :- write(X), write('/'), web_write(Y).
-web_write(term(X,Y)) :- write('\''), write(X), write('\'('), write(Y), write(')').
+web_write(term(X,[])) :- write(X).
+web_write(term(X,Y)) :- Y \= [], write(X), write('('), web_write(Y), write(')').
+web_write(exception(X)) :- write('exception('), web_write(X), write(')').
 web_write(state(Goal,Subs)) :-
     write('&lt;'),
     web_write(Goal),
