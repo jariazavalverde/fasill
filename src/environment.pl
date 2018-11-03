@@ -291,6 +291,15 @@ similarity_between(AtomA, AtomB, 0, TD) :-
     AtomA \= '/'(_,_), AtomB \= '/'(_,_),
     from_prolog(Prolog, TD).
 
+% similarity_retract/0
+% similarity_retract
+%
+% This predicate succeeds and retracts all the clauses
+% of similarity from the current environment.
+similarity_retract :-
+    retractall(~(_, _)),
+    retractall(~(_)).
+
 % similarity_consult/1
 % similarity_consult(+Path)
 %
@@ -298,6 +307,60 @@ similarity_between(AtomA, AtomB, 0, TD) :-
 % file +Path into the environment. This predicate cleans
 % the previous similarity relations.
 similarity_consult(Path) :-
-    retractall(~(_, _)),
-    retractall(~(_)),
-    consult(Path).
+    similarity_retract,
+    consult(Path),
+    similarity_closure.
+
+% similarity_closure/0
+% similarity_closure
+%
+% This predicate computes the reflexive, symmetric and 
+% transitive closure of the similarity scheme asserted
+% into the current environment.
+similarity_closure :-
+    findall(Atom/Length, similarity_between(Atom, _, Length, _), Dom1),
+    findall(Atom/Length, similarity_between(_, Atom, Length, _), Dom2),
+    append(Dom1, Dom2, DomR),
+    list_to_set(DomR, Dom),
+    findall(sim(Atom1,Atom2,Length,TD), similarity_between(Atom1,Atom2,Length,TD), Scheme),
+    similarity_tnorm(Tnorm),
+    lattice_call_bot(Bot),
+    lattice_call_top(Top),
+    similarity_retract,
+    findall(_, similarity_closure_reflexive(Dom, Scheme, Tnorm, Bot, Top), _),
+    findall(_, similarity_closure_symmetric(Dom, Scheme, Tnorm, Bot, Top), _),
+    findall(_, similarity_closure_transitive(Dom, Scheme, Tnorm, Bot, Top), _),
+    assertz('~'(tnorm=Tnorm)).
+
+similarity_closure_reflexive(Dom, _, _, _, Top) :-
+    to_prolog(Top,TopP),
+    member(X/Length, Dom),
+    member(Y/Length, Dom),
+    (X = Y -> assertz('~'(X/Length,Y/Length = TopP)) ; true).
+
+similarity_closure_symmetric(Dom, Scheme, _, Bot, _) :-
+    member(X/Length, Dom),
+    member(Y/Length, Dom),
+    \+('~'(X/Length,Y/Length = _)),
+    (member(sim(X,Y,Length,TD), Scheme) -> true ; (
+        member(sim(Y,X,Length,TD), Scheme) -> true ; TD = Bot)
+    ),
+    to_prolog(TD, TDP),
+    assertz('~'(X/Length,Y/Length = TDP)),
+    assertz('~'(Y/Length,X/Length = TDP)).
+
+similarity_closure_transitive(Dom, _, Tnorm, _, _) :-
+    member(Z/Length, Dom),
+    member(X/Length, Dom),
+    member(Y/Length, Dom),
+    '~'(X/Length,Y/Length=TDxy),
+    '~'(X/Length,Z/Length=TDxz),
+    '~'(Z/Length,Y/Length=TDzy),
+    from_prolog(TDxy, TDPxy),
+    from_prolog(TDxz, TDPxz),
+    from_prolog(TDzy, TDPzy),
+    retract('~'(X/Length,Y/Length=TDxy)),
+    lattice_call_connective('&'(Tnorm), [TDPxz,TDPzy], TDz),
+    lattice_call_connective('|'(Tnorm), [TDPxy,TDz], TD),
+    to_prolog(TD, TDP),
+    assertz('~'(X/Length,Y/Length = TDP)).

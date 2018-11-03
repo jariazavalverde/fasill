@@ -153,7 +153,7 @@ success_step(state(Goal,Subs), state(Goal_,Subs_), Info) :-
         lattice_tnorm(Tnorm),
         lattice_call_bot(Bot),
         program_clause(Name2/Arity, Rule),
-        (Name = Name2 ; similarity_between(Name, Name2, Arity, Sim), Sim \= Bot),
+        (Name = Name2 -> true ; similarity_between(Name, Name2, Arity, Sim), Sim \= Bot),
         Rule = fasill_rule(head(Head),Body,_),
         rename([Head,Body], [HeadR,BodyR]),
         wmgu(Expr, HeadR, state(TD,SubsExpr)),
