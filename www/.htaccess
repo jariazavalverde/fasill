@@ -1,0 +1,20 @@
+ErrorDocument 404 /404
+
+<IfModule mod_rewrite.c>
+
+	RewriteEngine on
+	RewriteBase /fasill/
+	
+	RewriteCond %{REQUEST_FILENAME} !-f
+	RewriteCond %{REQUEST_FILENAME} !-d
+	RewriteRule ^documentation/prolog/([^\/]+)/([^\/]+)/([0-9]+)/?$ index.php?view=predicate&package=$1&predicate=$2&arity=$3 [L,NC,QSA]
+	
+	RewriteCond %{REQUEST_FILENAME} !-f
+	RewriteCond %{REQUEST_FILENAME} !-d
+	RewriteRule ^examples/(.*)/?$ index.php?view=examples&example=$1 [L,NC,QSA]
+
+	RewriteCond %{REQUEST_FILENAME} !-f
+	RewriteCond %{REQUEST_FILENAME} !-d
+	RewriteRule ^(.*)$ index.php?view=$1 [L,NC,QSA]
+
+</IfModule>

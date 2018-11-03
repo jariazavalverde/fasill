@@ -1,0 +1,5 @@
+local/
+www/codemirror/*
+!www/codemirror/theme/
+www/codemirror/theme/*
+!www/codemirror/theme/fasill.css

@@ -1,0 +1,42 @@
+body {
+	color: #444444;
+}
+
+a {
+	color: #b83d4e;
+}
+
+a:hover {
+	color: #b83d4e;
+	text-decoration: underline;
+}
+
+#nav {
+	font-size: 150%;
+	margin-bottom: 50px;
+	text-align: center;
+}
+
+#nav > div > div {
+	padding: 0px !important;
+}
+
+#nav > div > div > a {
+	border-bottom: 10px solid #efefef;
+	color: #444444;
+	display: block;
+	padding: 20px;
+	text-decoration: none;
+}
+
+#nav > div > div > a:hover {
+	border-bottom: 10px solid #b83d4e;
+	color: #b83d4e;
+}
+
+#footer {
+	border-top: 10px solid #efefef;
+	margin-top: 50px;
+	padding: 20px;
+	text-align: center !important;
+}
