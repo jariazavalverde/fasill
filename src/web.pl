@@ -14,7 +14,7 @@ web_write(var(X)) :- write(X).
 web_write(X/Y) :- write(X), write('/'), web_write(Y).
 web_write(term(X,[])) :- write(X).
 web_write(term(X,Y)) :- Y \= [], write(X), write('('), web_write(Y), write(')').
-web_write(exception(X)) :- write('exception('), web_write(X), write(')').
+web_write(exception(X)) :- write('uncaught exception: '), web_write(X), write(')').
 web_write(state(Goal,Subs)) :-
     write('<'),
     web_write(Goal),

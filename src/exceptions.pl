@@ -5,6 +5,8 @@
     evaluation_error/3
 ]).
 
+:- use_module('environment').
+
 
 
 % HANDLE EXCEPTIONS
@@ -27,7 +29,8 @@ throw_exception(Exception) :- throw(Exception).
 % is produced when an argument or one of its components
 % is a variable, and an instantiated argument or component
 % is required.
-instantiation_error(X/Y, term(error, [term(instantiation_error,[]), term('/',[term(X,[]),num(Y)])])).
+instantiation_error(Indicator, term(error, [term(instantiation_error,[]), Indicator_])) :-
+    from_prolog(Indicator, Indicator_).
 
 % type_error/4
 % type_error(+Type, +Term, +Indicator, ?Error)
@@ -37,7 +40,10 @@ instantiation_error(X/Y, term(error, [term(instantiation_error,[]), term('/',[te
 % predicate +Indicator. This error is produced when the
 % type of an argument or of one of its components is
 % incorrect, but not a variable.
-type_error(Type, Term, X/Y, term(error, [term(type_error, [term(Type,[]), Term]), term('/',[term(X,[]),num(Y)])])).
+type_error(Type, Term, Indicator, term(error, [term(type_error, [Type_, Term_]), Indicator_])) :-
+    from_prolog(Type, Type_),
+    from_prolog(Term, Term_),
+    from_prolog(Indicator, Indicator_).
 
 % evaluation_error/3
 % evaluation_error(+Cause, +Indicator, ?Error)
@@ -46,4 +52,6 @@ type_error(Type, Term, X/Y, term(error, [term(type_error, [term(Type,[]), Term])
 % error produced by the cause +Cause in the predicate
 % +Indicator. This error is produced when the operands
 % of an evaluable functor has an exceptional value. 
-evaluation_error(Cause, X/Y, term(error, [term(evaluation_error,[term(Cause,[])]), term('/',[term(X,[]),num(Y)])])).
+evaluation_error(Cause, Indicator, term(error, [term(evaluation_error,[Cause_]), Indicator_])) :-
+    from_prolog(Cause, Cause_),
+    from_prolog(Indicator, Indicator_).
