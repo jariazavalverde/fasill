@@ -8,6 +8,25 @@
 
 
 
+web_write([]).
+web_write(num(X)) :- write(X).
+web_write(var(X)) :- write(X).
+web_write(X/Y) :- write(X), write('/'), web_write(Y).
+web_write(term(X,Y)) :- write('\''), write(X), write('\'('), write(Y), write(')').
+web_write(state(Goal,Subs)) :-
+    write('&lt;'),
+    web_write(Goal),
+    write(', {'),
+    web_write(Subs),
+    write('}&gt;').
+web_write([X|Y]) :-
+    Y \= [],
+    web_write(X),
+    write(','),
+    web_write(Y).
+web_write([X]) :-
+    web_write(X).
+
 % web_run/5
 % web_run(+Program, +Lattice, +Sim, +Goal, +Limit)
 % 
@@ -23,4 +42,4 @@ web_run(Program, Lattice, Sim, GoalAtom, Limit) :-
     atom_chars(GoalAtom, Chars),
     parse_query(Chars, Goal),
     derivation(state(Goal,[]), State, _),
-    writeln(State).
+    web_write(State).

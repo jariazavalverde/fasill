@@ -50,6 +50,7 @@ current_op(1300, xfx, '<',    yes).
 current_op(1200, xfx, 'with', yes).
 current_op(1100, xfy, '|',    yes).
 current_op(1050, xfy, '&',    yes).
+current_op(700,  xfx, 'is',   no).
 current_op(700,  xfx, '=',    no).
 current_op(700,  xfx, '\\=',  no).
 current_op(500,  yfx, '+',    no).

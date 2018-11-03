@@ -1,4 +1,5 @@
 local/
+www/src
 www/codemirror/*
 !www/codemirror/theme/
 www/codemirror/theme/*

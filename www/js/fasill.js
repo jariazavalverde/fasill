@@ -56,3 +56,29 @@ window.addEventListener("load", function() {
 	goal.setSize("100%", "100%");
 	limit.setSize("100%", "100%");
 });
+
+
+function post( url, data, callback ) {
+	var xhttp = new XMLHttpRequest();
+	xhttp.onreadystatechange = function() {
+		if (this.readyState == 4 && this.status == 200) {
+			callback(this.responseText);
+		}
+	};
+	xhttp.open("POST", url, true);
+	xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+	xhttp.send(data);
+}
+
+function fasill_run() {
+	var data = jQuery.param({
+		"program": program.getValue(),
+		"lattice": lattice.getValue(),
+		"sim": sim.getValue(),
+		"goal": goal.getValue(),
+		"limit": limit.getValue()
+	});
+	post("php/run.php", data, function(data) {
+		document.getElementById("out").innerHTML = data;
+	});
+}

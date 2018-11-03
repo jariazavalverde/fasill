@@ -14,34 +14,33 @@ $_LIMIT = isset($_POST["limit"]) ? $_POST["limit"] : $def_limit;
 
 ?>
 
-<form action="." method="POST">
+<form action="./sandbox" method="POST">
 	<div class="container">
 		<h1>Input</h1>
 		<div class="container container-sandbox">
-			<h4>Program</h4>
+			<h4><i class="fas fa-code"></i> Program</h4>
 			<div id="program" class="sandbox-editor"><?php echo $_PROGRAM; ?></div>
 		</div>
 		<div class="container container-sandbox">
-			<h4>Lattice</h4>
+			<h4><i class="fas fa-circle"></i> Lattice</h4>
 			<div id="lattice" class="sandbox-editor"><?php echo $_LATTICE; ?></div>
 		</div>
 		<div class="container container-sandbox">
-			<h4>Similarity Relation</h4>
+			<h4><i class="fas fa-equals"></i> Similarity Relation</h4>
 			<div id="sim" class="sandbox-editor"><?php echo $_SIM; ?></div>
 		</div>
 		<div class="container container-sandbox">
 			<div class="row">
 				<div class="col-sm">
-					<h4>Goal</h4>
+					<h4><i class="fab fa-font-awesome-flag"></i> Goal</h4>
 					<div id="goal"><?php echo $_GOAL; ?></div>
 				</div>
 				<div class="col-sm">
-					<h4>Limit</h4>
+					<h4><i class="fas fa-stopwatch"></i> Limit</h4>
 					<div id="limit"><?php echo $_LIMIT; ?></div>
 				</div>
 				<div class="col-sm">
-					<h4>Answers</h4>
-					<button type="submit" class="btn btn-danger btn-lg btn-block">Run</button>
+					<button id="run" onClick="fasill_run();" type="button" class="btn btn-danger btn-lg btn-block"><i class="fas fa-cogs"></i> Run</button>
 				</div>
 			</div>
 		</div>
@@ -52,4 +51,5 @@ $_LIMIT = isset($_POST["limit"]) ? $_POST["limit"] : $def_limit;
 
 <div class="container">
 	<h1>Output</h1>
+	<div id="out"></div>
 </div>

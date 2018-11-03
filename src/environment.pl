@@ -156,17 +156,6 @@ program_consult(Path) :-
     file_consult(Path, Rules),
     (member(Rule, Rules), assertz(Rule), fail ; true).
 
-% program_query/1
-% program_consult(+Path)
-%
-% This predicate loads the FASILL program from
-% the file +Path into the environment. This
-% predicate cleans the previous rules.
-program_consult(Path) :-
-    retractall(rule(_,_,_)),
-    file_consult(Path, Rules),
-    (member(Rule, Rules), assertz(Rule), fail ; true).
-
 
 
 % LATTICES
