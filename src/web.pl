@@ -16,11 +16,11 @@ web_write(term(X,[])) :- write(X).
 web_write(term(X,Y)) :- Y \= [], write(X), write('('), web_write(Y), write(')').
 web_write(exception(X)) :- write('exception('), web_write(X), write(')').
 web_write(state(Goal,Subs)) :-
-    write('&lt;'),
+    write('<'),
     web_write(Goal),
     write(', {'),
     web_write(Subs),
-    write('}&gt;').
+    write('}>').
 web_write([X|Y]) :-
     Y \= [],
     web_write(X),
@@ -43,5 +43,5 @@ web_run(Program, Lattice, Sim, GoalAtom, Limit) :-
     set_max_inferences(Limit),
     atom_chars(GoalAtom, Chars),
     parse_query(Chars, Goal),
-    derivation(state(Goal,[]), State, _),
-    web_write(State).
+    ( derivation(state(Goal,[]), State, _),
+      web_write(State), nl, fail ; true ).
