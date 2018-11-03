@@ -25,5 +25,5 @@ agr_aver(X,Y,Z) :- Z is (X+Y)/2.
 agr_very(X,Y) :- Y is X*X.
 
 % Default connectives
-tnorm(and_godel).
-tconorm(or_godel).
+tnorm(godel).
+tconorm(godel).

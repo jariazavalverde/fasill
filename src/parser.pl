@@ -88,7 +88,7 @@ parse_program([]) --> [].
 
 % parse_rule/3
 % parse a malp or fasill rule
-parse_rule(rule(head(Head), Body, [id(Id)|Info])) -->
+parse_rule(fasill_rule(head(Head), Body, [id(Id)|Info])) -->
     parse_expr(1300, T),
     {( T = term('<-', [Head, term(with, [BodyWith,TD])]), Body = body(term('&', [TD,BodyWith])), Info = [syntax(malp)] ;
        T = term('<'(Implication), [Head, term(with, [BodyWith,TD])]), Body = body(term('&'(Implication), [TD,BodyWith])), Info = [syntax(malp)] ;

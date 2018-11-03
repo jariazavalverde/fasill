@@ -45,7 +45,7 @@ wmgu(term(X,Xs), term(Y,Ys), state(TD, Subs), State) :- !,
     length(Ys, Length),
     similarity_between(X, Y, Length, TDxy),
     similarity_tnorm(Tnorm),
-    lattice_call_connective(Tnorm, [TD, TDxy], TD2),
+    lattice_call_connective('&'(Tnorm), [TD, TDxy], TD2),
     wmgu(Xs, Ys, state(TD2, Subs), State).
 %%% arguments
 wmgu([], [], State, State) :- !.
@@ -152,9 +152,10 @@ success_step(state(Goal,Subs), state(Goal_,Subs_), Info) :-
     ) ; (
         lattice_tnorm(Tnorm),
         program_clause(Name/Arity, Rule),
-        rename(Rule, rule(head(Head),Body,_)),
-        wmgu(Expr, Head, state(TD,SubsExpr)),
-        (Body = empty -> Var = TD ; (Body = body(Body_), Var = term('&'(Tnorm), [TD,Body_]))),
+        Rule = fasill_rule(head(Head),Body,_),
+        rename([Head,Body], [HeadR,BodyR]),
+        wmgu(Expr, HeadR, state(TD,SubsExpr)),
+        (BodyR = empty -> Var = TD ; (BodyR = body(Body_), Var = term('&'(Tnorm), [TD,Body_]))),
         apply(ExprVar, SubsExpr, Goal_),
         compose(Subs, SubsExpr, Subs_),
         program_rule_id(Rule, RuleId),
@@ -190,7 +191,7 @@ interpretive_step(state(Goal,Subs), state(Goal_,Subs), 'IS') :-
 % in the expression. ?Result is the resulting expression.
 interpret(bot, Bot) :- !, lattice_call_bot(Bot).
 interpret(top, Top) :- !, lattice_call_top(Top).
-interpret(term(Op, Args), Result) :- (Op =.. [_,Name] ; Op =.. [Name]), lattice_call_connective(Name, Args, Result).
+interpret(term(Op, Args), Result) :- lattice_call_connective(Op, Args, Result).
 
 % rename/2
 % rename(+Expression, ?Renamed)
@@ -206,9 +207,15 @@ rename(var(X), var(Y), Subs, [X/Y|Subs]) :-
     atom_concat('V', Atom, Y).
 rename(term(Name, Xs), term(Name, Ys), Subs, Subs_) :-
     !, rename(Xs, Ys, Subs, Subs_).
+rename([], [], Subs, Subs) :- !.
 rename([X|Xs], [Y|Ys], Subs, Subs3) :-
     !, rename(X, Y, Subs, Subs2),
     rename(Xs, Ys, Subs2, Subs3).
+rename(X, Y, Subs, Subs_) :-
+    compound(X), !,
+    X =.. [Name|Args],
+    rename(Args, Args_, Subs, Subs_),
+    Y =.. [Name|Args_].
 rename(X, X, Subs, Subs).
 
 % compose/3

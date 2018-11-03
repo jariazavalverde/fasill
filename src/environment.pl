@@ -135,15 +135,16 @@ fasill_var(var(_)).
 % program_clause(?Indicator, ?Rule)
 %
 %
-program_clause(Name/Arity, rule(term(Name, Arity, Args), Body, Info)) :-
-    fasill_rule(term(Name, Arity, Args), Body, Info).
+program_clause(Name/Arity, fasill_rule(head(term(Name, Args)), Body, Info)) :-
+    fasill_rule(head(term(Name, Args)), Body, Info),
+    length(Args, Arity).
 
 % program_rule_id/2
 % program_rule_id(+Rule, ?Id)
 %
 % This predicate succeeds when ?Id is the identifier
 % of the rule +Rule.
-program_rule_id(rule(_,_,Info), Id) :- member(id(Id), Info).
+program_rule_id(fasill_rule(_,_,Info), Id) :- member(id(Id), Info).
 
 % program_consult/1
 % program_consult(+Path)
@@ -152,7 +153,7 @@ program_rule_id(rule(_,_,Info), Id) :- member(id(Id), Info).
 % the file +Path into the environment. This
 % predicate cleans the previous rules.
 program_consult(Path) :-
-    retractall(rule(_,_,_)),
+    retractall(fasill_rule(_,_,_)),
     file_consult(Path, Rules),
     (member(Rule, Rules), assertz(Rule), fail ; true).
 
@@ -219,10 +220,16 @@ lattice_call_connective('|', Args, Result) :- !,
     current_predicate(Tconorm/3),
     sub_atom(Tconorm, 0, 3, _, or_)), !,
     lattice_call_connective(Tconorm, Args, Result).
-lattice_call_connective(Name, Args, Result) :-
+lattice_call_connective(Op, Args, Result) :-
+    Op =.. [Type,Name],
+    (   Type = '&', Pre = 'and_' ;
+        Type = '|', Pre = 'or_' ;
+        Type = '@', Pre = 'agr_'
+    ), !,
+    atom_concat(Pre, Name, Name_),
     maplist(to_prolog, Args, Args_),
     append(Args_, [Prolog], ArgsCall),
-    Call =.. [Name|ArgsCall],
+    Call =.. [Name_|ArgsCall],
     call(environment:Call),
     from_prolog(Prolog, Result).
 
@@ -281,6 +288,7 @@ similarity_between(AtomA, AtomB, Length, TD) :-
     from_prolog(Prolog, TD).
 similarity_between(AtomA, AtomB, 0, TD) :-
     environment:'~'(AtomA, '='(AtomB, Prolog)),
+    AtomA \= '/'(_,_), AtomB \= '/'(_,_),
     from_prolog(Prolog, TD).
 
 % similarity_consult/1
