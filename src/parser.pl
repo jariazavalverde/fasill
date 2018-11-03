@@ -36,7 +36,7 @@ parse_consult(Input, Program) :-
 % query a goal
 parse_query(Input, Goal) :-
     reset_rule_id,
-    parse_expr(1300, Input, Goal, []).
+    parse_expr(1300, Goal, Input, ['.']).
 
 
 

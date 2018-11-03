@@ -1,4 +1,5 @@
 :- module(environment, [
+    set_max_inferences/1,
     to_prolog/2,
     from_prolog/2,
     fasill_atom/1,
@@ -30,6 +31,29 @@
     '~'/1,
     '~'/2
 ).
+
+
+
+% ENVIRONMENT
+
+% fasill_max_inferences/1
+% fasill_max_inferences(?Limit)
+%
+% This predicate succeeds when ?Limit is the
+% current limit of inferences that can be performed
+% when a goal is executed.
+:- dynamic(fasill_max_inferences/1).
+fasill_max_inferences(false).
+
+% set_max_inferences/1
+% set_max_inferences(+Limit)
+%
+% This predicate succeeds, and chages the current
+% limit of inferences that can be performed when
+% a goal is executed.
+set_max_inferences(Limit) :-
+    retractall(fasill_max_inferences(Limit)),
+    asserta(fasill_max_inferences(Limit)).
 
 
 
@@ -122,6 +146,17 @@ program_clause(Name/Arity, rule(term(Name, Arity, Args), Body, Info)) :-
 program_rule_id(rule(_,_,Info), Id) :- member(id(Id), Info).
 
 % program_consult/1
+% program_consult(+Path)
+%
+% This predicate loads the FASILL program from
+% the file +Path into the environment. This
+% predicate cleans the previous rules.
+program_consult(Path) :-
+    retractall(rule(_,_,_)),
+    file_consult(Path, Rules),
+    (member(Rule, Rules), assertz(Rule), fail ; true).
+
+% program_query/1
 % program_consult(+Path)
 %
 % This predicate loads the FASILL program from
