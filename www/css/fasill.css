@@ -11,6 +11,10 @@ a:hover {
 	text-decoration: underline;
 }
 
+.container-sep {
+	height: 30px;
+}
+
 #nav {
 	font-size: 150%;
 	margin-bottom: 50px;
@@ -39,4 +43,12 @@ a:hover {
 	margin-top: 50px;
 	padding: 20px;
 	text-align: center !important;
+}
+
+.container-sandbox {
+	padding: 15px 0px;
+}
+
+#program, #lattice, #sim {
+	height: 150px;
 }

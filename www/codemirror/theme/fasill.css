@@ -1,0 +1,55 @@
+/* fasill theme for codemirror */
+
+/* Color scheme */
+
+.cm-s-fasill.CodeMirror {
+	background-color:#ffffff;
+	border: 1px solid #bfbfbf;
+	color:#2e383c;
+	line-height:1.4375;
+	outline: 5px solid #fafafa;
+}
+.cm-s-fasill .cm-comment { color:#75787b; }
+.cm-s-fasill .cm-atom { color:#75438a; }
+.cm-s-fasill .cm-variable { color:#047d65; }
+.cm-s-fasill .cm-number { color: #bc5b5b !important; }
+.cm-s-fasill .cm-string { color: #488bae !important; }
+.cm-s-fasill .cm-graphic { color: #b35e14 !important; }
+
+/* Editor styling */
+
+.cm-s-fasill pre {
+	padding: 0px;
+	padding: 0px 10px;
+}
+
+.cm-s-fasill .CodeMirror-gutters {
+	background-color: #efefef;
+	border:none;
+	border-right:1px solid #bfbfbf;
+	padding: 0px 10px;
+}
+
+.cm-s-fasill .CodeMirror-gutter-wrapper {
+	background-color: #efefef;
+}
+
+.cm-s-fasill .CodeMirror-linenumber {
+	background-color: #efefef;
+	padding:0;
+	color:#888888;
+}
+
+.cm-s-fasill .CodeMirror-guttermarker { color: #1d75b3; }
+.cm-s-fasill .CodeMirror-guttermarker-subtle { color: #e0e2e5; }
+
+.cm-s-fasill .CodeMirror-cursor {
+	width: 2px;
+	border: 0;
+	background: rgba(155,157,162,0.37);
+	z-index: 1;
+}
+
+.CodeMirror pre.CodeMirror-placeholder {
+	color: #bfbfbf;
+}
