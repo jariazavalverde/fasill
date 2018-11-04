@@ -96,18 +96,30 @@ select_expression([Term|Args], [Term|Args_], Var, Atom) :- select_expression(Arg
 % can be interpreted (i.e., there is no atoms in the expression).
 interpretable(Expr) :- \+select_atom(Expr, _, _, _).
 
+% query/2
+% query(+Goal, ?Answer)
+%
+% This predicate succeeds when ?Answer is a fuzzy computed
+% answer (fca) for the goal +Goal. A fca is a term of the
+% form state(TD, Substitution), where TD is the truth degree.
 query(Goal, Answer) :-
     get_variables(Goal, Vars),
     derivation(state(Goal, Vars), Answer, _).
 
-get_variables(var(X), [X/var(X)]) :- !.
-get_variables(term(_,Args), Vars) :- !, get_variables(Args, Vars).
-get_variables([H|T], Vars) :- !,
-    get_variables(H, Vh),
-    get_variables(T, Vt),
+% get_variables/2
+% get_variables(+Term, ?Variables)
+%
+% This predicate succeeds when ?Variables is the initial
+% substitution for the term +Term, where each variable in
+% +Term is replace by itself (X/X).
+get_variables(X, Z) :- get_variables2(X, Y), list_to_set(Y, Z).
+get_variables2(var(X), [X/var(X)]) :- !.
+get_variables2(term(_,Args), Vars) :- !, get_variables2(Args, Vars).
+get_variables2([H|T], Vars) :- !,
+    get_variables2(H, Vh),
+    get_variables2(T, Vt),
     append(Vh, Vt, Vars).
-get_variables(_,[]).
-
+get_variables2(_,[]).
 
 % derivation/3
 % derivation(+State1, ?State2, ?Info)
