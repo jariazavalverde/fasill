@@ -193,8 +193,9 @@ success_step(From, state(Goal,Subs), state(Goal_,Subs_), Info) :-
         ) ; (
             % Undefined predicate
             existence_error(procedure, Name/Arity, From, Error),
-            throw_exception(Error),
-            Info = Name/Arity
+            Info = Name/Arity,
+            retractall(check_success),
+            throw_exception(Error)
         ))
     )).
 

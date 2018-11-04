@@ -172,11 +172,11 @@ program_consult(Path) :-
 % of a predicate asserted in the program loaded in the current
 % environment.
 program_has_predicate(Name/Arity) :-
-    fasill_predicate(Name/Arity) ;
+    (fasill_predicate(Name/Arity) ;
     lattice_call_bot(Bot),
     similarity_between(Name, Other, Length, TD),
     TD \= Bot,
-    fasill_predicate(Other/Length), !.
+    fasill_predicate(Other/Length)), !.
 
 
 % LATTICES
