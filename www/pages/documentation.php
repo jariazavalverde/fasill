@@ -2,6 +2,17 @@
 	<h1>Documentation</h1>
 	<div class="container px-0 py-4">
 		<h3>FASILL Predicate Reference</h3>
+		<ul>
+<?php
+foreach( scandir("pages/ref-doc") as $f ) {
+	if( $f != "." && $f != "..") {
+		$name = str_replace(".php", "", $f);
+		$show = ucfirst(str_replace("-", " ", $name));
+		echo "<li><a href=\"documentation/ref/$name\">$show</a></li>";
+	}
+}
+?>
+		</ul>
 	</div>
 	<div class="container px-0 py-4">
 		<h3>Implementation details</h3>

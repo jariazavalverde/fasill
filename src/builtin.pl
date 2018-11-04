@@ -48,10 +48,14 @@ is_builtin_predicate(Name/Arity) :-
 
 
 
-% TERM UNIFICATION
+%% TERM UNIFICATION
 
-% '='/2
-% '='(@term, @term)
+%%% '='/2
+%%% '='(@term, @term)
+%%%
+%%% Weak unification.
+%%% X = Y is true if and only if X and Y are unifiable.
+%%% True if the unification succeeds.
 eval_builtin_predicate('='/2, state(_, Subs), selected(ExprVar, TD, Term), state(ExprSubs, Subs_)) :-
     Term = term('=', [X,Y]),
     wmgu(X, Y, state(TD, SubsUnification)),
@@ -60,10 +64,14 @@ eval_builtin_predicate('='/2, state(_, Subs), selected(ExprVar, TD, Term), state
 
 
 
-% ARITHMETIC EVALUATION
+%% ARITHMETIC EVALUATION
 
-% is/2
-% is(?term, @evaluable)
+%%% is/2
+%%% is(?term, @evaluable)
+%%%
+%%% Evaluate expression.
+%%% Result is Expression is true if and only if evaluating
+%%% Expression as an expression gives Result as a result.
 eval_builtin_predicate(is/2, state(_, Subs), selected(ExprVar, Var, Atom), state(ExprVar, Subs)) :-
     Atom = term(is, [Variable, Expression]),
     catch(
@@ -79,52 +87,80 @@ eval_builtin_predicate(is/2, state(_, Subs), selected(ExprVar, Var, Atom), state
     ).
 
 
-% TYPE TESTING
+%% TYPE TESTING
 
-% atom/1
-% atom(@term)
+%%% atom/1
+%%% atom(@term)
+%%%
+%%% Check if atom.
+%%% atom(X) is true if and only if X is an atom.
 eval_builtin_predicate(atom/1, state(_, Subs), selected(ExprVar, top, Atom), state(ExprVar, Subs)) :-
     Atom = term(atom, [term(_, [])]).
 
-% compound/1
-% compound(@term)
+%%% compound/1
+%%% compound(@term)
+%%%
+%%% Check if compound.
+%%% compound(X) is true if and only if X is a compound
+%%% term (neither atomic nor a variable).
 eval_builtin_predicate(compound/1, state(_, Subs), selected(ExprVar, top, Atom), state(ExprVar, Subs)) :-
     Atom = term(compound, [term(_, [_|_])]).
 
-% var/1
-% var(@term)
+%%% var/1
+%%% var(@term)
+%%%
+%%% Check if variable.
+%%% var(X) is true if and only if X is a variable.
 eval_builtin_predicate(var/1, state(_, Subs), selected(ExprVar, top, Atom), state(ExprVar, Subs)) :-
     Atom = term(var, [var(_)]).
 
-% nonvar/1
-% nonvar(@term)
+%%% nonvar/1
+%%% nonvar(@term)
+%%%
+%%% Check if not variable.
+%%% nonvar(X) is true if and only if X is not a variable.
 eval_builtin_predicate(nonvar/1, state(_, Subs), selected(ExprVar, top, Atom), state(ExprVar, Subs)) :-
     Atom = term(nonvar, [X]),
     X \= var(_).
 
-% number/1
-% number(@term)
+%%% number/1
+%%% number(@term)
+%%%
+%%% Check if integer or float.
+%%% number(X) is true if and only if X is either an integer or a float.
 eval_builtin_predicate(number/1, state(_, Subs), selected(ExprVar, top, Atom), state(ExprVar, Subs)) :-
     Atom = term(number, [num(_)]).
 
-% float/1
-% float(@term)
+%%% float/1
+%%% float(@term)
+%%%
+%%% Check if float.
+%%% float(X) is true if and only if X is a float.
 eval_builtin_predicate(float/1, state(_, Subs), selected(ExprVar, top, Atom), state(ExprVar, Subs)) :-
     Atom = term(float, [num(X)]),
     float(X).
 
-% integer/1
-% integer(@term)
+%%% integer/1
+%%% integer(@term)
+%%%
+%%% Check if integer.
+%%% integer(X) is true if and only if X is an integer.
 eval_builtin_predicate(integer/1, state(_, Subs), selected(ExprVar, top, Atom), state(ExprVar, Subs)) :-
     Atom = term(integer, [num(X)]),
     integer(X).
 
 
 
-% ATOM PROCESSING
+%% ATOM PROCESSING
 
-% atom_length/2
-% atom_length(+Atom, ?Length)
+%%% atom_length/2
+%%% atom_length(+Atom, ?Length)
+%%%
+%%% Length of an atom.
+%%% atom_length(Atom, Length) is true if and only if the number
+%%% of characters in the name of Atom is equal to Length. If
+%%% Length is not instantiated, atom_length will calculate the
+%%% length of Atom's name.
 eval_builtin_predicate(atom_length/2, state(_, Subs), selected(ExprVar, Var, Term), state(ExprVar, Subs)) :-
     Term = term(atom_length, [Atom,Length]),
     ( fasill_var(Atom) -> instantiation_error(atom_length/2, Error), throw_exception(Error) ;
@@ -138,8 +174,14 @@ eval_builtin_predicate(atom_length/2, state(_, Subs), selected(ExprVar, Var, Ter
         )
     ).
 
-% atom_concat/3
-% atom_concat(+First, +Second, -Concat).
+%%% atom_concat/3
+%%% atom_concat(+First, +Second, -Concat)
+%%%
+%%% Concatenate characters.
+%%% atom_concat(Start, End, Whole) is true if and only if Whole
+%%% is the atom obtained by adding the characters of End at the
+%%% end of Start. If Whole is the only argument instantiated,
+%%% atom_concat/3 will obtain all possible decompositions of it.
 eval_builtin_predicate(atom_concat/3, state(_, Subs), selected(ExprVar, Var, Atom), state(ExprVar, Subs)) :-
     Atom = term(atom_concat, [X,Y,Z]),
     X = term(AtomX, []),

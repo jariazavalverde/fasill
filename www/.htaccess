@@ -7,11 +7,11 @@ ErrorDocument 404 /404
 	
 	RewriteCond %{REQUEST_FILENAME} !-f
 	RewriteCond %{REQUEST_FILENAME} !-d
-	RewriteRule ^documentation/prolog/([^\/]+)/([^\/]+)/([0-9]+)/?$ index.php?view=predicate&package=$1&predicate=$2&arity=$3 [L,NC,QSA]
+	RewriteRule ^documentation/ref/([a-zA-Z-]+)/?$ index.php?view=predicate&category=$1 [L,NC,QSA]
 	
 	RewriteCond %{REQUEST_FILENAME} !-f
 	RewriteCond %{REQUEST_FILENAME} !-d
-	RewriteRule ^examples/(.*)/?$ index.php?view=examples&example=$1 [L,NC,QSA]
+	RewriteRule ^documentation/([a-zA-Z]+)/?$ index.php?view=source&module=$1 [L,NC,QSA]
 
 	RewriteCond %{REQUEST_FILENAME} !-f
 	RewriteCond %{REQUEST_FILENAME} !-d

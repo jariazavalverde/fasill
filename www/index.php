@@ -1,11 +1,14 @@
 <?php
 
+require("php/functions.php");
+
 $_VIEW = isset($_GET["view"]) ? $_GET["view"] : "home";
 
 ?>
 <!doctype html>
 <html lang="en">
 	<head>
+		<base href="http://dectau.uclm.es/fasill/">
 		<meta charset="utf-8">
 		<meta name="author" content="José Antonio Riaza Valverde" />
 		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -30,16 +33,26 @@ $_VIEW = isset($_GET["view"]) ? $_GET["view"] : "home";
 	<body>
 		<div class="container" id="nav">
 			<div class="row">
-				<div class="col-sm"><a href="./">Home</a></div>
-				<div class="col-sm"><a href="./downloads">Downloads</a></div>
-				<div class="col-sm"><a href="./documentation">Documentation</a></div>
-				<div class="col-sm"><a href="./sandbox">Sandbox</a></div>
+				<div class="col-sm"><a href="downloads">Downloads</a></div>
+				<div class="col-sm"><a href="documentation">Documentation</a></div>
+				<div class="col-sm"><a href="sandbox">Sandbox</a></div>
 			</div>
 		</div>
-		<div class="container px-0 " id="body">
+<?php if ($_VIEW != "home") { ?>
+		<div class="container py-3 text-uppercase" id="sec">
+<?php if ($_VIEW != "source" && $_VIEW != "predicate") { ?>
+			<a href=".">FASILL</a> <i class="fas fa-angle-double-right"></i> <?php echo $_VIEW; ?>
+<?php } else if($_VIEW == "source") { ?>
+			<a href=".">FASILL</a> <i class="fas fa-angle-double-right"></i> <a href="documentation">documentation</a> <i class="fas fa-angle-double-right"></i> <?php echo $_GET["module"]; ?>
+<?php } else if($_VIEW == "predicate") { ?>
+			<a href=".">FASILL</a> <i class="fas fa-angle-double-right"></i> <a href="documentation">documentation</a> <i class="fas fa-angle-double-right"></i> <a href="documentation#reference">Predicate Reference</a> <i class="fas fa-angle-double-right"></i> <?php echo str_replace("-", " ", $_GET["category"]); ?>
+<?php } ?>
+		</div>
+<?php } ?>
+		<div class="container px-0 my-5" id="body">
 			<?php include("pages/$_VIEW.php"); ?>
 		</div>
-		<div class="container" id="footer">
+		<div class="container py-4" id="footer">
 			<p><i class="far fa-copyright"></i> 2018 <a href="http://jariaza.es" title="jariaza.es" target="_blank">José Antonio Riaza Valverde</a> | <i class="fab fa-github"></i> <a href="https://github.com/jariazavalverde/fasill" title="GitHub" target="_blank">jariazavalverde/fasill</a> | <i class="fas fa-university"></i> <a href="http://uclm.es" target="_blank">University of Castilla-La Mancha</a>, <a href="dectau.uclm.es">DEC-Tau</a> research group</p>
 			<p><i class="fas fa-balance-scale"></i> Released under the <a href="https://github.com/jariazavalverde/fasill/blob/master/LICENSE" target="_blank">BSD-3 Clause license</a> | <i class="fas fa-font"></i> Uses <a href="https://fontawesome.com/" target="_blank" rel="nofollow">Font Awesome</a> and <a href="https://getbootstrap.com/" target="_blank" rel="nofollow">Bootstrap</a></p>
 		</div>

@@ -5,8 +5,8 @@
 			<div class="row">
 				<div class="col-md pt-2 pb-4">
 					<p class="text-justify text-secondary">
-						FASILL is a first order language containing variables, function symbols, predicate symbols and constants.
-						To increase language expressiveness, FASILL also contains the truth values of a complete lattice, equipped with a collection of connectives to combine/propagate truth values through the rules: conjunctive operators, disjunctive operators and aggregation operators. 
+						FASILL is a Prolog-like first order language containing variables, function symbols, predicate symbols and constants.
+						To increase language expressiveness, FASILL also contains the truth values of a complete lattice, equipped with a collection of connectives to combine/propagate truth values through the rules.
 					</p>
 				</div>
 				<div class="col-md pt-2 pb-4 text-center">

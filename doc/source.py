@@ -7,7 +7,7 @@ def gen(path, name, fun):
 		template = None
 		description = ""
 		for line in f:
-			if line[0] == '%':
+			if line[:2] == '% ':
 				if predicate is None:
 					predicate = line[2:]
 				elif template is None:
