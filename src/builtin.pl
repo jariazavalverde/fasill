@@ -18,6 +18,9 @@
 % and Arity is a non-negative integer.
 is_builtin_predicate(Name/Arity) :-
     member(Name/Arity, [
+        % control constructs
+        ','/2,
+        ';'/2,
         % term unification
         '='/2,
         '\\='/2,
@@ -46,6 +49,28 @@ is_builtin_predicate(Name/Arity) :-
 % ?State2 is the resulting state of performing a
 % step over the state +State1 with selected atom
 % +Atom whose indicator is +Indicator.
+
+
+
+%% CONTROL CONSTRUCTS
+
+%%% ,/2
+%%% ','(X,Y)
+%%%
+%%% Conjunction.
+%%% ','(First, Second) is true if and only if First is true and Second is true.
+eval_builtin_predicate(','/2, state(_, Subs), selected(ExprVar, Var, Term), state(ExprVar, Subs)) :-
+    Term = term(',', [X,Y]),
+    Var = term('&', [X,Y]).
+
+%%% ;/2
+%%% ';'(X,Y)
+%%%
+%%% Disjunction.
+%%% ';'(Either, Or) is true if and only if either Either or Or is true.
+eval_builtin_predicate(';'/2, state(_, Subs), selected(ExprVar, Var, Term), state(ExprVar, Subs)) :-
+    Term = term(';', [X,Y]),
+    (Var = X ; Var = Y).
 
 
 
