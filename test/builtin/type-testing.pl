@@ -20,7 +20,7 @@
 ?- test_builtin(5, '../../sample/lat/real.lat.pl', term(var,[term(p,[term(a,[])])]), [state(num(0.0), [])]).
 
 % (real) <var(X),{}> -> [<1.0,{}>]
-?- test_builtin(6, '../../sample/lat/real.lat.pl', term(var,[var('X')]), [state(num(1.0), [])]).
+?- test_builtin(6, '../../sample/lat/real.lat.pl', term(var,[var('X')]), [state(num(1.0), ['X'/var('X')])]).
 
 
 
@@ -42,7 +42,7 @@
 ?- test_builtin(15, '../../sample/lat/real.lat.pl', term(nonvar,[term(p,[term(a,[])])]), [state(num(1.0), [])]).
 
 % (real) <nonvar(X),{}> -> [<0.0,{}>]
-?- test_builtin(16, '../../sample/lat/real.lat.pl', term(nonvar,[var('X')]), [state(num(0.0), [])]).
+?- test_builtin(16, '../../sample/lat/real.lat.pl', term(nonvar,[var('X')]), [state(num(0.0), ['X'/var('X')])]).
 
 
 
@@ -64,7 +64,7 @@
 ?- test_builtin(25, '../../sample/lat/real.lat.pl', term(number,[term(p,[term(a,[])])]), [state(num(0.0), [])]).
 
 % (real) <number(X),{}> -> [<0.0,{}>]
-?- test_builtin(26, '../../sample/lat/real.lat.pl', term(number,[var('X')]), [state(num(0.0), [])]).
+?- test_builtin(26, '../../sample/lat/real.lat.pl', term(number,[var('X')]), [state(num(0.0), ['X'/var('X')])]).
 
 
 
@@ -86,7 +86,7 @@
 ?- test_builtin(35, '../../sample/lat/real.lat.pl', term(integer,[term(p,[term(a,[])])]), [state(num(0.0), [])]).
 
 % (real) <integer(X),{}> -> [<0.0,{}>]
-?- test_builtin(36, '../../sample/lat/real.lat.pl', term(integer,[var('X')]), [state(num(0.0), [])]).
+?- test_builtin(36, '../../sample/lat/real.lat.pl', term(integer,[var('X')]), [state(num(0.0), ['X'/var('X')])]).
 
 
 
@@ -108,7 +108,7 @@
 ?- test_builtin(45, '../../sample/lat/real.lat.pl', term(float,[term(p,[term(a,[])])]), [state(num(0.0), [])]).
 
 % (real) <float(X),{}> -> [<0.0,{}>]
-?- test_builtin(46, '../../sample/lat/real.lat.pl', term(float,[var('X')]), [state(num(0.0), [])]).
+?- test_builtin(46, '../../sample/lat/real.lat.pl', term(float,[var('X')]), [state(num(0.0), ['X'/var('X')])]).
 
 
 
@@ -130,7 +130,7 @@
 ?- test_builtin(55, '../../sample/lat/real.lat.pl', term(atom,[term(p,[term(a,[])])]), [state(num(0.0), [])]).
 
 % (real) <atom(X),{}> -> [<0.0,{}>]
-?- test_builtin(56, '../../sample/lat/real.lat.pl', term(atom,[var('X')]), [state(num(0.0), [])]).
+?- test_builtin(56, '../../sample/lat/real.lat.pl', term(atom,[var('X')]), [state(num(0.0), ['X'/var('X')])]).
 
 
 
@@ -152,4 +152,4 @@
 ?- test_builtin(65, '../../sample/lat/real.lat.pl', term(compound,[term(p,[term(a,[])])]), [state(num(1.0), [])]).
 
 % (real) <compound(X),{}> -> [<0.0,{}>]
-?- test_builtin(66, '../../sample/lat/real.lat.pl', term(compound,[var('X')]), [state(num(0.0), [])]).
+?- test_builtin(66, '../../sample/lat/real.lat.pl', term(compound,[var('X')]), [state(num(0.0), ['X'/var('X')])]).

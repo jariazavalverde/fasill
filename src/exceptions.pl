@@ -40,9 +40,8 @@ instantiation_error(Indicator, term(error, [term(instantiation_error,[]), Indica
 % predicate +Indicator. This error is produced when the
 % type of an argument or of one of its components is
 % incorrect, but not a variable.
-type_error(Type, Term, Indicator, term(error, [term(type_error, [Type_, Term_]), Indicator_])) :-
+type_error(Type, Term, Indicator, term(error, [term(type_error, [Type_, Term]), Indicator_])) :-
     from_prolog(Type, Type_),
-    from_prolog(Term, Term_),
     from_prolog(Indicator, Indicator_).
 
 % evaluation_error/3

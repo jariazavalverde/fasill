@@ -12,6 +12,6 @@
 
 % (real) <(X = a &prod X = b),{}> -> [<0.0,{X/p}>]
 ?- test_builtin(3, '../../sample/lat/real.lat.pl',
-    term('&'(and_prod),[term('=',[var('X'),term(a,[])]), term('=',[var('X'),term(b,[])])]),
+    term('&'(prod),[term('=',[var('X'),term(a,[])]), term('=',[var('X'),term(b,[])])]),
     [state(num(0.0), ['X'/term(a,[])])]
 ).

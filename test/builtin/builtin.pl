@@ -12,6 +12,6 @@
 % of the file that contains the lattice.
 test_builtin(ID, Lattice, Goal, ShouldBe) :-
     (   lattice_consult(Lattice),
-        findall(State, derivation(state(Goal, []), State, _), Result) ;
+        findall(State, query(Goal, State), Result) ;
         Result = fail), !,
     (ShouldBe \= Result -> throw(test_error(test_builtin/ID, expected(ShouldBe), result(Result))) ; true).
