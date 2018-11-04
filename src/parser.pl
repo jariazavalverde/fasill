@@ -102,11 +102,9 @@ parse_rule(fasill_rule(head(Head), Body, [id(Id),Info])) -->
 
 % parse_operator/6
 % parse an operator T with Priority, Specifier and Name 
-parse_operator(Priority, Specifier, T, yes) -->
-    blanks, {current_op(Priority, Specifier, Op, yes), atom_chars(Op, Chars)}, Chars,
-    token_minus_identifier(Identifier), {T =.. [Op, Identifier]}.
-parse_operator(Priority, Specifier, Op, no) -->
-    blanks, {current_op(Priority, Specifier, Op, no), atom_chars(Op, Chars)}, Chars.
+parse_operator(Priority, Specifier, T, Name) -->
+    blanks, {current_op(Priority, Specifier, Op, Name), atom_chars(Op, Chars)}, Chars,
+    ({Name = yes}, token_minus_identifier(Identifier), {T =.. [Op, Identifier]} ; {Name = no, T = Op}).
 
 % next_priority/2
 % give the next priority to derivate an expression
@@ -123,17 +121,11 @@ next_priority(200, 0).
 % parse_expr/4
 % parse an expression with level between 0 and 1300
 %%% level 0
-parse_expr(0, num(T)) --> blanks, token_number(T).
-parse_expr(0, str(T)) --> blanks, token_string(T).
-parse_expr(0, var(T)) --> blanks, token_variable(T).
-parse_expr(0, T) --> blanks, lparen, parse_expr(1300, T), rparen.
-parse_expr(0, T) --> blanks, parse_list(T).
-parse_expr(0, T) --> blanks, parse_term(T).
-parse_expr(0, T) --> blanks, parse_agr(T).
+parse_expr(0, X) --> blanks, parse_expr_zero(X).
 %%% level n, n > 0
 %%%%%% next level
 parse_expr(Priority, T) --> {Priority > 0, next_priority(Priority, Next)}, parse_expr(Next, T).
-%%%%%% fy, fy
+%%%%%% fx, fy
 parse_expr(Priority, term(Op, [T])) --> {Priority > 0}, parse_operator(Priority, fy, Op, _), parse_expr(Priority, T).
 parse_expr(Priority, term(Op, [T])) --> {Priority > 0}, parse_operator(Priority, fx, Op, _), {next_priority(Priority, Next)}, parse_expr(Next, T).
 %%%%%% xfx, xfy, yfx
@@ -151,6 +143,14 @@ parse_expr2(Priority, Left, T) -->
     parse_expr(Next, Right),
     parse_expr2(Priority, term(Op, [Left,Right]), T).
 parse_expr2(_, T, T) --> [].
+
+parse_expr_zero(num(T)) --> token_number(T).
+parse_expr_zero(str(T)) --> token_string(T).
+parse_expr_zero(var(T)) --> token_variable(T).
+parse_expr_zero(T) --> lparen, parse_expr(1300, T), rparen.
+parse_expr_zero(T) --> parse_list(T).
+parse_expr_zero(T) --> parse_term(T).
+parse_expr_zero(T) --> parse_agr(T).
 
 % parse_term/3
 % parse a (possible compound) term
@@ -261,6 +261,5 @@ dot --> blanks, ['.'].
 blanks --> blank, !, blanks.
 blanks --> [].
 blank --> [' '].
-blank --> ['\\','\n'].
 blank --> ['\n'].
 blank --> ['\t'].

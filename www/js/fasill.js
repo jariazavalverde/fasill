@@ -3,6 +3,7 @@ var lattice;
 var sim;
 var goal;
 var limit;
+var output;
 
 window.addEventListener("load", function() {
 	var program_value = document.getElementById("program").innerHTML.replace(/&lt;/g,"<").replace(/&gt;/g,">");
@@ -50,11 +51,18 @@ window.addEventListener("load", function() {
 		placeholder: "Max. number of inferences",
 		mode: "prolog"
 	});
+	output = CodeMirror(document.getElementById("out"), {
+		lineNumbers: true,
+		theme: "fasill",
+		mode: "prolog",
+		readOnly: true
+	});
 	program.setSize("100%", "100%");
 	lattice.setSize("100%", "100%");
 	sim.setSize("100%", "100%");
 	goal.setSize("100%", "100%");
 	limit.setSize("100%", "100%");
+	output.setSize("100%", "100%");
 });
 
 
@@ -79,6 +87,6 @@ function fasill_run() {
 		"limit": limit.getValue()
 	});
 	post("php/run.php", data, function(data) {
-		document.getElementById("out").innerHTML = data;
+		output.setValue(data.trim());
 	});
 }

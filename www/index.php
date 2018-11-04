@@ -36,7 +36,7 @@ $_VIEW = isset($_GET["view"]) ? $_GET["view"] : "home";
 				<div class="col-sm"><a href="./sandbox">Sandbox</a></div>
 			</div>
 		</div>
-		<div class="container" id="body">
+		<div class="container px-0 " id="body">
 			<?php include("pages/$_VIEW.php"); ?>
 		</div>
 		<div class="container" id="footer">

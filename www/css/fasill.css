@@ -45,10 +45,6 @@ a:hover {
 	text-align: center !important;
 }
 
-.container-sandbox {
-	padding: 15px 0px;
-}
-
 #program, #lattice, #sim {
 	height: 150px;
 }

@@ -19,7 +19,7 @@ fclose( $file_lat );
 fclose( $file_sim );
 
 try {
-	$cmd = "nice -n15 swipl -f '../src/web.pl' -g \"web_run('$ran-program.fpl', '$ran-lat.pl', '$ran-sim.pl', '$goal', $limit),halt\"";
+	$cmd = "timeout 10s swipl -f '../src/web.pl' -g \"web_run('$ran-program.fpl', '$ran-lat.pl', '$ran-sim.pl', '$goal', $limit),halt\"";
 	echo shell_exec( $cmd );
 } catch (Exception $e) {
     echo "<div class=\"error-message\">There was an error.</div>";

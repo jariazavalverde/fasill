@@ -17,29 +17,29 @@ $_LIMIT = isset($_POST["limit"]) ? $_POST["limit"] : $def_limit;
 <form action="./sandbox" method="POST">
 	<div class="container">
 		<h1>Input</h1>
-		<div class="container container-sandbox">
+		<div class="container px-0 py-4">
 			<h4><i class="fas fa-code"></i> Program</h4>
 			<div id="program" class="sandbox-editor"><?php echo $_PROGRAM; ?></div>
 		</div>
-		<div class="container container-sandbox">
+		<div class="container px-0 py-4">
 			<h4><i class="fas fa-circle"></i> Lattice</h4>
 			<div id="lattice" class="sandbox-editor"><?php echo $_LATTICE; ?></div>
 		</div>
-		<div class="container container-sandbox">
+		<div class="container px-0 py-4">
 			<h4><i class="fas fa-equals"></i> Similarity Relation</h4>
 			<div id="sim" class="sandbox-editor"><?php echo $_SIM; ?></div>
 		</div>
-		<div class="container container-sandbox">
+		<div class="container px-0">
 			<div class="row">
-				<div class="col-sm">
+				<div class="col-sm py-4">
 					<h4><i class="fab fa-font-awesome-flag"></i> Goal</h4>
 					<div id="goal"><?php echo $_GOAL; ?></div>
 				</div>
-				<div class="col-sm">
-					<h4><i class="fas fa-stopwatch"></i> Limit</h4>
+				<div class="col-sm py-4">
+					<h4><i class="fas fa-stopwatch"></i> Max. inferences</h4>
 					<div id="limit"><?php echo $_LIMIT; ?></div>
 				</div>
-				<div class="col-sm">
+				<div class="col-sm py-4">
 					<button id="run" onClick="fasill_run();" type="button" class="btn btn-danger btn-lg btn-block"><i class="fas fa-cogs"></i> Run</button>
 				</div>
 			</div>
@@ -51,5 +51,11 @@ $_LIMIT = isset($_POST["limit"]) ? $_POST["limit"] : $def_limit;
 
 <div class="container">
 	<h1>Output</h1>
-	<div id="out"></div>
+	<div class="container px-0 py-4">
+		<h4><i class="fas fa-search"></i> Fuzzy Computed Answers</h4>
+		<div id="out"></div>
+	</div>
+	<div class="container px-0 py-4">
+		<h4><i class="fas fa-tree"></i> Derivation tree</h4>
+	</div>
 </div>
