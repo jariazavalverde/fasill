@@ -1,7 +1,7 @@
 <div class="container">
 	<h1>Documentation</h1>
 	<div class="container px-0 py-4">
-		<h3>FASILL Predicate Reference</h3>
+		<h3 id="ref">FASILL Predicate Reference</h3>
 		<ul>
 <?php
 foreach( scandir("pages/ref-doc") as $f ) {
@@ -15,13 +15,13 @@ foreach( scandir("pages/ref-doc") as $f ) {
 		</ul>
 	</div>
 	<div class="container px-0 py-4">
-		<h3>Implementation details</h3>
+		<h3 id="src">Implementation details</h3>
 		<ul>
 <?php
 foreach( scandir("pages/src-doc") as $f ) {
 	if( $f != "." && $f != "..") {
 		$name = str_replace(".php", "", $f);
-		echo "<li><a href=\"documentation/$name\">$name module</a></li>";
+		echo "<li><a href=\"documentation/src/$name\">$name module</a></li>";
 	}
 }
 ?>

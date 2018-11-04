@@ -67,7 +67,7 @@ eval_builtin_predicate('='/2, state(_, Subs), selected(ExprVar, TD, Term), state
 %% ARITHMETIC EVALUATION
 
 %%% is/2
-%%% is(?term, @evaluable)
+%%% 'is'(?term, @evaluable)
 %%%
 %%% Evaluate expression.
 %%% Result is Expression is true if and only if evaluating
@@ -154,7 +154,7 @@ eval_builtin_predicate(integer/1, state(_, Subs), selected(ExprVar, top, Atom), 
 %% ATOM PROCESSING
 
 %%% atom_length/2
-%%% atom_length(+Atom, ?Length)
+%%% atom_length( +atom, ?integer )
 %%%
 %%% Length of an atom.
 %%% atom_length(Atom, Length) is true if and only if the number
@@ -175,7 +175,8 @@ eval_builtin_predicate(atom_length/2, state(_, Subs), selected(ExprVar, Var, Ter
     ).
 
 %%% atom_concat/3
-%%% atom_concat(+First, +Second, -Concat)
+%%% atom_concat( ?atom, ?atom +atom )
+%%% atom_concat( +atom, +atom, -atom )
 %%%
 %%% Concatenate characters.
 %%% atom_concat(Start, End, Whole) is true if and only if Whole

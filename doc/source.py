@@ -7,7 +7,7 @@ def gen(path, name, fun):
 		template = None
 		description = ""
 		for line in f:
-			if line[:2] == '% ':
+			if line[:2] == '% ' or line[:2] == '%\n':
 				if predicate is None:
 					predicate = line[2:]
 				elif template is None:
@@ -31,7 +31,7 @@ def gen(path, name, fun):
 def html(module, x):
 	(predicate, template, description) = x
 	html = "<div class=\"container py-2 px-0\">"
-	html += "<h4 id=\"" + predicate + "\"><a href=\"/fasill/documentation/" + module + "#" + predicate + "\">" + predicate + "</a></h4>"
+	html += "<h4 id=\"" + predicate + "\"><a href=\"/fasill/documentation/src/" + module + "#" + predicate + "\">" + predicate + "</a></h4>"
 	html += "<?php echo show_template(\"" + template + "\"); ?>"
 	html += "<p><?php echo show_description(\"" + description + "\"); ?></p>"
 	html += "</div>"

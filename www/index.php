@@ -43,9 +43,9 @@ $_VIEW = isset($_GET["view"]) ? $_GET["view"] : "home";
 <?php if ($_VIEW != "source" && $_VIEW != "predicate") { ?>
 			<a href=".">FASILL</a> <i class="fas fa-angle-double-right"></i> <?php echo $_VIEW; ?>
 <?php } else if($_VIEW == "source") { ?>
-			<a href=".">FASILL</a> <i class="fas fa-angle-double-right"></i> <a href="documentation">documentation</a> <i class="fas fa-angle-double-right"></i> <?php echo $_GET["module"]; ?>
+			<a href=".">FASILL</a> <i class="fas fa-angle-double-right"></i> <a href="documentation">documentation</a> <i class="fas fa-angle-double-right"></i> <a href="documentation#src">Source</a> <i class="fas fa-angle-double-right"></i> <?php echo $_GET["module"]; ?>
 <?php } else if($_VIEW == "predicate") { ?>
-			<a href=".">FASILL</a> <i class="fas fa-angle-double-right"></i> <a href="documentation">documentation</a> <i class="fas fa-angle-double-right"></i> <a href="documentation#reference">Predicate Reference</a> <i class="fas fa-angle-double-right"></i> <?php echo str_replace("-", " ", $_GET["category"]); ?>
+			<a href=".">FASILL</a> <i class="fas fa-angle-double-right"></i> <a href="documentation">documentation</a> <i class="fas fa-angle-double-right"></i> <a href="documentation#ref">Predicate Reference</a> <i class="fas fa-angle-double-right"></i> <?php echo str_replace("-", " ", $_GET["category"]); ?>
 <?php } ?>
 		</div>
 <?php } ?>
