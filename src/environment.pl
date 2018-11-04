@@ -11,6 +11,7 @@
     program_clause/2,
     program_rule_id/2,
     program_consult/1,
+    program_has_predicate/1,
     lattice_tnorm/1,
     lattice_tconorm/1,
     lattice_call_bot/1,
@@ -27,6 +28,7 @@
 
 :- dynamic(
     fasill_rule/3,
+    fasill_predicate/1,
     fasill_lattice_tnorm/1,
     '~'/1,
     '~'/2
@@ -154,9 +156,27 @@ program_rule_id(fasill_rule(_,_,Info), Id) :- member(id(Id), Info).
 % predicate cleans the previous rules.
 program_consult(Path) :-
     retractall(fasill_rule(_,_,_)),
+    retractall(fasill_predicate(_)),
     file_consult(Path, Rules),
-    (member(Rule, Rules), assertz(Rule), fail ; true).
+    (   member(Rule, Rules),
+        assertz(Rule),
+        Rule = fasill_rule(head(term(Name,Args)),_,_),
+        length(Args,Arity),
+        (fasill_predicate(Name/Arity) -> true ; assertz(fasill_predicate(Name/Arity))),
+        fail ; true).
 
+% program_has_predicate/1
+% program_has_predicate(?Indicator)
+%
+% This predicate succeeds when ?Indicator is the indicator
+% of a predicate asserted in the program loaded in the current
+% environment.
+program_has_predicate(Name/Arity) :-
+    fasill_predicate(Name/Arity) ;
+    lattice_call_bot(Bot),
+    similarity_between(Name, Other, Length, TD),
+    TD \= Bot,
+    fasill_predicate(Other/Length), !.
 
 
 % LATTICES

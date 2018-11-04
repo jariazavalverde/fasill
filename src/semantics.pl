@@ -1,9 +1,9 @@
 :- module(semantics, [
     wmgu/3,
     query/2,
-    derivation/3,
-    inference/3,
-    admissible_step/3,
+    derivation/4,
+    inference/4,
+    admissible_step/4,
     interpretive_step/3,
     apply/3,
     compose/3,
@@ -104,7 +104,7 @@ interpretable(Expr) :- \+select_atom(Expr, _, _, _).
 % form state(TD, Substitution), where TD is the truth degree.
 query(Goal, Answer) :-
     get_variables(Goal, Vars),
-    derivation(state(Goal, Vars), Answer, _).
+    derivation(top_level/0, state(Goal, Vars), Answer, _).
 
 % get_variables/2
 % get_variables(+Term, ?Variables)
@@ -121,74 +121,81 @@ get_variables2([H|T], Vars) :- !,
     append(Vh, Vt, Vars).
 get_variables2(_,[]).
 
-% derivation/3
-% derivation(+State1, ?State2, ?Info)
+% derivation/4
+% derivation(+From, +State1, ?State2, ?Info)
 %
 % This predicate performs a complete derivation from
 % an initial state ?State1 to the final state ?State2,
 % using the program +Program. ?Info is a list containing
 % the information of each step.
-derivation(exception(Error), exception(Error), []) :- !.
-derivation(State, State_, [X|Xs]) :-
-    catch(inference(State, State1, X), Error, (State1 = exception(Error), !)),
-    derivation(State1, State_, Xs).
-derivation(state(Goal,Subs), state(Goal,Subs), []) :-
+derivation(_, exception(Error), exception(Error), []) :- !.
+derivation(From, State, State_, [X|Xs]) :-
+    catch(inference(From, State, State1, X), Error, (State1 = exception(Error), !)),
+    derivation(X, State1, State_, Xs).
+derivation(_, state(Goal,Subs), state(Goal,Subs), []) :-
     lattice_call_member(Goal).
 
-% inference/3
-% inference(+State1, ?State2, ?Info)
+% inference/4
+% inference(+From, +State1, ?State2, ?Info)
 %
 % This predicate performs an inference step from the
 % initial state +State1 to the final step ?State2. ?Info
 % is an atom containg information about the rule used in
 % the derivation.
-inference(State, State_, Info) :- admissible_step(State, State_, Info).
-inference(state(Goal,Subs), State_, Info) :- interpretable(Goal), interpretive_step(state(Goal,Subs), State_, Info).
+inference(From, State, State_, Info) :- admissible_step(From, State, State_, Info).
+inference(_, state(Goal,Subs), State_, Info) :- interpretable(Goal), interpretive_step(state(Goal,Subs), State_, Info).
 
-% admissible_step/3
-% admissible_step(+State1, ?State2, ?Info)
+% admissible_step/4
+% admissible_step(+From, +State1, ?State2, ?Info)
 %
 % This predicate performs an admissible step from the
 % state +State1 to the state ?State2. ?Info is an atom
 % containg information about the rule used in the derivation.
 :- dynamic(check_success/0).
-admissible_step(State1, State2, Info) :-
+admissible_step(From, State1, State2, Info) :-
     assertz(check_success),
-    success_step(State1, State2, Info),
+    success_step(From, State1, State2, Info),
     retractall(check_success).
-admissible_step(State1, State2, Info) :-
+admissible_step(_, State1, State2, Info) :-
     check_success,
     retractall(check_success),
     failure_step(State1, State2, Info).
 
-% success_step/3
-% success_step(+State1, ?State2, ?Info)
+% success_step/4
+% success_step(+From, +State1, ?State2, ?Info)
 %
 % This predicate performs a successful admissible step
 % from the state +State1 to the state ?State2. ?Info is
 % an atom containg information about the rule used in
 % the derivation.
-success_step(state(Goal,Subs), state(Goal_,Subs_), Info) :-
+success_step(From, state(Goal,Subs), state(Goal_,Subs_), Info) :-
     select_atom(Goal, ExprVar, Var, Expr),
     Expr = term(Name, Args),
     length(Args, Arity),
+    % Builtin predicate
     (is_builtin_predicate(Name/Arity) -> (
         eval_builtin_predicate(Name/Arity, state(Goal,Subs), selected(ExprVar, Var, Expr), state(Goal_,Subs_)),
-        Info = Name
+        Info = Name/Arity
     ) ; (
-        lattice_tnorm(Tnorm),
-        lattice_call_bot(Bot),
-        program_clause(Name2/Arity, Rule),
-        (Name = Name2 -> true ; similarity_between(Name, Name2, Arity, Sim), Sim \= Bot),
-        Rule = fasill_rule(head(Head),Body,_),
-        rename([Head,Body], [HeadR,BodyR]),
-        wmgu(Expr, HeadR, state(TD,SubsExpr)),
-        (BodyR = empty -> Var = TD ; (BodyR = body(Body_), Var = term('&'(Tnorm), [TD,Body_]))),
-        apply(ExprVar, SubsExpr, Goal_),
-        compose(Subs, SubsExpr, Subs_),
-        program_rule_id(Rule, RuleId),
-        atom_number(InfoId, RuleId),
-        atom_concat('R', InfoId, Info)
+        % User-defined predicate
+        (program_has_predicate(Name/Arity) -> (
+            lattice_tnorm(Tnorm),
+            lattice_call_bot(Bot),
+            program_clause(Name2/Arity, Rule),
+            (Name = Name2 -> true ; similarity_between(Name, Name2, Arity, Sim), Sim \= Bot),
+            Rule = fasill_rule(head(Head),Body,_),
+            rename([Head,Body], [HeadR,BodyR]),
+            wmgu(Expr, HeadR, state(TD,SubsExpr)),
+            (BodyR = empty -> Var = TD ; (BodyR = body(Body_), Var = term('&'(Tnorm), [TD,Body_]))),
+            apply(ExprVar, SubsExpr, Goal_),
+            compose(Subs, SubsExpr, Subs_),
+            Info = Name2/Arity
+        ) ; (
+            % Undefined predicate
+            existence_error(procedure, Name/Arity, From, Error),
+            throw_exception(Error),
+            Info = Name/Arity
+        ))
     )).
 
 % failure_step/3
