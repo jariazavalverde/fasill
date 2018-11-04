@@ -308,7 +308,7 @@ similarity_retract :-
 % the previous similarity relations.
 similarity_consult(Path) :-
     similarity_retract,
-    consult(Path),
+    load_files(Path, [imports(['~'/1,'~'/2])]),
     similarity_closure.
 
 % similarity_closure/0

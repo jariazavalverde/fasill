@@ -1,5 +1,6 @@
 :- module(semantics, [
     wmgu/3,
+    query/2,
     derivation/3,
     inference/3,
     admissible_step/3,
@@ -94,6 +95,19 @@ select_expression([Term|Args], [Term|Args_], Var, Atom) :- select_expression(Arg
 % This predicate succeeds when the expression +Expression
 % can be interpreted (i.e., there is no atoms in the expression).
 interpretable(Expr) :- \+select_atom(Expr, _, _, _).
+
+query(Goal, Answer) :-
+    get_variables(Goal, Vars),
+    derivation(state(Goal, Vars), Answer, _).
+
+get_variables(var(X), [X/var(X)]) :- !.
+get_variables(term(_,Args), Vars) :- !, get_variables(Args, Vars).
+get_variables([H|T], Vars) :- !,
+    get_variables(H, Vh),
+    get_variables(T, Vt),
+    append(Vh, Vt, Vars).
+get_variables(_,[]).
+
 
 % derivation/3
 % derivation(+State1, ?State2, ?Info)
@@ -225,8 +239,9 @@ rename(X, X, Subs, Subs).
 %
 % This predicate composes both substitutions, +Substitution1
 % and +Substitution2 in ?SubstitutionOut.
-compose([], Xs, Xs).
-compose([X/Y|Xs], Subs, [X/Y_|Ys]) :- apply(Y, Subs, Y_), apply(Xs, Subs, Ys).
+compose([], _, []).
+compose([X/Y|T], Subs, [X/Z|S]) :- apply(Y, Subs, Z), compose(T, Subs, S).
+
 
 % apply/3
 % apply(+ExpressionIn, +Substitution, ?ExpressionOut)

@@ -43,5 +43,5 @@ web_run(Program, Lattice, Sim, GoalAtom, Limit) :-
     set_max_inferences(Limit),
     atom_chars(GoalAtom, Chars),
     parse_query(Chars, Goal),
-    ( derivation(state(Goal,[]), State, _),
+    ( query(Goal, State),
       web_write(State), nl, fail ; true ).
