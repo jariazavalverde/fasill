@@ -39,3 +39,25 @@
     term(atom_length,[term(ab,[]), num(2.0)]),
     [exception(term(error,[term(type_error,[term(integer,[]),num(2.0)]),term('/',[term(atom_length,[]),num(2)])]))]
 ).
+
+
+
+% ATOM_CONCAT/3
+
+% (real) <atom_concat(ab, cd, abcd),{}> -> [<1.0,{}>]
+?- test_builtin(1, '../../sample/lat/real.lat.pl',
+    term(atom_concat,[term(ab,[]), term(cd,[]), term(abcd,[])]),
+    [state(num(1.0), [])]
+).
+
+% (real) <atom_concat(ab, cd, X),{}> -> [<1.0,{X/abcd}>]
+?- test_builtin(1, '../../sample/lat/real.lat.pl',
+    term(atom_concat,[term(ab,[]), term(cd,[]), var('X')]),
+    [state(num(1.0), ['X'/term(abcd,[])])]
+).
+
+% (real) <atom_concat(X, Y, abc),{}> -> [<1.0,{}>]
+?- test_builtin(1, '../../sample/lat/real.lat.pl',
+    term(atom_concat,[var('X'), var('Y'), term(abc,[])]),
+    [state(num(1.0),['X'/term('',[]),'Y'/term(abc,[])]),state(num(1.0),['X'/term(a,[]),'Y'/term(bc,[])]),state(num(1.0),['X'/term(ab,[]),'Y'/term(c,[])]),state(num(1.0),['X'/term(abc,[]),'Y'/term('',[])])]
+).

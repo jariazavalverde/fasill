@@ -184,8 +184,18 @@ eval_builtin_predicate(atom_length/2, state(_, Subs), selected(ExprVar, Var, Ter
 %%% end of Start. If Whole is the only argument instantiated,
 %%% atom_concat/3 will obtain all possible decompositions of it.
 eval_builtin_predicate(atom_concat/3, state(_, Subs), selected(ExprVar, Var, Atom), state(ExprVar, Subs)) :-
-    Atom = term(atom_concat, [X,Y,Z]),
-    X = term(AtomX, []),
-    Y = term(AtomY, []),
-    atom_concat(AtomX, AtomY, AtomZ),
-    Var = term(=, [Z, term(AtomZ, [])]).
+    Atom = term(atom_concat, [Start,End,Whole]),
+    ( fasill_var(Whole), fasill_var(Start) -> instantiation_error(atom_concat/3, Error), throw_exception(Error) ;
+        ( fasill_var(Whole), fasill_var(End) -> instantiation_error(atom_concat/3, Error), throw_exception(Error) ;
+            ( \+fasill_var(Start), \+fasill_atom(Start) -> type_error(atom, Start, atom_concat/3, Error), throw_exception(Error) ;
+                ( \+fasill_var(End), \+fasill_atom(End) -> type_error(atom, End, atom_concat/3, Error), throw_exception(Error) ;
+                    ( \+fasill_var(Whole), \+fasill_atom(Whole) -> type_error(atom, Whole, atom_concat/3, Error), throw_exception(Error) ;
+                        to_prolog(Start, X), to_prolog(End, Y), to_prolog(Whole, Z),
+                        atom_concat(X,Y,Z),
+                        from_prolog(X, Fx), from_prolog(Y, Fy), from_prolog(Z, Fz),
+                        Var = term('&', [term('=',[Start,Fx]), term('&',[term('=',[End,Fy]),term('=',[Whole,Fz])])])
+                    )
+                )
+            )
+        )
+    ).
