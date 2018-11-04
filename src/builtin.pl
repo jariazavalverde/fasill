@@ -20,6 +20,7 @@ is_builtin_predicate(Name/Arity) :-
     member(Name/Arity, [
         % term unification
         '='/2,
+        '\\='/2,
         % arithmetic evaluation
         is/2,
         % type testing
@@ -62,6 +63,16 @@ eval_builtin_predicate('='/2, state(_, Subs), selected(ExprVar, TD, Term), state
     apply(ExprVar, SubsUnification, ExprSubs),
     compose(Subs, SubsUnification, Subs_).
 
+%%% '\='/2
+%%% '\='(@term, @term)
+%%%
+%%% Not unification.
+%%% X \= Y is true if and only if X and Y are not unifiable.
+eval_builtin_predicate('\\='/2, state(_, Subs), selected(ExprVar, top, Term), state(ExprVar, Subs)) :-
+    Term = term('\\=', [X,Y]),
+    lattice_call_bot(Bot),
+    (wmgu(X, Y, state(TD,_)) -> TD == Bot ; true).
+
 
 
 %% ARITHMETIC EVALUATION
@@ -78,7 +89,7 @@ eval_builtin_predicate(is/2, state(_, Subs), selected(ExprVar, Var, Atom), state
         (arithmetic_evaluation(Expression, Result), Var = term('=', [Variable, Result])),
         Error,
         (Error = type(Type, From) ->
-            (type_error(Type, From, is/2, Exception), throw(Exception)) ;
+            (from_prolog(From, From_), type_error(Type, From_, is/2, Exception), throw(Exception)) ;
             (Error = evaluation(Cause) ->
                 (evaluation_error(Cause, is/2, Exception), throw(Exception)) ;
                 (instantiation_error(is/2, Exception), throw(Exception))

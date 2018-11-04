@@ -52,6 +52,7 @@ current_op(1100, xfy, '|',    yes).
 current_op(1100, xfy, '|',    no).
 current_op(1050, xfy, '&',    yes).
 current_op(1050, xfy, '&',    no).
+current_op(1050, xfy, ',',    no).
 current_op(700,  xfx, 'is',   no).
 current_op(700,  xfx, '=',    no).
 current_op(700,  xfx, '\\=',  no).
@@ -192,11 +193,11 @@ letter(X) --> number(X).
 letter('_') --> ['_'].
 
 % Graphics
-token_graphics(T) --> graphics(G), {atom_chars(T,G)}.
+token_graphics(T) --> graphic(H), graphics(G), {atom_chars(T,[H|G])}.
 
 graphics([H|T]) --> graphic(H), !, graphics(T).
 graphics([]) --> [].
-graphic(X) --> [X], {member(X,['#','$','&','*','+','-','/',':','<','?','@','^','~','\\'])}.
+graphic(X) --> [X], {member(X,[',',';','#','$','&','*','+','-','/',':','<','?','@','^','~','\\'])}.
 
 % Variables
 token_variable(T) --> mayus(X), identifier(Xs), {atom_chars(T,[X|Xs])}.
@@ -244,9 +245,10 @@ token_atom(T) --> token_minus_identifier(T).
 
 quoted(X) --> quote, quote_content(X), quote.
 quote --> [''''].
-quote_content([X|Xs]) --> [X], {X \= ''''}, quote_content(Xs).
-quote_content(['''']) --> ['''',''''].
-quote_content(['''']) --> ['\\',''''].
+quote_content([X|Xs]) --> [X], {X \= ''''}, !, quote_content(Xs).
+quote_content(['''']) --> ['''',''''], !.
+quote_content(['''']) --> ['\\',''''], !.
+quote_content([]) --> [].
 
 % Proper symbols
 lparen --> ['('].

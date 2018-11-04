@@ -56,7 +56,7 @@
     [state(num(1.0), ['X'/term(abcd,[])])]
 ).
 
-% (real) <atom_concat(X, Y, abc),{}> -> [<1.0,{}>]
+% (real) <atom_concat(X, Y, abc),{}> -> [<1.0,{X/'',Y/abc}>, <1.0,{X/a,Y/bc}>,...]
 ?- test_builtin(1, '../../sample/lat/real.lat.pl',
     term(atom_concat,[var('X'), var('Y'), term(abc,[])]),
     [state(num(1.0),['X'/term('',[]),'Y'/term(abc,[])]),state(num(1.0),['X'/term(a,[]),'Y'/term(bc,[])]),state(num(1.0),['X'/term(ab,[]),'Y'/term(c,[])]),state(num(1.0),['X'/term(abc,[]),'Y'/term('',[])])]
