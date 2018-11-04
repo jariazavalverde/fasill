@@ -86,7 +86,11 @@ function fasill_run() {
 		"goal": goal.getValue(),
 		"limit": limit.getValue()
 	});
+	output.setValue("Running...");
 	post("php/run.php", data, function(data) {
+		data = data.trim();
+		if(data === "")
+			data = "uncaught exception: unknown"
 		output.setValue(data.trim());
 	});
 }

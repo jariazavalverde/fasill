@@ -23,20 +23,20 @@ def gen(path, name, fun):
 				predicate = None
 				template = None
 				description = ""
-	doc = "\n".join(map(fun, array))
-	out = open(name, "w")
+	doc = "\n".join(map(lambda x: fun(name, x), array))
+	out = open("../www/pages/src-doc/" + name + ".php", "w")
 	out.write(doc)
 	out.close()
 
-def html(x):
+def html(module, x):
 	(predicate, template, description) = x
-	html = "<div class=\"container\">"
-	html += "<h4>" + predicate + "</h4>"
-	html += "<pre><code>" + template + "</code></pre>"
-	html += "<p>" + description + "</p>"
+	html = "<div class=\"container py-2 px-0\">"
+	html += "<h4 id=\"" + predicate + "\"><a href=\"/fasill/documentation/" + module + "#" + predicate + "\">" + predicate + "</a></h4>"
+	html += "<?php echo show_template(\"" + template + "\"); ?>"
+	html += "<p><?php echo show_description(\"" + description + "\"); ?></p>"
 	html += "</div>"
 	return html
 
 for f in listdir("../src/"):
 	f = f.replace(".pl", "")
-	gen("../src/" + f + ".pl", f + ".html", html)
+	gen("../src/" + f + ".pl", f, html)
