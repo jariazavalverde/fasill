@@ -211,15 +211,15 @@ lattice_call_member(Member) :-
 % of evaluate the connective ?Name with the arguments
 % +Arguments of the lattice loaded into the environment.
 lattice_call_connective('&', Args, Result) :- !,
-    (lattice_tnorm(Tnorm) ;
+    (lattice_tnorm(Name) ;
     current_predicate(Tnorm/3),
-    sub_atom(Tnorm, 0, 4, _, and_)), !,
-    lattice_call_connective(Tnorm, Args, Result).
+    atom_concat(and_, Name, Tnorm)), !,
+    lattice_call_connective('&'(Name), Args, Result).
 lattice_call_connective('|', Args, Result) :- !,
-    (lattice_tnorm(Tconorm) ;
+    (lattice_tnorm(Name) ;
     current_predicate(Tconorm/3),
-    sub_atom(Tconorm, 0, 3, _, or_)), !,
-    lattice_call_connective(Tconorm, Args, Result).
+    atom_concat(or_, Name, Tconorm)), !,
+    lattice_call_connective('|'(Name), Args, Result).
 lattice_call_connective(Op, Args, Result) :-
     Op =.. [Type,Name],
     (   Type = '&', Pre = 'and_' ;
