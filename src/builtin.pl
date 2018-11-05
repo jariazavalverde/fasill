@@ -101,7 +101,7 @@ eval_builtin_predicate(catch/3, state(_, Subs), selected(ExprVar, Goal_, Term), 
     Term = term(catch, [Goal, Catcher, Handler]),
     derivation(catch/3, state(Goal,Subs), State, _),
     ( State = state(Goal_,Subs_) -> true ; (
-        State = exception(Exception),
+        State = exception(Exception), !,
         lattice_call_bot(Bot),
         ((wmgu(Catcher, Exception, state(TD,_)), TD \= Bot) ->
             Goal_ = term('&',[term('=',[Catcher,Exception]),Handler]), Subs_ = Subs ;
