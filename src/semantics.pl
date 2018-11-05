@@ -102,7 +102,11 @@ interpretable(Expr) :- \+select_atom(Expr, _, _, _).
 % This predicate succeeds when ?Answer is a fuzzy computed
 % answer (fca) for the goal +Goal. A fca is a term of the
 % form state(TD, Substitution), where TD is the truth degree.
+:- dynamic(check_success/0).
+:- dynamic(check_cut/0).
 query(Goal, Answer) :-
+    retractall(check_success),
+    retractall(check_cut),
     get_variables(Goal, Vars),
     derivation(top_level/0, state(Goal, Vars), Answer, _).
 
@@ -131,6 +135,7 @@ get_variables2(_,[]).
 derivation(_, exception(Error), exception(Error), []) :- !.
 derivation(From, State, State_, [X|Xs]) :-
     catch(inference(From, State, State1, X), Error, (State1 = exception(Error), !)),
+    (check_cut -> retractall(check_cut), ! ; true),
     derivation(X, State1, State_, Xs).
 derivation(_, state(Goal,Subs), state(Goal,Subs), []) :-
     lattice_call_member(Goal).
@@ -151,7 +156,6 @@ inference(_, state(Goal,Subs), State_, Info) :- interpretable(Goal), interpretiv
 % This predicate performs an admissible step from the
 % state +State1 to the state ?State2. ?Info is an atom
 % containg information about the rule used in the derivation.
-:- dynamic(check_success/0).
 admissible_step(From, State1, State2, Info) :-
     assertz(check_success),
     success_step(From, State1, State2, Info),
@@ -175,7 +179,8 @@ success_step(From, state(Goal,Subs), state(Goal_,Subs_), Info) :-
     % Builtin predicate
     (is_builtin_predicate(Name/Arity) -> (
         eval_builtin_predicate(Name/Arity, state(Goal,Subs), selected(ExprVar, Var, Expr), state(Goal_,Subs_)),
-        Info = Name/Arity
+        Info = Name/Arity,
+        (Name/Arity = '!'/0 -> assertz(check_cut) ; true)
     ) ; (
         % User-defined predicate
         (program_has_predicate(Name/Arity) -> (

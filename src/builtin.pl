@@ -23,6 +23,8 @@ is_builtin_predicate(Name/Arity) :-
         ';'/2,
         throw/1,
         catch/3,
+        top/0,
+        bot/0,
         % term unification
         '='/2,
         '\\='/2,
@@ -107,6 +109,20 @@ eval_builtin_predicate(catch/3, state(_, Subs), selected(ExprVar, Goal_, Term), 
             Goal_ = term('&',[term('=',[Catcher,Exception]),Handler]), Subs_ = Subs ;
             throw_exception(Exception))
     )).
+
+%%% top/0
+%%% top
+%%%
+%%% True.
+%%% top is always true with the maximum truth degree of the lattice.
+eval_builtin_predicate(top/0, state(_, Subs), selected(ExprVar, top, _), state(ExprVar, Subs)).
+
+%%% bot/0
+%%% bot
+%%%
+%%% Fail.
+%%% bot is always true with the minimum truth degree of the lattice.
+eval_builtin_predicate(bot/0, state(_, Subs), selected(ExprVar, bot, _), state(ExprVar, Subs)).
 
 
 

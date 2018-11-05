@@ -240,6 +240,7 @@ double_quote_content(['"']) --> ['"','"'].
 double_quote_content(['"']) --> ['\\','"'].
 
 % Atoms
+token_atom('!') --> ['!'].
 token_atom(T) --> quoted(Xs), {atom_chars(T,Xs)}.
 token_atom(T) --> token_graphics(T).
 token_atom(T) --> token_minus_identifier(T).
