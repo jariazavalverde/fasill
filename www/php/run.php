@@ -4,7 +4,7 @@ $fpl = $_POST['program'];
 $lat = $_POST['lattice'];
 $sim = $_POST['sim'];
 $limit = $_POST['limit'];
-$goal = $_POST['goal'];
+$goal = addslashes($_POST['goal']);
 
 $ran = rand(1000, 9999);
 

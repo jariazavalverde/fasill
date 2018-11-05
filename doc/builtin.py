@@ -25,7 +25,7 @@ def gen(path, fun):
 						description += line[3:]
 					empty = True
 			else:
-				if cat is not None and predicate is not None:
+				if cat is not None and short is not None and predicate is not None:
 					predicate = predicate.replace("\n","")
 					short = short.replace("\n","")
 					templates = map(lambda x: x.replace("\n",""), templates)

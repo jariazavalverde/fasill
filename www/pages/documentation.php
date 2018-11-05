@@ -21,7 +21,7 @@ foreach( scandir("pages/ref-doc") as $f ) {
 foreach( scandir("pages/src-doc") as $f ) {
 	if( $f != "." && $f != "..") {
 		$name = str_replace(".php", "", $f);
-		echo "<li><a href=\"documentation/src/$name\">$name module</a></li>";
+		echo "<li><a href=\"documentation/src/$name\">$name.pl</a></li>";
 	}
 }
 ?>

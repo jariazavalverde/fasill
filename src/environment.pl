@@ -8,6 +8,8 @@
     fasill_number/1,
     fasill_term/1,
     fasill_var/1,
+    fasill_callable/1,
+    fasill_list/1,
     program_clause/2,
     program_rule_id/2,
     program_consult/1,
@@ -18,6 +20,7 @@
     lattice_call_top/1,
     lattice_call_member/1,
     lattice_call_connective/3,
+    lattice_reduce_connective/3,
     lattice_consult/1,
     similarity_tnorm/1,
     similarity_between/4,
@@ -128,6 +131,20 @@ fasill_term(term(_,_)).
 %
 % This predicate succeeds when +Term is a FASILL variable.
 fasill_var(var(_)).
+
+% fasill_callable/1
+% fasill_callable(+Term)
+%
+% This predicate succeeds when +Term is a callable term.
+fasill_callable(_).
+
+% fasill_list/1
+% fasill_list(+Term)
+%
+% This predicate succeeds when +Term is a list or variable.
+fasill_list(term([],[])) :- !.
+fasill_list(var(_)) :- !.
+fasill_list(term('.',[_,T])) :- fasill_list(T).
 
 
 
@@ -252,6 +269,17 @@ lattice_call_connective(Op, Args, Result) :-
     Call =.. [Name_|ArgsCall],
     call(environment:Call),
     from_prolog(Prolog, Result).
+
+% lattice_reduce_connective/3
+% lattice_reduce_connective(+Name, +TDs, ?Result)
+%
+% This predicate succeeds when ?Result is the resulting value of
+% reducing a list of truth degrees +TDs applying the connective
+% +Name loaded in the lattice in the current environment.
+lattice_reduce_connective(_, [], Top) :- lattice_call_top(Top).
+lattice_reduce_connective(Op, [H|T], Result) :-
+    lattice_reduce_connective(Op, T, Result_),
+    lattice_call_connective(Op, [H,Result_], Result).
 
 % lattice_consult/1
 % lattice_consult(+Path)
