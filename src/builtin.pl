@@ -21,6 +21,7 @@ is_builtin_predicate(Name/Arity) :-
         % control constructs
         ','/2,
         ';'/2,
+        throw/1,
         % term unification
         '='/2,
         '\\='/2,
@@ -71,6 +72,18 @@ eval_builtin_predicate(','/2, state(_, Subs), selected(ExprVar, Var, Term), stat
 eval_builtin_predicate(';'/2, state(_, Subs), selected(ExprVar, Var, Term), state(ExprVar, Subs)) :-
     Term = term(';', [X,Y]),
     (Var = X ; Var = Y).
+
+%%% throw/1
+%%% throw( +term )
+%%%
+%%% Raise an exception.
+%%% throw(Exception) raise the Exception exception. The system looks for
+%%% the innermost catch/3 ancestor for which Exception unifies with the
+%%% Catcher argument of the catch/3 call.
+eval_builtin_predicate(throw/1, _, selected(_, _, Term), _) :-
+    Term = term(throw, [Exception]),
+    (fasill_var(Exception) -> instantiation_error(throw/1, Error), throw_exception(Error) ;
+        throw_exception(Exception)).
 
 
 

@@ -16,7 +16,7 @@
 % throw_exception(+Exception)
 %
 % This predicate throws the exception +Exception.
-throw_exception(Exception) :- throw(Exception).
+throw_exception(Exception) :- retractall(semantics:check_success), throw(Exception).
 
 
 
