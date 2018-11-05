@@ -25,6 +25,7 @@ is_builtin_predicate(Name/Arity) :-
         catch/3,
         top/0,
         bot/0,
+        truth_degree/2,
         % all solutions
         findall/3,
         findall/4,
@@ -126,6 +127,17 @@ eval_builtin_predicate(top/0, state(_, Subs), selected(ExprVar, top, _), state(E
 %%% Fail.
 %%% bot is always true with the minimum truth degree of the lattice.
 eval_builtin_predicate(bot/0, state(_, Subs), selected(ExprVar, bot, _), state(ExprVar, Subs)).
+
+%%% truth_degree/2
+%%% truth_degree( +callable_tem, ?term )
+%%%
+%%% Truth degree.
+%%% truth_degree(Goal, TD) is true if TD is the truth degree for the 
+%%% goal Goal.
+eval_builtin_predicate(truth_degree/2, state(_, Subs), selected(ExprVar, Var, Term), state(ExprVar, Subs_)) :-
+    Term = term(truth_degree, [Goal,TD]),
+    derivation(truth_degree/2, state(Goal,Subs), state(TD_,Subs_), _),
+    Var = term('=',[TD,TD_]).
 
 
 
