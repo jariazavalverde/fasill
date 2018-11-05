@@ -10,6 +10,7 @@
     fasill_var/1,
     fasill_callable/1,
     fasill_list/1,
+    fasill_connective/1,
     program_clause/2,
     program_rule_id/2,
     program_consult/1,
@@ -146,6 +147,14 @@ fasill_list(term([],[])) :- !.
 fasill_list(var(_)) :- !.
 fasill_list(term('.',[_,T])) :- fasill_list(T).
 
+% fasill_connective/1
+% fasill_connective(+Term)
+%
+% This predicate succeeds when +Term is a connective.
+fasill_connective(term(Type,Arg)) :-
+    (Type = '&' ; Type = '|' ; Type = '@'),
+    (Arg = [] ; Arg = [_]).
+
 
 
 % RULES MANIPULATION
@@ -276,10 +285,11 @@ lattice_call_connective(Op, Args, Result) :-
 % This predicate succeeds when ?Result is the resulting value of
 % reducing a list of truth degrees +TDs applying the connective
 % +Name loaded in the lattice in the current environment.
-lattice_reduce_connective(_, [], Top) :- lattice_call_top(Top).
+lattice_reduce_connective(_, [X], X) :- !.
 lattice_reduce_connective(Op, [H|T], Result) :-
-    lattice_reduce_connective(Op, T, Result_),
+    !, lattice_reduce_connective(Op, T, Result_),
     lattice_call_connective(Op, [H,Result_], Result).
+lattice_reduce_connective(_, [], Bot) :- lattice_call_bot(Bot).
 
 % lattice_consult/1
 % lattice_consult(+Path)

@@ -27,6 +27,7 @@ is_builtin_predicate(Name/Arity) :-
         bot/0,
         % all solutions
         findall/3,
+        findall/4,
         % term unification
         '='/2,
         '\\='/2,
@@ -140,10 +141,23 @@ eval_builtin_predicate(bot/0, state(_, Subs), selected(ExprVar, bot, _), state(E
 %%% Instances is filled with the values that make Goal succeed. If there is
 %%% not a single value that make Goal unify, Instances will be an empty list.
 eval_builtin_predicate(findall/3, state(_, Subs), selected(ExprVar, Var, Term), state(ExprVar, Subs)) :-
-    Term = term(findall, [Template, Goal, Instances]),
-    ( fasill_var(Goal) -> instantiation_error(findall/3, Error), throw_exception(Error) ;
-        ( \+fasill_callable(Goal) -> type_error(callable, Goal, findall/3, Error), throw_exception(Error) ;
-            (\+fasill_var(Instances), \+fasill_list(Instances) -> type_error(list, Instances, findall/3, Error), throw_exception(Error) ;
+    Term = term(findall, Args),
+    Var = term(findall, [term('&',[])|Args]).
+
+%%% findall/4
+%%% findall( +term, ?term, +callable_term, ?list )
+%%%
+%%% Find all the values that would make a goal succeed.
+%%% findall(Connective, Template, Goal, Instances) is true if and only if
+%%% Instances is a list of values in the form Templates that would make the 
+%%% goal Goal succeed. Usually, Template and Goal share some variables, so
+%%% Instances is filled with the values that make Goal succeed. If there is
+%%% not a single value that make Goal unify, Instances will be an empty list.
+eval_builtin_predicate(findall/4, state(_, Subs), selected(ExprVar, Var, Term), state(ExprVar, Subs)) :-
+    Term = term(findall, [Op, Template, Goal, Instances]),
+    ( fasill_var(Goal) -> instantiation_error(findall/4, Error), throw_exception(Error) ;
+        ( \+fasill_callable(Goal) -> type_error(callable, Goal, findall/4, Error), throw_exception(Error) ;
+            (\+fasill_var(Instances), \+fasill_list(Instances) -> type_error(list, Instances, findall/4, Error), throw_exception(Error) ;
                 V = var(var),
                 lattice_call_bot(Bot),
                 FindGoal = term('&', [Goal, term('=',[V,Template])]),
@@ -156,8 +170,9 @@ eval_builtin_predicate(findall/3, state(_, Subs), selected(ExprVar, Var, Term), 
                 maplist(nth0(1), List, Bodies),
                 maplist(to_prolog, Bodies, Bodies_),
                 from_prolog(Bodies_, Result),
-                lattice_reduce_connective('&', TDs, TD),
-                Var = term('&', [TD, term('=',[Instances, Result])])
+                to_prolog(Op, Op_),
+                lattice_reduce_connective(Op_, TDs, TD),
+                Var = term(Op_, [TD, term('=',[Instances, Result])])
             )
         )
     ).
