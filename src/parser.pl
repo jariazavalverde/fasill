@@ -146,20 +146,20 @@ parse_expr2(Priority, Left, T) -->
     parse_expr2(Priority, term(Op, [Left,Right]), T).
 parse_expr2(_, T, T) --> [].
 
-parse_expr_zero(num(T)) --> token_number(T).
-parse_expr_zero(str(T)) --> token_string(T).
-parse_expr_zero(var(T)) --> token_variable(T).
-parse_expr_zero(T) --> lparen, parse_expr(1300, T), rparen.
-parse_expr_zero(T) --> parse_list(T).
-parse_expr_zero(T) --> parse_term(T).
-parse_expr_zero(T) --> parse_agr(T).
+parse_expr_zero(num(T)) --> token_number(T), !.
+parse_expr_zero(str(T)) --> token_string(T), !.
+parse_expr_zero(var(T)) --> token_variable(T), !.
+parse_expr_zero(T) --> lparen, !, parse_expr(1300, T), rparen.
+parse_expr_zero(T) --> parse_list(T), !.
+parse_expr_zero(T) --> parse_term(T), !.
+parse_expr_zero(T) --> parse_agr(T), !.
 
 % parse_term/3
 % parse a (possible compound) term
 parse_term(term(Name, Args)) --> token_atom(Name), parse_term2(Args).
-parse_term2([H|T]) --> lparen, !, parse_expr(999, H), parse_term3(T).
+parse_term2([H|T]) --> lparen, blanks, !, parse_expr(999, H), parse_term3(T).
 parse_term2([]) --> [].
-parse_term3([H|T]) --> comma, !, parse_expr(999, H), parse_term3(T).
+parse_term3([H|T]) --> comma, blanks, !, parse_expr(999, H), parse_term3(T).
 parse_term3([]) --> rparen.
 
 % parse_agr/3
