@@ -1,3 +1,5 @@
+![FASILL](logo/colorx2048.png)
+
 # FASILL
 
 ## Fuzzy Aggregators and Similarities Into a Logic Language
