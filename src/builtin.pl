@@ -170,13 +170,11 @@ eval_builtin_predicate(findall/4, state(_, Subs), selected(ExprVar, Var, Term), 
     ( fasill_var(Goal) -> instantiation_error(findall/4, Error), throw_exception(Error) ;
         ( \+fasill_callable(Goal) -> type_error(callable, Goal, findall/4, Error), throw_exception(Error) ;
             (\+fasill_var(Instances), \+fasill_list(Instances) -> type_error(list, Instances, findall/4, Error), throw_exception(Error) ;
-                V = var(var),
                 lattice_call_bot(Bot),
-                FindGoal = term('&', [Goal, term('=',[V,Template])]),
-                findall([TD,M], (
-                    query(FindGoal, state(TD,S)),
+                findall([TD,Template_], (
+                    query(Goal, state(TD,Subs_)),
                     TD \= Bot,
-                    member(var/M, S)
+                    apply(Template, Subs_, Template_)
                 ), List),
                 maplist(nth0(0), List, TDs),
                 maplist(nth0(1), List, Bodies),
