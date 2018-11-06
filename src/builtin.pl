@@ -33,6 +33,7 @@ is_builtin_predicate(Name/Arity) :-
         '='/2,
         '~'/2,
         '\\='/2,
+        '\\~'/2,
         % arithmetic evaluation
         is/2,
         % type testing
@@ -111,7 +112,7 @@ eval_builtin_predicate(catch/3, state(_, Subs), selected(ExprVar, Goal_, Term), 
         State = exception(Exception), !,
         lattice_call_bot(Bot),
         ((wmgu(Catcher, Exception, state(TD,_)), TD \= Bot) ->
-            Goal_ = term('&',[term('=',[Catcher,Exception]),Handler]), Subs_ = Subs ;
+            Goal_ = term('&',[term('~',[Catcher,Exception]),Handler]), Subs_ = Subs ;
             throw_exception(Exception))
     )).
 
@@ -138,7 +139,7 @@ eval_builtin_predicate(bot/0, state(_, Subs), selected(ExprVar, bot, _), state(E
 eval_builtin_predicate(truth_degree/2, state(_, Subs), selected(ExprVar, Var, Term), state(ExprVar, Subs_)) :-
     Term = term(truth_degree, [Goal,TD]),
     derivation(truth_degree/2, state(Goal,Subs), State, _),
-    (State = state(TD_,Subs_) -> Var = term('=',[TD,TD_]) ; State = exception(Error), throw_exception(Error)).
+    (State = state(TD_,Subs_) -> Var = term('~',[TD,TD_]) ; State = exception(Error), throw_exception(Error)).
 
 
 
@@ -183,7 +184,7 @@ eval_builtin_predicate(findall/4, state(_, Subs), selected(ExprVar, Var, Term), 
                 from_prolog_list(Bodies, Result),
                 to_prolog(Op, Op_),
                 lattice_reduce_connective(Op_, TDs, TD),
-                Var = term(Op_, [TD, term('=',[Instances, Result])])
+                Var = term(Op_, [TD, term('~',[Instances, Result])])
             )
         )
     ).
@@ -216,6 +217,16 @@ eval_builtin_predicate('='/2, state(_, Subs), selected(ExprVar, top, Term), stat
     apply(ExprVar, SubsUnification, ExprSubs),
     compose(Subs, SubsUnification, Subs_).
 
+%%% '\~'/2
+%%% '\~'(@term, @term)
+%%%
+%%% Not weak unification.
+%%% X \~ Y is true if and only if X and Y are not weakly unifiable.
+eval_builtin_predicate('\\~'/2, state(_, Subs), selected(ExprVar, top, Term), state(ExprVar, Subs)) :-
+    Term = term('\\~', [X,Y]),
+    lattice_call_bot(Bot),
+    (wmgu(X, Y, state(TD,_)) -> TD == Bot ; true).
+
 %%% '\='/2
 %%% '\='(@term, @term)
 %%%
@@ -223,8 +234,7 @@ eval_builtin_predicate('='/2, state(_, Subs), selected(ExprVar, top, Term), stat
 %%% X \= Y is true if and only if X and Y are not unifiable.
 eval_builtin_predicate('\\='/2, state(_, Subs), selected(ExprVar, top, Term), state(ExprVar, Subs)) :-
     Term = term('\\=', [X,Y]),
-    lattice_call_bot(Bot),
-    (wmgu(X, Y, state(TD,_)) -> TD == Bot ; true).
+    \+mgu(X, Y, _).
 
 
 
@@ -239,7 +249,7 @@ eval_builtin_predicate('\\='/2, state(_, Subs), selected(ExprVar, top, Term), st
 eval_builtin_predicate(is/2, state(_, Subs), selected(ExprVar, Var, Atom), state(ExprVar, Subs)) :-
     Atom = term(is, [Variable, Expression]),
     catch(
-        (arithmetic_evaluation(Expression, Result), Var = term('=', [Variable, Result])),
+        (arithmetic_evaluation(Expression, Result), Var = term('~', [Variable, Result])),
         Error,
         (Error = type(Type, From) ->
             (from_prolog(From, From_), type_error(Type, From_, is/2, Exception), throw(Exception)) ;
@@ -333,7 +343,7 @@ eval_builtin_predicate(atom_length/2, state(_, Subs), selected(ExprVar, Var, Ter
                 to_prolog(Atom, X), to_prolog(Length, Y),
                 atom_length(X,Y),
                 from_prolog(X, Fx), from_prolog(Y, Fy),
-                Var = term('&', [term('=',[Atom, Fx]), term('=',[Length, Fy])])
+                Var = term('&', [term('~',[Atom, Fx]), term('~',[Length, Fy])])
             )
         )
     ).
@@ -357,7 +367,7 @@ eval_builtin_predicate(atom_concat/3, state(_, Subs), selected(ExprVar, Var, Ato
                         to_prolog(Start, X), to_prolog(End, Y), to_prolog(Whole, Z),
                         atom_concat(X,Y,Z),
                         from_prolog(X, Fx), from_prolog(Y, Fy), from_prolog(Z, Fz),
-                        Var = term('&', [term('=',[Start,Fx]), term('&',[term('=',[End,Fy]),term('=',[Whole,Fz])])])
+                        Var = term('&', [term('~',[Start,Fx]), term('&',[term('~',[End,Fy]),term('~',[Whole,Fz])])])
                     )
                 )
             )
