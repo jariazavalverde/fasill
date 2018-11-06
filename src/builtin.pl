@@ -136,8 +136,8 @@ eval_builtin_predicate(bot/0, state(_, Subs), selected(ExprVar, bot, _), state(E
 %%% goal Goal.
 eval_builtin_predicate(truth_degree/2, state(_, Subs), selected(ExprVar, Var, Term), state(ExprVar, Subs_)) :-
     Term = term(truth_degree, [Goal,TD]),
-    derivation(truth_degree/2, state(Goal,Subs), state(TD_,Subs_), _),
-    Var = term('=',[TD,TD_]).
+    derivation(truth_degree/2, state(Goal,Subs), State, _),
+    (State = state(TD_,Subs_) -> Var = term('=',[TD,TD_]) ; State = exception(Error), throw_exception(Error)).
 
 
 
@@ -172,9 +172,10 @@ eval_builtin_predicate(findall/4, state(_, Subs), selected(ExprVar, Var, Term), 
             (\+fasill_var(Instances), \+fasill_list(Instances) -> type_error(list, Instances, findall/4, Error), throw_exception(Error) ;
                 lattice_call_bot(Bot),
                 findall([TD,Template_], (
-                    query(Goal, state(TD,Subs_)),
-                    TD \= Bot,
-                    apply(Template, Subs_, Template_)
+                    query(Goal, State),
+                    (State = state(TD,Subs_) -> TD \= Bot, apply(Template, Subs_, Template_) ;
+                        State = exception(Error), throw_exception(Error)
+                    )
                 ), List),
                 maplist(nth0(0), List, TDs),
                 maplist(nth0(1), List, Bodies),
