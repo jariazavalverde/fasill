@@ -275,12 +275,9 @@ compose([X/Y|T], Subs, [X/Z|S]) :- apply(Y, Subs, Z), compose(T, Subs, S).
 % the expression +ExpressionIn. ?ExpressionOut is the resulting
 % expression.
 apply(term(T,Args), Subs, term(T,Args_)) :- !, apply(Args, Subs, Args_).
-apply(var(X), X/Y, Y) :- !. 
-apply([], _, []) :- !.
-apply([H|T], Subs, [H_|T_]) :- !, apply(H, Subs, H_), apply(T, Subs, T_).
-apply(Expr, [], Expr) :- !.
-apply(Expr, [H|T], Expr_) :- !, apply(Expr, H, ExprH), apply(ExprH, T, Expr_).
-apply(Expr, _/_, Expr) :- !.
+apply(var(X), Subs, Y) :- !, (member(X/Y, Subs) -> true ; Y = var(X)).
+apply([X|Xs], Subs, [Y|Ys]) :- !, apply(X, Subs, Y), apply(Xs, Subs, Ys).
+apply(X, _, X).
 
 % arithmetic_evaluation/2
 % arithmetic_evaluation(+Expression, ?Result)

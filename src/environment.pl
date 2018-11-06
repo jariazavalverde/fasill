@@ -2,6 +2,7 @@
     set_max_inferences/1,
     to_prolog/2,
     from_prolog/2,
+    from_prolog_list/2,
     fasill_atom/1,
     fasill_float/1,
     fasill_integer/1,
@@ -96,6 +97,14 @@ from_prolog(X, term(H,Args)) :-
     compound(X), !,
     X =.. [H|T],
     maplist(from_prolog, T, Args).
+
+% from_prolog_list/2
+% from_prolog_list(+Prolog, ?FASILL)
+%
+% This predicate takes the Prolog list +Prolog
+% and returns the list ?FASILL in FASILL notation.
+from_prolog_list([], term([], [])).
+from_prolog_list([H|T], term('.',[H,S])) :- from_prolog_list(T, S).
 
 % fasill_number/1
 % fasill_number(+Term)
