@@ -56,6 +56,7 @@ current_op(1050, xfy, '&',    no).
 current_op(1050, xfy, ',',    no).
 current_op(700,  xfx, 'is',   no).
 current_op(700,  xfx, '=',    no).
+current_op(700,  xfx, '~',    no).
 current_op(700,  xfx, '\\=',  no).
 current_op(500,  yfx, '+',    no).
 current_op(500,  yfx, '-',    no).

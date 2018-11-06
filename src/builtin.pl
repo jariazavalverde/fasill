@@ -31,6 +31,7 @@ is_builtin_predicate(Name/Arity) :-
         findall/4,
         % term unification
         '='/2,
+        '~'/2,
         '\\='/2,
         % arithmetic evaluation
         is/2,
@@ -191,15 +192,27 @@ eval_builtin_predicate(findall/4, state(_, Subs), selected(ExprVar, Var, Term), 
 
 %% TERM UNIFICATION
 
+%%% '~'/2
+%%% '~'(@term, @term)
+%%%
+%%% Weak unification.
+%%% X ~ Y is true if and only if X and Y are weakly unifiable.
+%%% True if the weak unification succeeds.
+eval_builtin_predicate('~'/2, state(_, Subs), selected(ExprVar, TD, Term), state(ExprSubs, Subs_)) :-
+    Term = term('~', [X,Y]),
+    wmgu(X, Y, state(TD, SubsUnification)),
+    apply(ExprVar, SubsUnification, ExprSubs),
+    compose(Subs, SubsUnification, Subs_).
+
 %%% '='/2
 %%% '='(@term, @term)
 %%%
-%%% Weak unification.
+%%% Unification.
 %%% X = Y is true if and only if X and Y are unifiable.
 %%% True if the unification succeeds.
-eval_builtin_predicate('='/2, state(_, Subs), selected(ExprVar, TD, Term), state(ExprSubs, Subs_)) :-
+eval_builtin_predicate('='/2, state(_, Subs), selected(ExprVar, top, Term), state(ExprSubs, Subs_)) :-
     Term = term('=', [X,Y]),
-    wmgu(X, Y, state(TD, SubsUnification)),
+    mgu(X, Y, SubsUnification),
     apply(ExprVar, SubsUnification, ExprSubs),
     compose(Subs, SubsUnification, Subs_).
 

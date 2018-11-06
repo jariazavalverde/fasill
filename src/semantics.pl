@@ -1,5 +1,6 @@
 :- module(semantics, [
     wmgu/3,
+    mgu/3,
     query/2,
     derivation/4,
     inference/4,
@@ -53,6 +54,38 @@ wmgu([], [], State, State) :- !.
 wmgu([X|Xs], [Y|Ys], State, State_) :- !,
     wmgu(X, Y, State, StateXY),
     wmgu(Xs, Ys, StateXY, State_).
+
+
+% mgu/3
+% mgu(+ExpressionA, +ExpressionB, ?MGU)
+%
+% This predicate returns the most general unifier (mgu)
+% ?MGU of the expressions +ExpressionA and +ExpressionB.
+mgu(ExprA, ExprB, Subs) :-
+    mgu(ExprA, ExprB, [], Subs).
+%%% var with expression
+mgu(var(X), Y, Subs, Subs_) :-
+    member(X/Z, Subs), !,
+    mgu(Z, Y, Subs, Subs_).
+mgu(var(X), Y, Subs, [X/Y|Subs]) :- !.
+%%% expression with var
+mgu(X, var(Y), Subs, Subs_) :- !, mgu(var(Y), X, Subs, Subs_).
+%%% num with num
+mgu(num(X), num(X), Subs, Subs) :- !.
+%%% term with term
+mgu(term(X,Xs), term(X,Ys), Subs, Subs_) :- !,
+    length(Xs, Length),
+    length(Ys, Length),
+    mgu(Xs, Ys, Subs, Subs_).
+mgu(term(X,Xs), term(X,Ys), Subs, Subs_) :- !,
+    length(Xs, Length),
+    length(Ys, Length),
+    mgu(Xs, Ys, Subs, Subs_).
+%%% arguments
+mgu([], [], Subs, Subs) :- !.
+mgu([X|Xs], [Y|Ys], Subs1, Subs3) :- !,
+    mgu(X, Y, Subs1, Subs2),
+    mgu(Xs, Ys, Subs2, Subs3).
 
 
 
