@@ -221,14 +221,20 @@ program_has_predicate(Name/Arity) :-
 %
 % This predicate succeeds when ?Tnorm is the
 % current t-norm asserted in the environment.
-lattice_tnorm(Tnorm) :- tnorm(Tnorm).
+lattice_tnorm(Tnorm) :- catch(tnorm(Tnorm), _, fail), !.
+lattice_tnorm(Tnorm) :-
+    current_predicate(Name/3),
+    atom_concat(and_, Tnorm, Name), !.
 
 % lattice_tconorm/1
 % lattice_tconorm(?Tconorm)
 %
 % This predicate succeeds when ?Tconorm is the
 % current t-conorm asserted in the environment.
-lattice_tconorm(Tconorm) :- tconorm(Tconorm).
+lattice_tconorm(Tconorm) :- catch(tconorm(Tconorm), _, fail), !.
+lattice_tconorm(Tconorm) :-
+    current_predicate(Name/3),
+    atom_concat(or_, Tconorm, Name), !.
 
 % lattice_call_bot/1
 % lattice_call_bot(-Bot)
@@ -266,14 +272,10 @@ lattice_call_member(Member) :-
 % of evaluate the connective ?Name with the arguments
 % +Arguments of the lattice loaded into the environment.
 lattice_call_connective('&', Args, Result) :- !,
-    (lattice_tnorm(Name) ;
-    current_predicate(Tnorm/3),
-    atom_concat(and_, Name, Tnorm)), !,
+    lattice_tnorm(Name),
     lattice_call_connective('&'(Name), Args, Result).
 lattice_call_connective('|', Args, Result) :- !,
-    (lattice_tnorm(Name) ;
-    current_predicate(Tconorm/3),
-    atom_concat(or_, Name, Tconorm)), !,
+    lattice_tconorm(Name),
     lattice_call_connective('|'(Name), Args, Result).
 lattice_call_connective(Op, Args, Result) :-
     Op =.. [Type,Name],

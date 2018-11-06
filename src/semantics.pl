@@ -267,7 +267,6 @@ rename(X, X, Subs, Subs).
 compose([], _, []).
 compose([X/Y|T], Subs, [X/Z|S]) :- apply(Y, Subs, Z), compose(T, Subs, S).
 
-
 % apply/3
 % apply(+ExpressionIn, +Substitution, ?ExpressionOut)
 %
