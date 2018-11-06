@@ -157,9 +157,9 @@ parse_expr_zero(T) --> parse_agr(T), !.
 % parse_term/3
 % parse a (possible compound) term
 parse_term(term(Name, Args)) --> token_atom(Name), parse_term2(Args).
-parse_term2([H|T]) --> lparen, blanks, !, parse_expr(999, H), parse_term3(T).
+parse_term2([H|T]) --> lparen, !, parse_expr(999, H), parse_term3(T).
 parse_term2([]) --> [].
-parse_term3([H|T]) --> comma, blanks, !, parse_expr(999, H), parse_term3(T).
+parse_term3([H|T]) --> comma, !, parse_expr(999, H), parse_term3(T).
 parse_term3([]) --> rparen.
 
 % parse_agr/3
@@ -198,7 +198,7 @@ token_graphics(T) --> graphic(H), graphics(G), {atom_chars(T,[H|G])}.
 
 graphics([H|T]) --> graphic(H), !, graphics(T).
 graphics([]) --> [].
-graphic(X) --> [X], {member(X,[',',';','#','$','&','*','+','-','/',':','<','?','@','^','~','\\'])}.
+graphic(X) --> [X], {member(X,[',',';','#','$','&','*','+','-','/',':','<','?','^','~','\\'])}.
 
 % Variables
 token_variable(T) --> mayus(X), identifier(Xs), {atom_chars(T,[X|Xs])}.

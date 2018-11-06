@@ -30,11 +30,13 @@ web_write([X|Y]) :-
 web_write([X]) :-
     web_write(X).
 
-web_write_list(term([],[])).
-web_write_list(term('.',[X,Y])) :-
+web_write_list(term('[]',[])) :- !.
+web_write_list(term([],[])) :- !.
+web_write_list(term('.',[X,Y])) :- !,
     write(','), web_write(X), web_write_list(Y).
-web_write_list(list(term('.',[X,Y]))) :-
+web_write_list(list(term('.',[X,Y]))) :- !,
     write('['), web_write(X), web_write_list(Y), write(']').
+web_write_list(X) :- write('|'), web_write(X).
 
 % web_run/5
 % web_run(+Program, +Lattice, +Sim, +Goal, +Limit)
