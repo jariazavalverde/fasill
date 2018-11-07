@@ -34,6 +34,13 @@ is_builtin_predicate(Name/Arity) :-
         '~'/2,
         '\\='/2,
         '\\~'/2,
+        % term comparison
+        '=='/2,
+        '@<'/2,
+        '@>'/2,
+        '@=<'/2,
+        '@>='/2,
+        '\\=='/2,
         % arithmetic evaluation
         is/2,
         % type testing
@@ -235,6 +242,58 @@ eval_builtin_predicate('\\~'/2, state(_, Subs), selected(ExprVar, top, Term), st
 eval_builtin_predicate('\\='/2, state(_, Subs), selected(ExprVar, top, Term), state(ExprVar, Subs)) :-
     Term = term('\\=', [X,Y]),
     \+mgu(X, Y, _).
+
+
+
+%% TERM COMPARISON
+
+%%% '=='/2
+%%% '=='(@term, @term)
+%%%
+%%% Term identical.
+%%% True if the compared terms are identical.
+eval_builtin_predicate('=='/2, state(_, Subs), selected(ExprVar, top, Term), state(ExprVar, Subs)) :-
+    Term = term('==', [X,Y]), to_prolog(X, X_), to_prolog(Y, Y_), X_ == Y_.
+
+%%% '\=='/2
+%%% '\=='(@term, @term)
+%%%
+%%% Term not identical.
+%%% True if the compared terms are not identical.
+eval_builtin_predicate('\\=='/2, state(_, Subs), selected(ExprVar, top, Term), state(ExprVar, Subs)) :-
+    Term = term('\\==', [X,Y]), to_prolog(X, X_), to_prolog(Y, Y_), X_ \== Y_.
+
+%%% '@<'/2
+%%% '@<'(@term, @term)
+%%%
+%%% Term less than.
+%%% True if the first term is less than the second one.
+eval_builtin_predicate('@<'/2, state(_, Subs), selected(ExprVar, top, Term), state(ExprVar, Subs)) :-
+    Term = term('@<', [X,Y]), to_prolog(X, X_), to_prolog(Y, Y_), X_ @< Y_.
+
+%%% '@>'/2
+%%% '@>'(@term, @term)
+%%%
+%%% Term greater than.
+%%% True if the first term is greater than the second one.
+eval_builtin_predicate('@>'/2, state(_, Subs), selected(ExprVar, top, Term), state(ExprVar, Subs)) :-
+    Term = term('@>', [X,Y]), to_prolog(X, X_), to_prolog(Y, Y_), X_ @> Y_.
+
+%%% '@=<'/2
+%%% '@=<'(@term, @term)
+%%%
+%%% Term less than or equal to.
+%%% True if the first term is less than or equal to the second one.
+eval_builtin_predicate('@=<'/2, state(_, Subs), selected(ExprVar, top, Term), state(ExprVar, Subs)) :-
+    Term = term('@=<', [X,Y]), to_prolog(X, X_), to_prolog(Y, Y_), X_ @=< Y_.
+
+%%% '@>='/2
+%%% '@>='(@term, @term)
+%%%
+%%% Term greater than or equal to.
+%%% True if the first term is greater than or equal to the second one.
+eval_builtin_predicate('@>='/2, state(_, Subs), selected(ExprVar, top, Term), state(ExprVar, Subs)) :-
+    Term = term('@>=', [X,Y]), to_prolog(X, X_), to_prolog(Y, Y_), X_ @>= Y_.
 
 
 
