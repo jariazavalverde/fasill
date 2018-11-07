@@ -120,8 +120,9 @@ parse_rule(fasill_rule(head(Head), Body, [id(Id),Info])) -->
 % parse_operator/6
 % parse an operator T with Priority, Specifier and Name 
 parse_operator(Priority, Specifier, T, Name) -->
-    blanks, {current_op(Priority, Specifier, Op, Name), atom_chars(Op, Chars)}, Chars,
-    ({Name = yes}, token_minus_identifier(Identifier), {T =.. [Op, Identifier]} ; {Name = no, T = Op}).
+    blanks, token_atom(Op), {current_op(Priority, Specifier, Op, Name)},
+    ({Name = yes}, token_minus_identifier(Identifier), {T =.. [Op, Identifier]} ; 
+        {current_op(Priority, Specifier, Op, no), T = Op}).
 
 % next_priority/2
 % give the next priority to derivate an expression
@@ -213,7 +214,7 @@ token_graphics(T) --> graphic(H), graphics(G), {atom_chars(T,[H|G])}.
 
 graphics([H|T]) --> graphic(H), !, graphics(T).
 graphics([]) --> [].
-graphic(X) --> [X], {member(X,[',',';','#','$','&','*','+','-','/',':','<','?','^','~','\\'])}.
+graphic(X) --> [X], {member(X,[',',';','#','$','&','*','+','-','/',':','<','>','?','^','~','\\'])}.
 
 % Variables
 token_variable(T) --> mayus(X), identifier(Xs), {atom_chars(T,[X|Xs])}.
