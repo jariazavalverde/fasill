@@ -240,6 +240,7 @@ double_quote --> ['"'].
 double_quote_content(X) --> [X], {X \= '"'}.
 double_quote_content(['"']) --> ['"','"'].
 double_quote_content(['"']) --> ['\\','"'].
+double_quote_content(['\\']) --> ['\\','\\'].
 
 % Atoms
 token_atom('!') --> ['!'].
@@ -252,6 +253,7 @@ quote --> [''''].
 quote_content([X|Xs]) --> [X], {X \= ''''}, !, quote_content(Xs).
 quote_content(['''']) --> ['''',''''], !.
 quote_content(['''']) --> ['\\',''''], !.
+quote_content(['\\']) --> ['\\','\\'], !.
 quote_content([]) --> [].
 
 % Proper symbols

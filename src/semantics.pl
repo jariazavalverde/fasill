@@ -101,7 +101,7 @@ select_atom(term(Term, Args), term(Term, Args_), Var, Atom) :-
     ( (Term =.. [Op,_] ; Term =.. [Op]), member(Op, ['@','&','|']) ;
       member(Term, ['@','&','|']) ), !,
     select_atom(Args, Args_, Var, Atom).
-select_atom(term(Term, Args), Var, Var, term(Term, Args)).
+select_atom(term(Term, Args), Var, Var, term(Term, Args)) :- \+lattice_call_member(term(Term, Args)).
 select_atom([Term|Args], [Term_|Args], Var, Atom) :- select_atom(Term, Term_, Var, Atom), !.
 select_atom([Term|Args], [Term|Args_], Var, Atom) :- select_atom(Args, Args_, Var, Atom).
 
@@ -136,10 +136,8 @@ interpretable(Expr) :- \+select_atom(Expr, _, _, _).
 % answer (fca) for the goal +Goal. A fca is a term of the
 % form state(TD, Substitution), where TD is the truth degree.
 :- dynamic(check_success/0).
-:- dynamic(check_cut/0).
 query(Goal, Answer) :-
     retractall(check_success),
-    retractall(check_cut),
     get_variables(Goal, Vars),
     derivation(top_level/0, state(Goal, Vars), Answer, _).
 
@@ -166,12 +164,11 @@ get_variables2(_,[]).
 % using the program +Program. ?Info is a list containing
 % the information of each step.
 derivation(_, exception(Error), exception(Error), []) :- !.
+derivation(_, state(Goal,Subs), state(Goal,Subs), []) :-
+    lattice_call_member(Goal), !.
 derivation(From, State, State_, [X|Xs]) :-
     catch(inference(From, State, State1, X), Error, (State1 = exception(Error), !)),
-    (check_cut -> retractall(check_cut), ! ; true),
     derivation(X, State1, State_, Xs).
-derivation(_, state(Goal,Subs), state(Goal,Subs), []) :-
-    lattice_call_member(Goal).
 
 % inference/4
 % inference(+From, +State1, ?State2, ?Info)
@@ -181,7 +178,7 @@ derivation(_, state(Goal,Subs), state(Goal,Subs), []) :-
 % is an atom containg information about the rule used in
 % the derivation.
 inference(From, State, State_, Info) :- admissible_step(From, State, State_, Info).
-inference(_, state(Goal,Subs), State_, Info) :- interpretable(Goal), interpretive_step(state(Goal,Subs), State_, Info).
+inference(From, state(Goal,Subs), State_, Info) :- interpretable(Goal), interpretive_step(From, state(Goal,Subs), State_, Info).
 
 % admissible_step/4
 % admissible_step(+From, +State1, ?State2, ?Info)
@@ -212,8 +209,7 @@ success_step(From, state(Goal,Subs), state(Goal_,Subs_), Info) :-
     % Builtin predicate
     (is_builtin_predicate(Name/Arity) -> (
         eval_builtin_predicate(Name/Arity, state(Goal,Subs), selected(ExprVar, Var, Expr), state(Goal_,Subs_)),
-        Info = Name/Arity,
-        (Name/Arity = '!'/0 -> assertz(check_cut) ; true)
+        Info = Name/Arity
     ) ; (
         % User-defined predicate
         (program_has_predicate(Name/Arity) -> (
@@ -246,17 +242,19 @@ success_step(From, state(Goal,Subs), state(Goal_,Subs_), Info) :-
 failure_step(state(Goal,Subs), state(Goal_,Subs), 'FS') :-
     select_atom(Goal, Goal_, bot, _).
 
-% interpretive_step/3
-% interpretive_step(+State1, ?State2, ?Info)
+% interpretive_step/4
+% interpretive_step(+From, +State1, ?State2, ?Info)
 %
 % This predicate performs an interpretive step from the
 % state +State1 to the state ?State2 ?Info is an atom
 % containg information about the derivation. This steps
 % only can be performed when there is no atoms to perform
 % admissible steps.
-interpretive_step(state(Goal,Subs), state(Goal_,Subs), 'IS') :-
-    select_expression(Goal, Goal_, Var, Expr),
-    interpret(Expr, Var).
+interpretive_step(From, state(Goal,Subs), state(Goal_,Subs), 'IS') :-
+    ( select_expression(Goal, Goal_, Var, Expr) -> interpret(Expr, Var) ; (
+        type_error(truth_degree, Goal, From, Error),
+        throw_exception(Error)
+    )).
 
 % interpret/2
 % interpret(+Expression, ?Result)
