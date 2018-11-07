@@ -32,7 +32,7 @@ wmgu(ExprA, ExprB, State) :-
 wmgu(var(X), Y, state(TD,Subs), State_) :-
     member(X/Z, Subs), !,
     wmgu(Z, Y, state(TD,Subs), State_).
-wmgu(var(X), Y, state(TD,Subs), state(TD,[X/Y|Subs])) :- !.
+wmgu(var(X), Y, state(TD,Subs), state(TD,[X/Y|Subs_])) :- !, compose(Subs,[X/Y],Subs_).
 %%% expression with var
 wmgu(X, var(Y), State, State_) :- !, wmgu(var(Y), X, State, State_).
 %%% num with num
@@ -53,7 +53,10 @@ wmgu(term(X,Xs), term(Y,Ys), state(TD, Subs), State) :- !,
 wmgu([], [], State, State) :- !.
 wmgu([X|Xs], [Y|Ys], State, State_) :- !,
     wmgu(X, Y, State, StateXY),
-    wmgu(Xs, Ys, StateXY, State_).
+    StateXY = state(_,Subs),
+    apply(Xs, Subs, Xs_),
+    apply(Ys, Subs, Ys_),
+    wmgu(Xs_, Ys_, StateXY, State_).
 
 
 % mgu/3
@@ -67,7 +70,7 @@ mgu(ExprA, ExprB, Subs) :-
 mgu(var(X), Y, Subs, Subs_) :-
     member(X/Z, Subs), !,
     mgu(Z, Y, Subs, Subs_).
-mgu(var(X), Y, Subs, [X/Y|Subs]) :- !.
+mgu(var(X), Y, Subs, [X/Y|Subs_]) :- !, compose(Subs,[X/Y],Subs_).
 %%% expression with var
 mgu(X, var(Y), Subs, Subs_) :- !, mgu(var(Y), X, Subs, Subs_).
 %%% num with num
@@ -85,7 +88,9 @@ mgu(term(X,Xs), term(X,Ys), Subs, Subs_) :- !,
 mgu([], [], Subs, Subs) :- !.
 mgu([X|Xs], [Y|Ys], Subs1, Subs3) :- !,
     mgu(X, Y, Subs1, Subs2),
-    mgu(Xs, Ys, Subs2, Subs3).
+    apply(Xs, Subs2, Xs_),
+    apply(Ys, Subs2, Ys_),
+    mgu(Xs_, Ys_, Subs2, Subs3).
 
 
 
@@ -146,7 +151,7 @@ query(Goal, Answer) :-
 %
 % This predicate succeeds when ?Variables is the initial
 % substitution for the term +Term, where each variable in
-% +Term is replace by itself (X/X).
+% +Term is replaced by itself (X/X).
 get_variables(X, Z) :- get_variables2(X, Y), list_to_set(Y, Z).
 get_variables2(var(X), [X/var(X)]) :- !.
 get_variables2(term(_,Args), Vars) :- !, get_variables2(Args, Vars).
