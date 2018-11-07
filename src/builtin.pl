@@ -253,7 +253,10 @@ eval_builtin_predicate('\\='/2, state(_, Subs), selected(ExprVar, top, Term), st
 %%% Term identical.
 %%% True if the compared terms are identical.
 eval_builtin_predicate('=='/2, state(_, Subs), selected(ExprVar, top, Term), state(ExprVar, Subs)) :-
-    Term = term('==', [X,Y]), to_prolog(X, X_), to_prolog(Y, Y_), X_ == Y_.
+    Term = term('==', [X,Y]),
+    (( X = var(X_), Y = var(Y_)) -> X_ == Y_ ;
+        ( to_prolog(X, X_), to_prolog(Y, Y_), X_ == Y_ )
+    ).
 
 %%% '\=='/2
 %%% '\=='(@term, @term)
@@ -261,7 +264,10 @@ eval_builtin_predicate('=='/2, state(_, Subs), selected(ExprVar, top, Term), sta
 %%% Term not identical.
 %%% True if the compared terms are not identical.
 eval_builtin_predicate('\\=='/2, state(_, Subs), selected(ExprVar, top, Term), state(ExprVar, Subs)) :-
-    Term = term('\\==', [X,Y]), to_prolog(X, X_), to_prolog(Y, Y_), X_ \== Y_.
+    Term = term('\\==', [X,Y]),
+    (( X = var(X_), Y = var(Y_)) -> X_ \== Y_ ;
+        ( to_prolog(X, X_), to_prolog(Y, Y_), X_ \== Y_ )
+    ).
 
 %%% '@<'/2
 %%% '@<'(@term, @term)
@@ -269,7 +275,10 @@ eval_builtin_predicate('\\=='/2, state(_, Subs), selected(ExprVar, top, Term), s
 %%% Term less than.
 %%% True if the first term is less than the second one.
 eval_builtin_predicate('@<'/2, state(_, Subs), selected(ExprVar, top, Term), state(ExprVar, Subs)) :-
-    Term = term('@<', [X,Y]), to_prolog(X, X_), to_prolog(Y, Y_), X_ @< Y_.
+    Term = term('@<', [X,Y]),
+    (( X = var(X_), Y = var(Y_)) -> X_ @< Y_ ;
+        ( to_prolog(X, X_), to_prolog(Y, Y_), X_ @< Y_ )
+    ).
 
 %%% '@>'/2
 %%% '@>'(@term, @term)
@@ -277,7 +286,10 @@ eval_builtin_predicate('@<'/2, state(_, Subs), selected(ExprVar, top, Term), sta
 %%% Term greater than.
 %%% True if the first term is greater than the second one.
 eval_builtin_predicate('@>'/2, state(_, Subs), selected(ExprVar, top, Term), state(ExprVar, Subs)) :-
-    Term = term('@>', [X,Y]), to_prolog(X, X_), to_prolog(Y, Y_), X_ @> Y_.
+    Term = term('@>', [X,Y]),
+    (( X = var(X_), Y = var(Y_)) -> X_ @> Y_ ;
+        ( to_prolog(X, X_), to_prolog(Y, Y_), X_ @> Y_ )
+    ).
 
 %%% '@=<'/2
 %%% '@=<'(@term, @term)
@@ -285,7 +297,10 @@ eval_builtin_predicate('@>'/2, state(_, Subs), selected(ExprVar, top, Term), sta
 %%% Term less than or equal to.
 %%% True if the first term is less than or equal to the second one.
 eval_builtin_predicate('@=<'/2, state(_, Subs), selected(ExprVar, top, Term), state(ExprVar, Subs)) :-
-    Term = term('@=<', [X,Y]), to_prolog(X, X_), to_prolog(Y, Y_), X_ @=< Y_.
+    Term = term('@=<', [X,Y]),
+    (( X = var(X_), Y = var(Y_)) -> X_ @=< Y_ ;
+        ( to_prolog(X, X_), to_prolog(Y, Y_), X_ @=< Y_ )
+    ).
 
 %%% '@>='/2
 %%% '@>='(@term, @term)
@@ -293,7 +308,10 @@ eval_builtin_predicate('@=<'/2, state(_, Subs), selected(ExprVar, top, Term), st
 %%% Term greater than or equal to.
 %%% True if the first term is greater than or equal to the second one.
 eval_builtin_predicate('@>='/2, state(_, Subs), selected(ExprVar, top, Term), state(ExprVar, Subs)) :-
-    Term = term('@>=', [X,Y]), to_prolog(X, X_), to_prolog(Y, Y_), X_ @>= Y_.
+    Term = term('@>=', [X,Y]),
+    (( X = var(X_), Y = var(Y_)) -> X_ @>= Y_ ;
+        ( to_prolog(X, X_), to_prolog(Y, Y_), X_ @>= Y_ )
+    ).
 
 
 
