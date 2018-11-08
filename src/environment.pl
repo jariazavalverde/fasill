@@ -282,13 +282,13 @@ lattice_call_connective(Op, Args, Result) :-
     (   Type = '&', Pre = 'and_' ;
         Type = '|', Pre = 'or_' ;
         Type = '@', Pre = 'agr_'
-    ), !,
+    ),
     atom_concat(Pre, Name, Name_),
     maplist(to_prolog, Args, Args_),
     append(Args_, [Prolog], ArgsCall),
     Call =.. [Name_|ArgsCall],
     call(environment:Call),
-    from_prolog(Prolog, Result).
+    from_prolog(Prolog, Result), !.
 
 % lattice_reduce_connective/3
 % lattice_reduce_connective(+Name, +TDs, ?Result)
@@ -425,9 +425,9 @@ similarity_closure_transitive(Dom, _, Tnorm, _, _) :-
     member(Z/Length, Dom),
     member(X/Length, Dom),
     member(Y/Length, Dom),
-    '~'(X/Length,Y/Length=TDxy),
-    '~'(X/Length,Z/Length=TDxz),
-    '~'(Z/Length,Y/Length=TDzy),
+    once('~'(X/Length,Y/Length=TDxy)),
+    once('~'(X/Length,Z/Length=TDxz)),
+    once('~'(Z/Length,Y/Length=TDzy)),
     from_prolog(TDxy, TDPxy),
     from_prolog(TDxz, TDPxz),
     from_prolog(TDzy, TDPzy),
