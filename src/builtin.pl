@@ -41,6 +41,13 @@ is_builtin_predicate(Name/Arity) :-
         '@=<'/2,
         '@>='/2,
         '\\=='/2,
+        % arithmetic comparison
+        '<'/2,
+        '=:='/2,
+        '=<'/2,
+        '=\\='/2,
+        '>'/2,
+        '>='/2,
         % arithmetic evaluation
         is/2,
         % type testing
@@ -315,6 +322,28 @@ eval_builtin_predicate('@>='/2, state(_, Subs), selected(ExprVar, top, Term), st
 
 
 
+%% ARITHMETIC COMPARISON
+
+%%% '<'/2
+%%% '<'(@evaluable, @evaluable)
+%%%
+%%% Arithmetic less than.
+%%% True if the first number is less than the second one.
+eval_builtin_predicate('<'/2, state(_, Subs), selected(ExprVar, top, Atom), state(ExprVar, Subs)) :-
+    Atom = term('<', [Left, Right]),
+    arithmetic_comparison('<'/2, Left, Right).
+
+%%% '>'/2
+%%% '>'(@evaluable, @evaluable)
+%%%
+%%% Arithmetic less than.
+%%% True if the first number is less than the second one.
+eval_builtin_predicate('>'/2, state(_, Subs), selected(ExprVar, top, Atom), state(ExprVar, Subs)) :-
+    Atom = term('>', [Left, Right]),
+    arithmetic_comparison('>'/2, Left, Right).
+
+
+
 %% ARITHMETIC EVALUATION
 
 %%% is/2
@@ -325,17 +354,9 @@ eval_builtin_predicate('@>='/2, state(_, Subs), selected(ExprVar, top, Term), st
 %%% Expression as an expression gives Result as a result.
 eval_builtin_predicate(is/2, state(_, Subs), selected(ExprVar, Var, Atom), state(ExprVar, Subs)) :-
     Atom = term(is, [Variable, Expression]),
-    catch(
-        (arithmetic_evaluation(Expression, Result), Var = term('~', [Variable, Result])),
-        Error,
-        (Error = type(Type, From) ->
-            (from_prolog(From, From_), type_error(Type, From_, is/2, Exception), throw(Exception)) ;
-            (Error = evaluation(Cause) ->
-                (evaluation_error(Cause, is/2, Exception), throw(Exception)) ;
-                (instantiation_error(is/2, Exception), throw(Exception))
-            )
-        )
-    ).
+    arithmetic_evaluation('is'/2, Expression, Result),
+    Var = term('~', [Variable, Result]).
+
 
 
 %% TYPE TESTING

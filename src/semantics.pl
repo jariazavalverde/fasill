@@ -9,7 +9,8 @@
     apply/3,
     compose/3,
     rename/2,
-    arithmetic_evaluation/2
+    arithmetic_evaluation/3,
+    arithmetic_comparison/3
 ]).
 
 :- use_module('environment').
@@ -318,19 +319,46 @@ apply(var(X), Subs, Y) :- !, (member(X/Y, Subs) -> true ; Y = var(X)).
 apply([X|Xs], Subs, [Y|Ys]) :- !, apply(X, Subs, Y), apply(Xs, Subs, Ys).
 apply(X, _, X).
 
-% arithmetic_evaluation/2
-% arithmetic_evaluation(+Expression, ?Result)
+% arithmetic_evaluation/3
+% arithmetic_evaluation(+Indicator, +Expression, ?Result)
 %
 % This predicate succeeds when ?Result is the result
 % of evaluating the expression +Expression. This predicate
 % throws an arithmetical exception if there is any problem.
-arithmetic_evaluation(var(_), _) :- !, throw(instantiation).
-arithmetic_evaluation(num(X), num(X)) :- !.
-arithmetic_evaluation(term(Op,Args), Result) :-
-    maplist(arithmetic_evaluation, Args, Args_),
-    maplist(arithmetic_type, Args_, Types),
-    maplist(to_prolog, Args_, Prolog),
-    arithmetic_op(Op, Prolog, Types, Result), !.
+arithmetic_evaluation(Indicator, var(_), _) :- !,
+    instantiation_error(Indicator, Error),
+    throw_exception(Error).
+arithmetic_evaluation(_, num(X), num(X)) :- !.
+arithmetic_evaluation(Indicator, term(Op,Args), Result) :-
+    catch(
+        (   maplist(arithmetic_evaluation(Indicator), Args, Args_),
+            maplist(arithmetic_type, Args_, Types),
+            maplist(to_prolog, Args_, Prolog),
+            arithmetic_op(Op, Prolog, Types, Result), !
+        ), Error,
+        (Error = type(Type, From) ->
+            (from_prolog(From, From_), type_error(Type, From_, Indicator, Exception), throw_exception(Exception)) ;
+            (Error = evaluation(Cause) ->
+                (evaluation_error(Cause, Indicator, Exception), throw_exception(Exception)) ;
+                (Error = exception(Exception) -> throw_exception(Exception) ;
+                    throw_exception(Exception)
+                )
+            )
+        )
+    ).
+
+% arithmetic_comparison/3
+% arithmetic_comparison(+Op, +Expression1, +Expression2)
+%
+% This predicate succeeds when expressions +Expression1 and
+% +Expression2, evaluated as much as possible, fulfill the
+% ordering relation +Op.
+arithmetic_comparison(Name/2, Expr1, Expr2) :-
+    arithmetic_evaluation(Name/2, Expr1, Result1).
+    arithmetic_evaluation(Name/2, Expr2, Result2),
+    to_prolog(Result1, Result1_),
+    to_prolog(Result2, Result2_),
+    call(Name, Result1_, Result2_).
 
 % arithmetic_type/2
 % arithmetic_type(+Number, ?Type)
