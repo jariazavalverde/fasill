@@ -1,0 +1,5 @@
+append([],X,X).
+append([H|T], X, [H|S]) <- append(T, X, S).
+
+member(X, [X|_]).
+member(X, [_|T]) <- member(X, T).

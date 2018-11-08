@@ -5,7 +5,7 @@ members([false,true]).
 
 % Distance
 distance(X, X, 0.0).
-distance(X, X, 1.0).
+distance(_, _, 1.0).
 
 % Ordering relation
 leq(false, _).

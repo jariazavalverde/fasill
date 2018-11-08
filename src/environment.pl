@@ -344,7 +344,10 @@ lattice_consult(Path) :-
 %
 % This predicate succeeds when ?Tnorm is the current
 % t-norm asserted in the environment.
-similarity_tnorm(Tnorm) :- ~(tnorm=Tnorm).
+similarity_tnorm(Tnorm) :- catch(~(tnorm=Tnorm), _, fail), !.
+similarity_tnorm(Tnorm) :-
+    current_predicate(Name/3),
+    atom_concat(and_, Tnorm, Name), !.
 
 % similarity_between/4
 % similarity_between(?AtomA, ?AtomB, ?Length, ?TD)
