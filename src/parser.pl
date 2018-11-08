@@ -1,5 +1,6 @@
 :- module(parser, [
     file_consult/2,
+    file_query/2,
     parse_consult/2,
     parse_query/2
 ]).
@@ -25,6 +26,14 @@ file_consult(Path, Program) :-
     stream_to_list(Stream, Input),
     close(Stream),
     parse_consult(Input, Program).
+
+% file_query/2
+% consult a goal
+file_query(Path, Query) :-
+    open(Path, read, Stream),
+    stream_to_list(Stream, Input),
+    close(Stream),
+    parse_query(Input, Query).
 
 % parse_consult/2
 % consult a program

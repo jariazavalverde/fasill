@@ -16,6 +16,7 @@
     program_rule_id/2,
     program_consult/1,
     program_has_predicate/1,
+    query_consult/2,
     lattice_tnorm/1,
     lattice_tconorm/1,
     lattice_call_bot/1,
@@ -30,6 +31,8 @@
 ]).
 
 :- use_module(parser).
+:- use_module(exceptions).
+:- use_module(semantics).
 
 :- dynamic(
     fasill_rule/3,
@@ -200,6 +203,15 @@ program_consult(Path) :-
         (fasill_predicate(Name/Arity) -> true ; assertz(fasill_predicate(Name/Arity))),
         fail ; true).
 
+% query_consult/2
+% program_consult(+Path, ?State)
+%
+% This predicate loads the FASILL goal from the
+% file +Path into the environment and runs it.
+query_consult(Path, State) :-
+    file_query(Path, Query),
+    query(Query, State).
+
 % program_has_predicate/1
 % program_has_predicate(?Indicator)
 %
@@ -225,6 +237,10 @@ lattice_tnorm(Tnorm) :- catch(tnorm(Tnorm), _, fail), !.
 lattice_tnorm(Tnorm) :-
     current_predicate(Name/3),
     atom_concat(and_, Tnorm, Name), !.
+lattice_tnorm(Tnorm) :-
+    atom_concat(and_, Tnorm, Name),
+    existence_error(procedure, Name/3, lattice/0, Error),
+    throw_exception(Error).
 
 % lattice_tconorm/1
 % lattice_tconorm(?Tconorm)
@@ -235,6 +251,10 @@ lattice_tconorm(Tconorm) :- catch(tconorm(Tconorm), _, fail), !.
 lattice_tconorm(Tconorm) :-
     current_predicate(Name/3),
     atom_concat(or_, Tconorm, Name), !.
+lattice_tconorm(Tconorm) :-
+    atom_concat(and_, Tconorm, Name),
+    existence_error(procedure, Name/3, lattice/0, Error),
+    throw_exception(Error).
 
 % lattice_call_bot/1
 % lattice_call_bot(-Bot)
@@ -243,8 +263,12 @@ lattice_tconorm(Tconorm) :-
 % bottom member of the lattice loaded into
 % the environment.
 lattice_call_bot(Bot) :-
+    current_predicate(bot/1), !,
     bot(Prolog),
     from_prolog(Prolog, Bot).
+lattice_call_bot(_) :-
+    existence_error(procedure, bot/1, lattice/0, Error),
+    throw_exception(Error).
 
 % lattice_call_top/1
 % lattice_call_top(-Bot)
@@ -253,17 +277,25 @@ lattice_call_bot(Bot) :-
 % bottom member of the lattice loaded into
 % the environment.
 lattice_call_top(Top) :-
+    current_predicate(top/1), !,
     top(Prolog),
     from_prolog(Prolog, Top).
+lattice_call_top(_) :-
+    existence_error(procedure, top/1, lattice/0, Error),
+    throw_exception(Error).
 
 % lattice_call_member/1
-% lattice_call_member(+Memeber)
+% lattice_call_member(+Member)
 %
 % This predicate succeeds when +Member is a member
 % of the lattice loaded into the environment.
 lattice_call_member(Member) :-
+    current_predicate(member/1), !,
     to_prolog(Member, Prolog),
     member(Prolog).
+lattice_call_member(_) :-
+    existence_error(procedure, member/1, lattice/0, Error),
+    throw_exception(Error).
 
 % lattice_call_connective/3
 % lattice_call_connective(+Name, +Arguments, ?Result)
@@ -284,6 +316,10 @@ lattice_call_connective(Op, Args, Result) :-
         Type = '@', Pre = 'agr_'
     ),
     atom_concat(Pre, Name, Name_),
+    length(Args, Arity),
+    Arity_ is Arity + 1,
+    (current_predicate(Name_/Arity_) -> true ;
+        existence_error(procedure, Name_/Arity_, lattice/0, Error), throw_exception(Error)),
     maplist(to_prolog, Args, Args_),
     append(Args_, [Prolog], ArgsCall),
     Call =.. [Name_|ArgsCall],
@@ -345,9 +381,7 @@ lattice_consult(Path) :-
 % This predicate succeeds when ?Tnorm is the current
 % t-norm asserted in the environment.
 similarity_tnorm(Tnorm) :- catch(~(tnorm=Tnorm), _, fail), !.
-similarity_tnorm(Tnorm) :-
-    current_predicate(Name/3),
-    atom_concat(and_, Tnorm, Name), !.
+similarity_tnorm(Tnorm) :- lattice_tnorm(Tnorm), !.
 
 % similarity_between/4
 % similarity_between(?AtomA, ?AtomB, ?Length, ?TD)

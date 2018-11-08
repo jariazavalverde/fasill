@@ -169,8 +169,12 @@ get_variables2(_,[]).
 % using the program +Program. ?Info is a list containing
 % the information of each step.
 derivation(_, exception(Error), exception(Error), []) :- !.
-derivation(_, state(Goal,Subs), state(Goal,Subs), []) :-
-    lattice_call_member(Goal), !.
+derivation(_, state(Goal,Subs), State, []) :-
+    catch(
+        (lattice_call_member(Goal), State = state(Goal, Subs)),
+        Error,
+        State = exception(Error)
+    ), !.
 derivation(From, State, State_, [X|Xs]) :-
     catch(inference(From, State, State1, X), Error, (State1 = exception(Error), !)),
     derivation(X, State1, State_, Xs).
