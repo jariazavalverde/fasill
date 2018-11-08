@@ -10,7 +10,7 @@
 web_write([]).
 web_write(level(0)).
 web_write(level(N)) :- N > 0, write('  '), M is N-1, web_write(level(M)).
-web_write(trace(Level, State)) :- web_write(level(Level)), web_write(State).
+web_write(trace(Level, Info, State)) :- web_write(level(Level)), write(Info), write(' '), web_write(State).
 web_write(top) :- write(top).
 web_write(bot) :- write(bot).
 web_write(num(X)) :- write(X).

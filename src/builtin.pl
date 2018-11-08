@@ -147,6 +147,8 @@ eval_builtin_predicate(throw/1, _, selected(_, _, Term), _) :-
 %%% called as in call/1.
 eval_builtin_predicate(catch/3, state(_, Subs), selected(ExprVar, Goal_, Term), state(ExprVar, Subs_)) :-
     Term = term(catch, [Goal, Catcher, Handler]),
+    trace_level(Level), Level_ is Level+1, retractall(trace_level(_)), assertz(trace_level(Level_)),
+    (current_fasill_flag(trace, true) -> assertz(trace_derivation(trace(Level_, catch/3, state(Goal,Subs)))) ; true),
     derivation(catch/3, state(Goal,Subs), State, _),
     ( State = state(Goal_,Subs_) -> true ; (
         State = exception(Exception), !,
@@ -213,8 +215,11 @@ eval_builtin_predicate(findall/4, state(_, Subs), selected(ExprVar, Var, Term), 
         ( \+fasill_callable(Goal) -> type_error(callable, Goal, findall/4, Error), throw_exception(Error) ;
             (\+fasill_var(Instances), \+fasill_list(Instances) -> type_error(list, Instances, findall/4, Error), throw_exception(Error) ;
                 lattice_call_bot(Bot),
+                get_variables(Goal, GoalVars),
+                trace_level(Level), Level_ is Level+1, retractall(trace_level(_)), assertz(trace_level(Level_)),
+                (current_fasill_flag(trace, true) -> assertz(trace_derivation(trace(Level_, findall/4, state(Goal,GoalVars)))) ; true),
                 findall([TD,Template_], (
-                    query(Goal, State),
+                    derivation(findall/4, state(Goal,GoalVars), State, _),
                     (State = state(TD,Subs_) -> TD \= Bot, apply(Template, Subs_, Template_) ;
                         State = exception(Error), throw_exception(Error)
                     )

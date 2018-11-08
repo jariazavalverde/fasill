@@ -4,6 +4,7 @@ var sim;
 var goal;
 var limit;
 var output;
+var derivation;
 
 window.addEventListener("load", function() {
 	var program_value = document.getElementById("program").innerHTML.replace(/&lt;/g,"<").replace(/&gt;/g,">");
@@ -57,12 +58,19 @@ window.addEventListener("load", function() {
 		mode: "prolog",
 		readOnly: true
 	});
+	derivation = CodeMirror(document.getElementById("derivation"), {
+		lineNumbers: true,
+		theme: "fasill",
+		mode: "prolog",
+		readOnly: true
+	});
 	program.setSize("100%", "100%");
 	lattice.setSize("100%", "100%");
 	sim.setSize("100%", "100%");
 	goal.setSize("100%", "100%");
 	limit.setSize("100%", "100%");
 	output.setSize("100%", "100%");
+	derivation.setSize("100%", "100%");
 });
 
 function load_lattice( from ) {
@@ -92,10 +100,16 @@ function fasill_run() {
 		"limit": limit.getValue()
 	});
 	output.setValue("Running...");
+	derivation.setValue("Running...");
 	post("php/run.php", data, function(data) {
 		data = data.trim();
 		if(data === "")
-			data = "uncaught exception: unknown"
-		output.setValue(data.trim());
+			data = "uncaught exception: unknown";
+		data = data.trim().split("\n\n");
+		if(data.length == 1)
+			data[1] = "";
+		output.setValue(data[0]);
+		derivation.setValue(data[1]);
+		draw_tree( data[1], "tree" );
 	});
 }

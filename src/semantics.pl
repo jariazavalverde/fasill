@@ -2,7 +2,8 @@
     wmgu/3,
     mgu/3,
     query/2,
-    derivation/5,
+    derivation/4,
+    get_variables/2,
     inference/4,
     admissible_step/4,
     interpretive_step/4,
@@ -11,7 +12,8 @@
     rename/2,
     arithmetic_evaluation/3,
     arithmetic_comparison/3,
-    trace_derivation/1
+    trace_derivation/1,
+    trace_level/1
 ]).
 
 :- use_module('environment').
@@ -142,14 +144,16 @@ interpretable(Expr) :- \+select_atom(Expr, _, _, _).
 % This predicate succeeds when ?Answer is a fuzzy computed
 % answer (fca) for the goal +Goal. A fca is a term of the
 % form state(TD, Substitution), where TD is the truth degree.
-:- dynamic(check_success/0, trace_derivation/1).
+:- dynamic(check_success/0, trace_derivation/1, trace_level/1).
 query(Goal, Answer) :-
     retractall(check_success),
     retractall(trace_derivation),
+    retractall(trace_level(_)),
+    assertz(trace_level(0)),
     get_variables(Goal, Vars),
     State = state(Goal, Vars),
-    Level = 0,
-    derivation(top_level/0, Level, State, Answer, _).
+    (current_fasill_flag(trace, true) -> assertz(trace_derivation(trace(0, 'GOAL', State))) ; true),
+    derivation(top_level/0, State, Answer, _).
 
 % get_variables/2
 % get_variables(+Term, ?Variables)
@@ -166,25 +170,27 @@ get_variables2([H|T], Vars) :- !,
     append(Vh, Vt, Vars).
 get_variables2(_,[]).
 
-% derivation/5
-% derivation(+From, +Level, +State1, ?State2, ?Info)
+% derivation/4
+% derivation(+From, +State1, ?State2, ?Info)
 %
 % This predicate performs a complete derivation from
 % an initial state ?State1 to the final state ?State2,
 % using the program +Program. ?Info is a list containing
 % the information of each step.
-derivation(_, Level, exception(Error), exception(Error), []) :- !,
-    (current_fasill_flag(trace, true) -> assertz(trace_derivation(trace(Level, exception(Error)))) ; true).
-derivation(_, Level, state(Goal,Subs), State, []) :-
+derivation(_, exception(Error), exception(Error), []) :- !.
+derivation(_, state(Goal,Subs), State, []) :-
     catch(
         ( lattice_call_member(Goal), State = state(Goal, Subs)),
-          Error, State = exception(Error) ), !,
-    (current_fasill_flag(trace, true) -> assertz(trace_derivation(trace(Level, State))) ; true).
-derivation(From, Level, State, State_, [X|Xs]) :-
-    (current_fasill_flag(trace, true) -> assertz(trace_derivation(trace(Level, State))) ; true),
+          Error, State = exception(Error) ), !.
+derivation(From, State, State_, [X|Xs]) :-
+    trace_level(Level),
     Level_ is Level+1,
     catch(inference(From, State, State1, X), Error, (State1 = exception(Error), !)),
-    derivation(X, Level_, State1, State_, Xs).
+    (current_fasill_flag(trace, true), State1 \= exception(_) ->
+        assertz(trace_derivation(trace(Level_, X, State1))),
+        retractall(trace_level(_)),
+        assertz(trace_level(Level_)) ; true),
+    derivation(X, State1, State_, Xs).
 
 % inference/4
 % inference(+From, +State1, ?State2, ?Info)

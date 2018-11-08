@@ -30,6 +30,7 @@ include("pages/headers/$_VIEW.php");
 		<script src="codemirror/addon/mode/simple.js"></script>
 		<script src="codemirror/mode/prolog/prolog.js"></script>
 		<script src="codemirror/addon/placeholder/placeholder.js"></script>
+		<script src="js/trees.js"></script>
 		<script src="js/fasill.js"></script>
 		<title>FASILL: <?php echo $_TITLE; ?></title>
 	</head>

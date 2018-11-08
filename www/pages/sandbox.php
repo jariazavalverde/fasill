@@ -60,5 +60,9 @@ $_LIMIT = isset($_POST["limit"]) ? $_POST["limit"] : $def_limit;
 	</div>
 	<div class="container px-0 py-4">
 		<h4><i class="fas fa-tree"></i> Derivation tree</h4>
+		<div id="derivation"></div>
+		<div id="tree-container" class="text-center">
+			<canvas id="tree" width="0" height="0"></canvas>
+		</div>
 	</div>
 </div>

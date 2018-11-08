@@ -19,7 +19,6 @@ h1 a:hover, h2 a:hover, h3 a:hover, h4 a:hover {
 	color: #b83d4e;
 }
 
-
 .container-sep {
 	height: 30px;
 }
@@ -58,6 +57,9 @@ h1 a:hover, h2 a:hover, h3 a:hover, h4 a:hover {
 	background-color: #fafafa;
 }
 
+#tree-container {
+	overflow: auto;
+}
 
 #footer {
 	border-top: 10px solid #efefef;
