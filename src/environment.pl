@@ -1,5 +1,4 @@
 :- module(environment, [
-    set_max_inferences/1,
     to_prolog/2,
     from_prolog/2,
     from_prolog_list/2,
@@ -60,6 +59,7 @@ fasill_flag(unification, [weak, strict], weak).
 fasill_flag(quoted_chars, [chars, codes, atom], chars).
 fasill_flag(unknown, [error, fail, warning], error).
 fasill_flag(occurs_check, [false, true], false).
+fasill_flag(max_inferences, [false, num(_)], false).
 
 % current_fasill_flag/2
 % current_fasill_flag(?Flag, ?Value)
@@ -76,34 +76,11 @@ current_fasill_flag(Flag, Value) :- fasill_flag(Flag, _, Value).
 % and +Value is a possible value for the flag. This predicate
 % has the side effect of chaging the current value for the flag.
 set_fasill_flag(Flag, Value) :-
-    atom(Flag), atom(Value),
-    fasill_flag(Flag, Values, Value),
+    atomic(Flag), nonvar(Value),
+    fasill_flag(Flag, Values, _),
     member(Value, Values),
     retractall(fasill_flag(Flag, _, _)),
-    assertz(fassil_flag(Flag, Values, Value)).
-
-
-
-% ENVIRONMENT
-
-% fasill_max_inferences/1
-% fasill_max_inferences(?Limit)
-%
-% This predicate succeeds when ?Limit is the
-% current limit of inferences that can be performed
-% when a goal is executed.
-:- dynamic(fasill_max_inferences/1).
-fasill_max_inferences(false).
-
-% set_max_inferences/1
-% set_max_inferences(+Limit)
-%
-% This predicate succeeds, and chages the current
-% limit of inferences that can be performed when
-% a goal is executed.
-set_max_inferences(Limit) :-
-    retractall(fasill_max_inferences(Limit)),
-    asserta(fasill_max_inferences(Limit)).
+    assertz(fasill_flag(Flag, Values, Value)).
 
 
 
