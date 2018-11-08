@@ -65,6 +65,11 @@ window.addEventListener("load", function() {
 	output.setSize("100%", "100%");
 });
 
+function load_lattice( from ) {
+	post( from, "", function(data) {
+		lattice.setValue(data);
+	});
+}
 
 function post( url, data, callback ) {
 	var xhttp = new XMLHttpRequest();

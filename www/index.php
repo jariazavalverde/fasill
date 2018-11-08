@@ -4,6 +4,8 @@ require("php/functions.php");
 
 $_VIEW = isset($_GET["view"]) ? $_GET["view"] : "home";
 
+include("pages/headers/$_VIEW.php");
+
 ?>
 <!doctype html>
 <html lang="en">
@@ -12,6 +14,7 @@ $_VIEW = isset($_GET["view"]) ? $_GET["view"] : "home";
 		<meta charset="utf-8">
 		<meta name="author" content="José Antonio Riaza Valverde" />
 		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+		<link rel="shortcut icon" type="image/x-icon" href="img/favicon.ico">
 		<!-- Bootstrap CSS -->
 		<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
 		<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" crossorigin="anonymous">
@@ -28,11 +31,14 @@ $_VIEW = isset($_GET["view"]) ? $_GET["view"] : "home";
 		<script src="codemirror/mode/prolog/prolog.js"></script>
 		<script src="codemirror/addon/placeholder/placeholder.js"></script>
 		<script src="js/fasill.js"></script>
-		<title>FASILL</title>
+		<title>FASILL: <?php echo $_TITLE; ?></title>
 	</head>
 	<body>
 		<div class="container" id="nav">
 			<div class="row">
+				<?php if($_VIEW != "home") { ?>
+				<div class="col-sm"><a id="nav-logo" href="./">&nbsp;</a></div>
+				<?php } ?>
 				<div class="col-sm"><a href="downloads">Downloads</a></div>
 				<div class="col-sm"><a href="documentation">Documentation</a></div>
 				<div class="col-sm"><a href="sandbox">Sandbox</a></div>

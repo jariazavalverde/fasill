@@ -24,6 +24,14 @@ h1 a:hover, h2 a:hover, h3 a:hover, h4 a:hover {
 	height: 30px;
 }
 
+#nav-logo {
+	background: #ffffff url("../img/grayxs48.png") center center no-repeat;
+}
+
+#nav-logo:hover {
+	background: #ffffff url("../img/colorxs48.png") center center no-repeat;
+}
+
 #nav {
 	font-size: 150%;
 	text-align: center;

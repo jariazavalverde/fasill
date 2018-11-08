@@ -1,7 +1,7 @@
 <div class="container">
-	<h1>FASILL</h1>
+	<img class="img-fluid mb-3" src="img/colorx2048.png" alt="FASILL" />
 	<div class="container px-0 pt-4">
-			<h4>Fuzzy Aggregators and Similarities Into a Logic Language</h4>
+			<h3>What is FASILL?</h3>
 			<div class="row">
 				<div class="col-md pt-2 pb-4">
 					<p class="text-justify text-secondary">

@@ -22,7 +22,10 @@ $_LIMIT = isset($_POST["limit"]) ? $_POST["limit"] : $def_limit;
 			<div id="program" class="sandbox-editor"><?php echo $_PROGRAM; ?></div>
 		</div>
 		<div class="container px-0 py-4">
-			<h4><i class="fas fa-circle"></i> Lattice</h4>
+			<h4><i class="fas fa-circle"></i> Lattice
+				<button type="button" class="btn btn-dark btn-sm float-right ml-2" onClick="load_lattice('sample/bool.lat.pl');">bool</button>
+				<button type="button" class="btn btn-dark btn-sm float-right" onClick="load_lattice('sample/real.lat.pl');">real</button>
+			</h4>
 			<div id="lattice" class="sandbox-editor"><?php echo $_LATTICE; ?></div>
 		</div>
 		<div class="container px-0 py-4">

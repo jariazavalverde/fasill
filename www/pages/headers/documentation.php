@@ -1,0 +1,3 @@
+<?php
+
+$_TITLE = "Documentation";
