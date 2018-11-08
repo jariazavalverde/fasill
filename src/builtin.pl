@@ -21,6 +21,7 @@ is_builtin_predicate(Name/Arity) :-
         % control constructs
         ','/2,
         ';'/2,
+        call/_,
         throw/1,
         catch/3,
         top/0,
@@ -95,6 +96,31 @@ eval_builtin_predicate(','/2, state(_, Subs), selected(ExprVar, Var, Term), stat
 eval_builtin_predicate(';'/2, state(_, Subs), selected(ExprVar, Var, Term), state(ExprVar, Subs)) :-
     Term = term(';', [X,Y]),
     (Var = X ; Var = Y).
+
+%%% call/[1..]
+%%% call( +callable_term [, @term, ...] )
+%%%
+%%% Invoke a callable term as a goal.
+%%% call(Goal, Arg1, ..., ArgN) is true if and only if Goal represents a goal which is true
+%%% for the (optional) arguments Arg1, ..., ArgN. 
+eval_builtin_predicate('call'/Arity, state(_, Subs), selected(ExprVar, Var, Atom), state(ExprVar, Subs)) :-
+    Atom = term('call', [Term|Args]),
+    \+lattice_call_member(Term), !,
+    ( fasill_var(Term) -> instantiation_error(call/Arity, Error), throw_exception(Error) ; 
+        ( \+fasill_callable(Term) -> type_error(callable, Term, call/Arity, Error), throw_exception(Error) ;
+            Term = term(Name, Args2),
+            append(Args2, Args, Args3),
+            Var = term(Name, Args3)
+        )
+    ).
+eval_builtin_predicate('call'/Arity, state(_, Subs), selected(ExprVar, Var, Atom), state(ExprVar, Subs)) :-
+    Atom = term('call', [Term|Args]),
+    lattice_call_member(Term), !,
+    ( fasill_var(Term) -> instantiation_error(call/Arity, Error), throw_exception(Error) ; 
+        ( Args \= [] -> type_error(callable, Term, call/Arity, Error), throw_exception(Error) ;
+            Var = Term
+        )
+    ).
 
 %%% throw/1
 %%% throw( +term )

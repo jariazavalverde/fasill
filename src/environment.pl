@@ -3,6 +3,8 @@
     to_prolog/2,
     from_prolog/2,
     from_prolog_list/2,
+    current_fasill_flag/2,
+    set_fasill_flag/2,
     fasill_atom/1,
     fasill_float/1,
     fasill_integer/1,
@@ -41,6 +43,44 @@
     '~'/1,
     '~'/2
 ).
+
+
+
+% FLAGS
+
+% fasill_flag/3
+% fasill_flag(?Flag, ?PossibleValues, ?CurrentValue)
+%
+% This predicate succeeds when ?Flag is a FASILL flag,
+% that can take the serie of values ?PossibleValues and
+% with ?CurrentValue as the current value in the environment.
+:- dynamic(fasill_flag/3).
+fasill_flag(trace, [false, true], false).
+fasill_flag(unification, [weak, strict], weak).
+fasill_flag(quoted_chars, [chars, codes, atom], chars).
+fasill_flag(unknown, [error, fail, warning], error).
+fasill_flag(occurs_check, [false, true], false).
+
+% current_fasill_flag/2
+% current_fasill_flag(?Flag, ?Value)
+%
+% This predicate succeeds when ?Flag is a FASILL flag,
+% and ?Value is the current value of the flag in the
+% environment.
+current_fasill_flag(Flag, Value) :- fasill_flag(Flag, _, Value).
+
+% set_fasill_flag/2
+% set_fasill_flag(+Flag, +Value)
+%
+% This predicate succeeds when +Flag is a FASILL flag
+% and +Value is a possible value for the flag. This predicate
+% has the side effect of chaging the current value for the flag.
+set_fasill_flag(Flag, Value) :-
+    atom(Flag), atom(Value),
+    fasill_flag(Flag, Values, Value),
+    member(Value, Values),
+    retractall(fasill_flag(Flag, _, _)),
+    assertz(fassil_flag(Flag, Values, Value)).
 
 
 
@@ -149,7 +189,8 @@ fasill_var(var(_)).
 % fasill_callable(+Term)
 %
 % This predicate succeeds when +Term is a callable term.
-fasill_callable(_).
+fasill_callable(term(_, _)) :- !.
+fasill_callable(X) :- lattice_call_member(X).
 
 % fasill_list/1
 % fasill_list(+Term)
