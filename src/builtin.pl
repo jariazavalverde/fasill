@@ -79,7 +79,7 @@ is_builtin_predicate(Name/Arity) :-
 %% CONTROL CONSTRUCTS
 
 %%% ,/2
-%%% ','(X,Y)
+%%% ','( +callable_term, +callable_term )
 %%%
 %%% Conjunction.
 %%% ','(First, Second) is true if and only if First is true and Second is true.
@@ -88,7 +88,7 @@ eval_builtin_predicate(','/2, state(_, Subs), selected(ExprVar, Var, Term), stat
     Var = term('&', [X,Y]).
 
 %%% ;/2
-%%% ';'(X,Y)
+%%% ';'( +callable_term, +callable_term )
 %%%
 %%% Disjunction.
 %%% ';'(Either, Or) is true if and only if either Either or Or is true.
@@ -336,11 +336,47 @@ eval_builtin_predicate('<'/2, state(_, Subs), selected(ExprVar, top, Atom), stat
 %%% '>'/2
 %%% '>'(@evaluable, @evaluable)
 %%%
-%%% Arithmetic less than.
-%%% True if the first number is less than the second one.
+%%% Arithmetic greater than.
+%%% True if the first number is greater than the second one.
 eval_builtin_predicate('>'/2, state(_, Subs), selected(ExprVar, top, Atom), state(ExprVar, Subs)) :-
     Atom = term('>', [Left, Right]),
     arithmetic_comparison('>'/2, Left, Right).
+
+%%% '=:='/2
+%%% '=:='(@evaluable, @evaluable)
+%%%
+%%% Arithmetic equal.
+%%% True if both numbers are equal.
+eval_builtin_predicate('=:='/2, state(_, Subs), selected(ExprVar, top, Atom), state(ExprVar, Subs)) :-
+    Atom = term('=:=', [Left, Right]),
+    arithmetic_comparison('=:='/2, Left, Right).
+
+%%% '=\\='/2
+%%% '=\\='(@evaluable, @evaluable)
+%%%
+%%% Arithmetic not equal.
+%%% True if the compared numbers are not equal.
+eval_builtin_predicate('=\\='/2, state(_, Subs), selected(ExprVar, top, Atom), state(ExprVar, Subs)) :-
+    Atom = term('=\\=', [Left, Right]),
+    arithmetic_comparison('=\\='/2, Left, Right).
+
+%%% '=<'/2
+%%% '=<'(@evaluable, @evaluable)
+%%%
+%%% Arithmetic less than or equal to.
+%%% True if the first number is less than or equal to the second one.
+eval_builtin_predicate('=<'/2, state(_, Subs), selected(ExprVar, top, Atom), state(ExprVar, Subs)) :-
+    Atom = term('=<', [Left, Right]),
+    arithmetic_comparison('=<'/2, Left, Right).
+
+%%% '>='/2
+%%% '>='(@evaluable, @evaluable)
+%%%
+%%% Arithmetic greater than or equal to.
+%%% True if the first number is greater than or equal to the second one.
+eval_builtin_predicate('>='/2, state(_, Subs), selected(ExprVar, top, Atom), state(ExprVar, Subs)) :-
+    Atom = term('>=', [Left, Right]),
+    arithmetic_comparison('>='/2, Left, Right).
 
 
 

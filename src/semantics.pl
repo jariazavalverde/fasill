@@ -341,7 +341,7 @@ arithmetic_evaluation(Indicator, term(Op,Args), Result) :-
             (Error = evaluation(Cause) ->
                 (evaluation_error(Cause, Indicator, Exception), throw_exception(Exception)) ;
                 (Error = exception(Exception) -> throw_exception(Exception) ;
-                    throw_exception(Exception)
+                    throw_exception(Error)
                 )
             )
         )
@@ -354,7 +354,7 @@ arithmetic_evaluation(Indicator, term(Op,Args), Result) :-
 % +Expression2, evaluated as much as possible, fulfill the
 % ordering relation +Op.
 arithmetic_comparison(Name/2, Expr1, Expr2) :-
-    arithmetic_evaluation(Name/2, Expr1, Result1).
+    arithmetic_evaluation(Name/2, Expr1, Result1),
     arithmetic_evaluation(Name/2, Expr2, Result2),
     to_prolog(Result1, Result1_),
     to_prolog(Result2, Result2_),
