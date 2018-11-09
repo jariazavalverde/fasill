@@ -1,3 +1,14 @@
+/**
+  * 
+  * FILENAME: environment.pl
+  * DESCRIPTION: This module contains predicates for manipulating programs, lattices and similarity relations.
+  * AUTHORS: José Antonio Riaza Valverde
+  * UPDATED: 09.11.2018
+  * 
+  **/
+
+
+
 :- module(environment, [
     to_prolog/2,
     from_prolog/2,

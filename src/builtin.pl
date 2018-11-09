@@ -1,3 +1,14 @@
+/**
+  * 
+  * FILENAME: builtin.pl
+  * DESCRIPTION: This module contains the definition of the FASILL built-in predicates.
+  * AUTHORS: José Antonio Riaza Valverde
+  * UPDATED: 09.11.2018
+  * 
+  **/
+
+
+
 :- module(builtin, [
     is_builtin_predicate/1,
     eval_builtin_predicate/4

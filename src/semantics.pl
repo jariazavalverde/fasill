@@ -1,3 +1,14 @@
+/**
+  * 
+  * FILENAME: semantics.pl
+  * DESCRIPTION: This module contains predicates implementing the semantics for FASILL.
+  * AUTHORS: José Antonio Riaza Valverde
+  * UPDATED: 09.11.2018
+  * 
+  **/
+
+
+
 :- module(semantics, [
     wmgu/3,
     mgu/3,
@@ -186,10 +197,8 @@ derivation(From, State, State_, [X|Xs]) :-
     trace_level(Level),
     Level_ is Level+1,
     catch(inference(From, State, State1, X), Error, (State1 = exception(Error), !)),
-    (current_fasill_flag(trace, true), State1 \= exception(_) ->
-        assertz(trace_derivation(trace(Level_, X, State1))),
-        retractall(trace_level(_)),
-        assertz(trace_level(Level_)) ; true),
+    (current_fasill_flag(trace, true), State1 \= exception(_) -> assertz(trace_derivation(trace(Level_, X, State1))) ; true),
+    retractall(trace_level(_)), assertz(trace_level(Level_)),
     derivation(X, State1, State_, Xs).
 
 % inference/4

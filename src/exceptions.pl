@@ -1,3 +1,14 @@
+/**
+  * 
+  * FILENAME: exceptions.pl
+  * DESCRIPTION: This module contains predicates for manipulating errors.
+  * AUTHORS: José Antonio Riaza Valverde
+  * UPDATED: 09.11.2018
+  * 
+  **/
+
+
+
 :- module(exceptions, [
     throw_exception/1,
     instantiation_error/2,

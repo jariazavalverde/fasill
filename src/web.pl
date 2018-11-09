@@ -1,3 +1,14 @@
+/**
+  * 
+  * FILENAME: web.pl
+  * DESCRIPTION: This module contains predicates for the web interface.
+  * AUTHORS: José Antonio Riaza Valverde
+  * UPDATED: 09.11.2018
+  * 
+  **/
+
+
+
 :- module(web, [
     web_run/5
 ]).

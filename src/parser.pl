@@ -1,3 +1,14 @@
+/**
+  * 
+  * FILENAME: parser.pl
+  * DESCRIPTION: This module contains predicates for parsing FASILL programs.
+  * AUTHORS: José Antonio Riaza Valverde
+  * UPDATED: 09.11.2018
+  * 
+  **/
+
+
+
 :- module(parser, [
     file_consult/2,
     file_query/2,
