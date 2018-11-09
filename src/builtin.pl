@@ -180,6 +180,8 @@ eval_builtin_predicate(bot/0, state(_, Subs), selected(ExprVar, bot, _), state(E
 %%% goal Goal.
 eval_builtin_predicate(truth_degree/2, state(_, Subs), selected(ExprVar, Var, Term), state(ExprVar, Subs_)) :-
     Term = term(truth_degree, [Goal,TD]),
+    trace_level(Level), Level_ is Level+1, retractall(trace_level(_)), assertz(trace_level(Level_)),
+    (current_fasill_flag(trace, true) -> assertz(trace_derivation(trace(Level_, truth_degree/2, state(Goal,Subs)))) ; true),
     derivation(truth_degree/2, state(Goal,Subs), State, _),
     (State = state(TD_,Subs_) -> Var = term('~',[TD,TD_]) ; State = exception(Error), throw_exception(Error)).
 
