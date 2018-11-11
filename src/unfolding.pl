@@ -41,7 +41,10 @@ unfold(R1) :-
 %
 % This predicate succeeds when +Rule is a FASILL rule
 % and ?Unfolded is an unfolded rule of +Rule.
+:- dynamic(check_unfolding/0).
 unfold(R1, R2) :-
+    retractall(check_unfolding),
+    assertz(check_unfolding),
     R1 = fasill_rule(head(Head), body(Body), [id(Id)|_]),
     ( select_atom(Body, Body_, BodyTD, Atom) ->
         fasill_rule(head(Headi), Bodyi, [id(Idi)|_]),
@@ -51,17 +54,22 @@ unfold(R1, R2) :-
         apply(Body_, Subs, BodySubs),
         atom_concat(Id, '-AS', Id_),
         atom_concat(Id_, Idi, IdAS),
-        R2 = fasill_rule(head(HeadSubs), body(BodySubs), [id(IdAS),syntax(fasill)])
+        R2 = fasill_rule(head(HeadSubs), body(BodySubs), [id(IdAS),syntax(fasill)]),
+        retractall(check_unfolding)
     ;
-        ( interpretive_step(unfolding/0, state(Body, _), state(Body_, _), _) ->
-            atom_concat(Id, '-IS', IdIS),
-            R2 = fasill_rule(head(Head), body(Body_), [id(IdIS),syntax(fasill)])
-        ;
-            failure_step(state(Body, _), state(Body_, _), _),
-            atom_concat(Id, '-FS', IdFS),
-            R2 = fasill_rule(head(Head), body(Body_), [id(IdFS),syntax(fasill)])
-        )
+        interpretive_step(unfolding/0, state(Body, _), state(Body_, _), _) ->
+        atom_concat(Id, '-IS', IdIS),
+        R2 = fasill_rule(head(Head), body(Body_), [id(IdIS),syntax(fasill)]),
+        retractall(check_unfolding)
     ).
+
+unfold(R1, R2) :-
+    check_unfolding,
+    retractall(check_unfolding),
+    R1 = fasill_rule(head(Head), body(Body), [id(Id)|_]),
+    failure_step(state(Body, _), state(Body_, _), _),
+    atom_concat(Id, '-FS', IdFS),
+    R2 = fasill_rule(head(Head), body(Body_), [id(IdFS),syntax(fasill)]).
 
 % unfold_by_id/1
 % unfold_by_id(?Id)
