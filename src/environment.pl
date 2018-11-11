@@ -24,6 +24,7 @@
     fasill_callable/1,
     fasill_list/1,
     fasill_connective/1,
+    fasill_rule/3,
     program_clause/2,
     program_rule_id/2,
     program_consult/1,

@@ -3,7 +3,7 @@
   * FILENAME: semantics.pl
   * DESCRIPTION: This module contains predicates implementing the semantics for FASILL.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 09.11.2018
+  * UPDATED: 11.11.2018
   * 
   **/
 
@@ -13,6 +13,8 @@
     wmgu/3,
     mgu/3,
     query/2,
+    select_atom/4,
+    select_expression/4,
     derivation/4,
     get_variables/2,
     inference/4,
