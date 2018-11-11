@@ -20,6 +20,7 @@
     inference/4,
     admissible_step/4,
     interpretive_step/4,
+    failure_step/3,
     apply/3,
     compose/3,
     rename/2,

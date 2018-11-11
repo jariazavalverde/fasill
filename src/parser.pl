@@ -127,7 +127,7 @@ parse_program([]) --> [].
 
 % parse_rule/3
 % parse a malp or fasill rule
-parse_rule(fasill_rule(head(Head), Body, [id(Id),Info])) -->
+parse_rule(fasill_rule(head(Head), Body, [id(IdAtom),Info])) -->
     parse_expr(1300, T), dot,
     {( T = term(with, [Head, TD]), Body = body(TD), Info = syntax(malp) ;
        T = term('<-', [Head, term(with, [BodyWith,TD])]), Body = body(term('&', [TD,BodyWith])), Info = syntax(malp) ;
@@ -135,7 +135,7 @@ parse_rule(fasill_rule(head(Head), Body, [id(Id),Info])) -->
        T = term('<-', [Head,Body_]), Body = body(Body_), Info = syntax(fasill) ;
        T = term('<'(_), [Head,Body_]), Body = body(Body_), Info = syntax(malp) ;
        T = Head, Body = empty, Info = syntax(fasill)
-    )}, !, {auto_rule_id(Id)}.
+    )}, !, {auto_rule_id(Id), atom_number(IdAtom, Id)}.
 
 % parse_operator/6
 % parse an operator T with Priority, Specifier and Name 
