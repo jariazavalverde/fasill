@@ -30,6 +30,7 @@
 % new unfolded rules.
 unfold(R1) :-
     findall(R, unfold(R1, R), Rules),
+    Rules \= [],
     once(retract(R1)),
     ( member(Rule, Rules),
       assertz(Rule),
