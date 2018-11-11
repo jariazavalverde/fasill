@@ -20,6 +20,10 @@ $_LIMIT = isset($_POST["limit"]) ? $_POST["limit"] : $def_limit;
 		<div class="container px-0 py-4">
 			<h4><i class="fas fa-code"></i> Program</h4>
 			<div id="program" class="sandbox-editor"><?php echo $_PROGRAM; ?></div>
+			<div class="text-right">
+				<a href="javascript:fasill_listing();">[+] Unfold program</a>
+			</div>
+			<div id="listing"></div>
 		</div>
 		<div class="container px-0 py-4">
 			<h4><i class="fas fa-circle"></i> Lattice

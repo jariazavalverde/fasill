@@ -274,7 +274,8 @@ success_step(From, state(Goal,Subs), state(Goal_,Subs_), Info) :-
 % from the state +State1 to the state ?State2. ?Info is an
 % atom containg information about the failure.
 failure_step(state(Goal,Subs), state(Goal_,Subs), 'FS') :-
-    select_atom(Goal, Goal_, bot, _).
+    lattice_call_bot(Bot),
+    select_atom(Goal, Goal_, Bot, _).
 
 % interpretive_step/4
 % interpretive_step(+From, +State1, ?State2, ?Info)

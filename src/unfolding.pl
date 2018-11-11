@@ -45,7 +45,7 @@ unfold(R1, R2) :-
     R1 = fasill_rule(head(Head), body(Body), [id(Id)|_]),
     ( select_atom(Body, Body_, BodyTD, Atom) ->
         fasill_rule(head(Headi), Bodyi, [id(Idi)|_]),
-        (Bodyi = empty -> BodyTD = TD ; BodyTD = term('&', [TD, Bodyi])),
+        (Bodyi = empty -> BodyTD = TD ; Bodyi = body(Bodyi_), BodyTD = term('&', [TD, Bodyi_])),
         wmgu(Atom, Headi, state(TD, Subs)),
         apply(Head, Subs, HeadSubs),
         apply(Body_, Subs, BodySubs),

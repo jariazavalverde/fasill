@@ -11,11 +11,13 @@
 
 :- module(sandbox, [
     sandbox_run/5,
-    sandbox_listing/1
+    sandbox_listing/1,
+    sandbox_unfold/4
 ]).
 
 :- use_module('environment').
 :- use_module('parser').
+:- use_module('unfolding').
 
 
 
@@ -23,10 +25,12 @@ sandbox_write([]).
 sandbox_write(level(0)).
 sandbox_write(level(N)) :- N > 0, write('  '), M is N-1, sandbox_write(level(M)).
 sandbox_write(trace(Level, Info, State)) :- sandbox_write(level(Level)), write(Info), write(' '), sandbox_write(State).
-sandbox_write(fasill_rule(head(Head), empty, [id(Id)])) :- !,
+sandbox_write(rule(head(Head), empty)) :- !, sandbox_write(Head), write('.').
+sandbox_write(rule(head(Head), body(Body))) :- !, sandbox_write(Head), write(' <- '), sandbox_write(Body), write('.').
+sandbox_write(fasill_rule(head(Head), empty, [id(Id)|_])) :- !,
     write(Id), write(' '),
     sandbox_write(Head), write('.').
-sandbox_write(fasill_rule(head(Head), body(Body), [id(Id)])) :- !,
+sandbox_write(fasill_rule(head(Head), body(Body), [id(Id)|_])) :- !,
     write(Id), write(' '),
     sandbox_write(Head), write(' <- '),
     sandbox_write(Body), write('.').
@@ -89,4 +93,18 @@ sandbox_listing(Program) :-
     program_consult(Program),
     ( fasill_rule(Head, Body, Info),
       sandbox_write(fasill_rule(Head, Body, Info)),
+      nl, fail ; true).
+
+% sandbox_unfold/4
+% sandbox_unfold(+Program, +Lattice, +Sim, +Rule)
+% 
+% This predicate loads the program <+Program, +Lattice, +Sim>
+% into the environemnt and runs the unfolding of the rule +Rule.
+sandbox_unfold(Program, Lattice, Sim, Rule) :-
+    lattice_consult(Lattice),
+    program_consult(Program),
+    catch(similarity_consult(Sim), Error, (write('uncaught exception in similarities: '), sandbox_write(Error), nl)),
+    unfold_by_id(Rule),
+    ( fasill_rule(Head, Body, _),
+      sandbox_write(rule(Head, Body)),
       nl, fail ; true).

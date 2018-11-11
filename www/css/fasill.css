@@ -87,3 +87,34 @@ h1 a:hover, h2 a:hover, h3 a:hover, h4 a:hover {
 .predicate-template-argument-arroba { color: #5a005d; }
 .predicate-template-argument-dots { color: #3e7770; }
 .predicate-template-argument-generic { color: #00005d; }
+
+.lst-rule-id {
+	background-color: #dfdfdf;
+	border: 1px solid #bfbfbf;
+	border-left: none;
+	color: #444444;
+	font-size: 14px;
+	font-weight: bold;
+	padding: 10px;
+	text-align: center;
+}
+
+.lst-rule {
+	background-color: #efefef;
+	border: 1px solid #bfbfbf;
+	border-radius: 2px;
+	cursor: pointer;
+	font-family: monospace, courier, arial;
+	font-size: 16px;
+	margin: 3px 0px;
+	padding: 5px;
+	padding-left: 0px;
+}
+
+.lst-rule:hover {
+	background-color: #f6bcd7;
+}
+
+.lst-rule:hover {
+	background-color: #dfdfdf;
+}

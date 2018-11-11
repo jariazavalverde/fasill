@@ -113,3 +113,36 @@ function fasill_run() {
 		draw_tree( data[1], "tree" );
 	});
 }
+
+function fasill_listing() {
+	var lst = document.getElementById("listing");
+	var data = jQuery.param({
+		"program": program.getValue()
+	});
+	post("php/listing.php", data, function(data) {
+		data = data.trim();
+		if(data === "")
+			data = "uncaught exception: unknown";
+		data = data.split("\n");
+		var html = "";
+		for(var i = 0; i < data.length; i++) {
+			data[i] = data[i].trim().split(/ (.+)/);
+			html += "<div onClick=\"fasill_unfold('" + data[i][0] + "');\" class=\"lst-rule mt-2\"> <span class=\"lst-rule-id\">" + data[i][0] + "</span> " + data[i][1] + "</div>";
+		}
+		lst.innerHTML = html;
+	});
+}
+
+function fasill_unfold(rule) {
+	var data = jQuery.param({
+		"program": program.getValue(),
+		"lattice": lattice.getValue(),
+		"sim": sim.getValue(),
+		"rule": rule
+	});
+	post("php/unfold.php", data, function(data) {
+		data = data.trim();
+		if(data !== "")
+			program.setValue(data);
+	});
+}
