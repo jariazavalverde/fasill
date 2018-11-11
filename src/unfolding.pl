@@ -8,6 +8,7 @@
   **/
 
 
+
 :- module(unfolding, [
     unfold/2,
     unfold_by_id/2
@@ -25,13 +26,17 @@
 % and ?Unfolded is an unfolded rule of +Rule.
 unfold(R1, R2) :-
     R1 = fasill_rule(head(Head), body(Body), _),
-    select_atom(Body, Body_, BodyTD, Atom),
-    fasill_rule(head(Headi), Bodyi, _),
-    (Bodyi = empty -> BodyTD = TD ; BodyTD = term('&', [TD, Bodyi])),
-    wmgu(Atom, Headi, state(TD, Subs)),
-    apply(Head, Subs, HeadSubs),
-    apply(Body_, Subs, BodySubs),
-    R2 = fasill_rule(head(HeadSubs), body(BodySubs), []).
+    ( select_atom(Body, Body_, BodyTD, Atom) ->
+        fasill_rule(head(Headi), Bodyi, _),
+        (Bodyi = empty -> BodyTD = TD ; BodyTD = term('&', [TD, Bodyi])),
+        wmgu(Atom, Headi, state(TD, Subs)),
+        apply(Head, Subs, HeadSubs),
+        apply(Body_, Subs, BodySubs),
+        R2 = fasill_rule(head(HeadSubs), body(BodySubs), [])
+    ;
+        interpretive_step(unfolding/0, state(Body, _), state(Body_, _), _),
+        R2 = fasill_rule(head(Head), body(Body_), [])
+    ).
 
 % unfold_by_id/2
 % unfold_by_id(?Id, ?Unfolded)
