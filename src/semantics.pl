@@ -114,6 +114,13 @@ mgu([X|Xs], [Y|Ys], Subs1, Subs3) :- !,
 
 % DERIVATIONS
 
+% is_fuzzy_computed_answer/1
+% is_fuzzy_computed_answer(+Expression)
+%
+% This predicate succeeds when +Expression is
+% a (symbolic) fuzzy computed answer.
+is_fuzzy_computed_answer(X) :- interpretable(X), \+select_expression(X, _, _, _).
+
 % select_atom/4
 % select_atom(+Expression, ?ExprVar, ?Var, ?Atom)
 %
@@ -121,10 +128,11 @@ mgu([X|Xs], [Y|Ys], Subs1, Subs3) :- !,
 % +Expression, where ?ExprVar is the expression +Expression
 % with the variable ?Var instead of the atom ?Atom.
 select_atom(term(Term, Args), term(Term, Args_), Var, Atom) :-
-    ( (Term =.. [Op,_] ; Term =.. [Op]), member(Op, ['@','&','|']) ;
-      member(Term, ['@','&','|']) ), !,
+    (Term =.. [Op,_] ; Term =.. [Op]), member(Op, ['@','&','|','#@','#&','#|']), !,
     select_atom(Args, Args_, Var, Atom).
-select_atom(term(Term, Args), Var, Var, term(Term, Args)) :- \+lattice_call_member(term(Term, Args)).
+select_atom(term(Term, Args), Var, Var, term(Term, Args)) :-
+    Term =.. ['#',_] -> fail ;
+    \+lattice_call_member(term(Term, Args)).
 select_atom([Term|Args], [Term_|Args], Var, Atom) :- select_atom(Term, Term_, Var, Atom), !.
 select_atom([Term|Args], [Term|Args_], Var, Atom) :- select_atom(Args, Args_, Var, Atom).
 
@@ -194,8 +202,10 @@ get_variables2(_,[]).
 derivation(_, exception(Error), exception(Error), []) :- !.
 derivation(_, state(Goal,Subs), State, []) :-
     catch(
-        ( lattice_call_member(Goal), State = state(Goal, Subs)),
-          Error, State = exception(Error) ), !.
+        (is_fuzzy_computed_answer(Goal), State = state(Goal, Subs)),
+        Error,
+        State = exception(Error)
+    ), !.
 derivation(From, State, State_, [X|Xs]) :-
     (trace_level(Level) -> Level_ is Level+1 ; Level_ = false),
     catch(inference(From, State, State1, X), Error, (State1 = exception(Error), !)),

@@ -3,7 +3,7 @@
   * FILENAME: parser.pl
   * DESCRIPTION: This module contains predicates for parsing FASILL programs.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 09.11.2018
+  * UPDATED: 12.11.2018
   * 
   **/
 
@@ -50,13 +50,13 @@ file_query(Path, Query) :-
 % consult a program
 parse_consult(Input, Program) :-
     reset_rule_id,
-    parse_program(Program, Input, []).
+    once(parse_program(Program, Input, [])).
 
 % parse_query/2
 % query a goal
 parse_query(Input, Goal) :-
     reset_rule_id,
-    parse_expr(1300, Goal, Input, ['.']).
+    once(parse_expr(1300, Goal, Input, ['.'])).
 
 
 
@@ -68,9 +68,11 @@ parse_query(Input, Goal) :-
 current_op(1300, xfx, '<-',   no).
 current_op(1300, xfx, '<',    yes).
 current_op(1200, xfx, 'with', no).
+current_op(1100, xfy, '#|',   yes).
 current_op(1100, xfy, '|',    yes).
 current_op(1100, xfy, '|',    no).
 current_op(1100, xfy, ';',    no).
+current_op(1050, xfy, '#&',   yes).
 current_op(1050, xfy, '&',    yes).
 current_op(1050, xfy, '&',    no).
 current_op(1050, xfy, ',',    no).
@@ -200,6 +202,7 @@ parse_term3([]) --> rparen.
 
 % parse_agr/3
 % parse an aggregator
+parse_agr(term('#@'(Name), [H|T])) --> ['#','@'], token_atom(Name), lparen, parse_expr(999, H), parse_term3(T).
 parse_agr(term('@'(Name), [H|T])) --> ['@'], token_atom(Name), lparen, parse_expr(999, H), parse_term3(T).
 
 % parse_list/3
@@ -278,6 +281,7 @@ double_quote_content(['\\']) --> ['\\','\\'].
 
 % Atoms
 token_atom('!') --> ['!'].
+token_atom('#'(T)) --> ['#'], token_minus_identifier(T).
 token_atom(T) --> quoted(Xs), {atom_chars(T,Xs)}.
 token_atom(T) --> token_graphics(T).
 token_atom(T) --> token_minus_identifier(T).

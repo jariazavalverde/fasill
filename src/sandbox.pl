@@ -39,6 +39,8 @@ sandbox_write(bot) :- write(bot).
 sandbox_write(num(X)) :- write(X).
 sandbox_write(var(X)) :- write(X).
 sandbox_write(X/Y) :- write(X), write('/'), sandbox_write(Y).
+sandbox_write(term('#&'(Name),[X,Y])) :- !, write('('), sandbox_write(X), write(' #&'), write(Name), write(' '), sandbox_write(Y), write(')'). 
+sandbox_write(term('#|'(Name),[X,Y])) :- !, write('('), sandbox_write(X), write(' #|'), write(Name), write(' '), sandbox_write(Y), write(')'). 
 sandbox_write(term('&'(Name),[X,Y])) :- !, write('('), sandbox_write(X), write(' &'), write(Name), write(' '), sandbox_write(Y), write(')'). 
 sandbox_write(term('|'(Name),[X,Y])) :- !, write('('), sandbox_write(X), write(' |'), write(Name), write(' '), sandbox_write(Y), write(')'). 
 sandbox_write(term('.',[X,Y])) :- !, sandbox_write_list(list(term('.',[X,Y]))). 
