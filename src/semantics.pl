@@ -197,11 +197,10 @@ derivation(_, state(Goal,Subs), State, []) :-
         ( lattice_call_member(Goal), State = state(Goal, Subs)),
           Error, State = exception(Error) ), !.
 derivation(From, State, State_, [X|Xs]) :-
-    trace_level(Level),
-    Level_ is Level+1,
+    (trace_level(Level) -> Level_ is Level+1 ; Level_ = false),
     catch(inference(From, State, State1, X), Error, (State1 = exception(Error), !)),
     (current_fasill_flag(trace, true), State1 \= exception(_) -> assertz(trace_derivation(trace(Level_, X, State1))) ; true),
-    retractall(trace_level(_)), assertz(trace_level(Level_)),
+    ( Level_\= false -> retractall(trace_level(_)), assertz(trace_level(Level_)) ; true),
     derivation(X, State1, State_, Xs).
 
 % inference/4
