@@ -189,8 +189,8 @@ parse_expr_zero(str(T)) --> token_string(T), !.
 parse_expr_zero(var(T)) --> token_variable(T), !.
 parse_expr_zero(T) --> lparen, !, parse_expr(1300, T), rparen.
 parse_expr_zero(T) --> parse_list(T), !.
-parse_expr_zero(T) --> parse_term(T), !.
 parse_expr_zero(T) --> parse_agr(T), !.
+parse_expr_zero(T) --> parse_term(T), !.
 
 % parse_term/3
 % parse a (possible compound) term
