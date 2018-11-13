@@ -20,17 +20,18 @@ $_LIMIT = isset($_POST["limit"]) ? $_POST["limit"] : $def_limit;
 		<div class="container px-0 py-4">
 			<h4><i class="fas fa-code"></i> Program</h4>
 			<div id="program" class="sandbox-editor"><?php echo $_PROGRAM; ?></div>
-			<div class="text-right">
-				<a href="javascript:fasill_listing();">[+] Unfold program</a>
+			<div class="text-right mt-2">
+				<button onClick="fasill_listing();" type="button" class="btn btn-primary btn-sm">Unfold program</button>
 			</div>
 			<div id="listing"></div>
 		</div>
 		<div class="container px-0 py-4">
-			<h4><i class="fas fa-circle"></i> Lattice
+			<h4><i class="fas fa-circle"></i> Lattice</h4>
+			<div id="lattice" class="sandbox-editor"><?php echo $_LATTICE; ?></div>
+			<div class="text-right mt-2">
 				<button type="button" class="btn btn-dark btn-sm float-right ml-2" onClick="load_lattice('sample/bool.lat.pl');">bool</button>
 				<button type="button" class="btn btn-dark btn-sm float-right" onClick="load_lattice('sample/real.lat.pl');">real</button>
-			</h4>
-			<div id="lattice" class="sandbox-editor"><?php echo $_LATTICE; ?></div>
+			</div>
 		</div>
 		<div class="container px-0 py-4">
 			<h4><i class="fas fa-equals"></i> Similarity Relation</h4>

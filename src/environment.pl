@@ -72,6 +72,7 @@ fasill_flag(quoted_chars, [chars, codes, atom], chars).
 fasill_flag(unknown, [error, fail, warning], error).
 fasill_flag(occurs_check, [false, true], false).
 fasill_flag(max_inferences, [false, num(_)], false).
+fasill_flag(symbolic, [false, true], true).
 
 % current_fasill_flag/2
 % current_fasill_flag(?Flag, ?Value)

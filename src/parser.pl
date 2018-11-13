@@ -18,6 +18,8 @@
     parse_testcases/2
 ]).
 
+:- use_module('environment').
+
 
 
 % UTILS
@@ -197,8 +199,12 @@ parse_testcases([]) --> [].
 % This predicate parses the testcase ?Testcase from
 % the input +Chars, leaving the characters ?Rest.
 parse_testcase(testcase(TD, Goal)) -->
-    parse_expr(1300, Expr), dot,
-    {Expr = term('->', [TD, Goal])}.
+    {current_fasill_flag(symbolic, Flag),
+    set_fasill_flag(symbolic, false)},
+    ( parse_expr(1300, Expr), dot,
+      {Expr = term('->', [TD, Goal]),
+        set_fasill_flag(symbolic, Flag)}, !
+    ; {set_fasill_flag(symbolic, Flag), fail} ).
 
 % parse_operator/6
 % parse an operator T with Priority, Specifier and Name 

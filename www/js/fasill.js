@@ -91,6 +91,12 @@ function post( url, data, callback ) {
 	xhttp.send(data);
 }
 
+function cancel(e) {
+	var lst = document.getElementById("listing");
+	if(lst)
+		lst.innerHTML = "";
+}
+
 function fasill_run() {
 	var data = jQuery.param({
 		"program": program.getValue(),
@@ -119,21 +125,29 @@ function fasill_listing() {
 	var data = jQuery.param({
 		"program": program.getValue()
 	});
+	lst.innerHTML = "Parsing rules...";
 	post("php/listing.php", data, function(data) {
 		data = data.trim();
-		if(data === "")
+		if(data === "") {
 			data = "uncaught exception: unknown";
-		data = data.split("\n");
-		var html = "";
-		for(var i = 0; i < data.length; i++) {
-			data[i] = data[i].trim().split(/ (.+)/);
-			html += "<div onClick=\"fasill_unfold('" + data[i][0] + "');\" class=\"lst-rule mt-2\"> <span class=\"lst-rule-id\">" + data[i][0] + "</span> " + data[i][1] + "</div>";
+		} else if(data.substring(0,19) === "uncaught exception:") {
+			
+		} else {
+			data = data.split("\n");
+			var html = "";
+			for(var i = 0; i < data.length; i++) {
+				data[i] = data[i].trim().split(/ (.+)/);
+				html += "<div onClick=\"fasill_unfold(event, '" + data[i][0] + "');\" class=\"lst-rule mt-3\"><span class=\"lst-rule-id\">" + data[i][0] + "</span><span class=\"lst-rule-content\">" + data[i][1] + "</span></div>";
+			}
 		}
 		lst.innerHTML = html;
 	});
 }
 
-function fasill_unfold(rule) {
+function fasill_unfold(e, rule) {
+	e.stopPropagation();
+	var lst = document.getElementById("listing");
+	lst.innerHTML = "Unfolding program...";
 	var data = jQuery.param({
 		"program": program.getValue(),
 		"lattice": lattice.getValue(),
@@ -141,6 +155,7 @@ function fasill_unfold(rule) {
 		"rule": rule
 	});
 	post("php/unfold.php", data, function(data) {
+		lst.innerHTML = "";
 		data = data.trim();
 		if(data !== "")
 			program.setValue(data);
