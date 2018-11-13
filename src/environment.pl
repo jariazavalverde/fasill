@@ -225,7 +225,7 @@ program_rule_id(fasill_rule(_,_,Info), Id) :- member(id(Id), Info).
 program_consult(Path) :-
     retractall(fasill_rule(_,_,_)),
     retractall(fasill_predicate(_)),
-    file_consult(Path, Rules),
+    file_program(Path, Rules),
     (   member(Rule, Rules),
         assertz(Rule),
         Rule = fasill_rule(head(term(Name,Args)),_,_),

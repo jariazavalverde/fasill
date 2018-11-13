@@ -3,20 +3,24 @@
   * FILENAME: parser.pl
   * DESCRIPTION: This module contains predicates for parsing FASILL programs.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 12.11.2018
+  * UPDATED: 13.11.2018
   * 
   **/
 
 
 
 :- module(parser, [
-    file_consult/2,
+    file_program/2,
     file_query/2,
-    parse_consult/2,
-    parse_query/2
+    file_testcases/2,
+    parse_program/2,
+    parse_query/2,
+    parse_testcases/2
 ]).
 
 
+
+% UTILS
 
 % stream_to_list/2
 % stream_to_list(+Stream, ?List)
@@ -30,33 +34,72 @@ stream_to_list(Stream, [Char|Input]) :-
     char_code(Char, Code),
     stream_to_list(Stream, Input).
 
-% file_consult/2
-% consult a program
-file_consult(Path, Program) :-
+
+
+% FILE OPERATIONS
+
+% file_program/2
+% file_program(+Path, ?Program)
+%
+% This predicate succeeds when file +Path exists and
+% it can be parsed as a FASILL program ?Program.
+file_program(Path, Program) :-
     open(Path, read, Stream),
     stream_to_list(Stream, Input),
     close(Stream),
-    parse_consult(Input, Program).
+    parse_program(Input, Program).
 
 % file_query/2
-% consult a goal
+% file_query(+Path, ?Goal)
+%
+% This predicate succeeds when file +Path exists and
+% it can be parsed as a FASILL goal ?Goal.
 file_query(Path, Query) :-
     open(Path, read, Stream),
     stream_to_list(Stream, Input),
     close(Stream),
     parse_query(Input, Query).
 
-% parse_consult/2
-% consult a program
-parse_consult(Input, Program) :-
+% file_testcases/2
+% file_testcases(+Path, ?Testcases)
+%
+% This predicate succeeds when file +Path exists and
+% it can be parsed as a FASILL set of testcases ?Testcases.
+file_testcases(Path, Testcases) :-
+    open(Path, read, Stream),
+    stream_to_list(Stream, Input),
+    close(Stream),
+    parse_testcases(Input, Testcases).
+
+
+
+% CHARS OPERATIONS
+
+% parse_program/2
+% parse_program(+Chars, ?Program)
+%
+% This predicate parses a FASILL program ?Program
+% from a list of characters +Chars.
+parse_program(Input, Program) :-
     reset_rule_id,
     once(parse_program(Program, Input, [])).
 
 % parse_query/2
-% query a goal
+% parse_query(+Chars, ?Program)
+%
+% This predicate parses a FASILL goal ?Goal
+% from a list of characters +Chars.
 parse_query(Input, Goal) :-
     reset_rule_id,
     once(parse_expr(1300, Goal, Input, ['.'])).
+
+% parse_testcases/2
+% parse_testcases(+Chars, ?Testcases)
+%
+% This predicate parses a set of testcases ?Testcases
+% from a list of characters +Chars.
+parse_testcases(Input, Testcases) :-
+    parse_testcases(Testcases, Input, []).
 
 
 
@@ -66,6 +109,7 @@ parse_query(Input, Goal) :-
 % initial operator table
 :- dynamic current_op/4.
 current_op(1300, xfx, '<-',   no).
+current_op(1300, xfx, '->',   no).
 current_op(1300, xfx, '<',    yes).
 current_op(1200, xfx, 'with', no).
 current_op(1100, xfy, '#|',   yes).
@@ -106,7 +150,7 @@ current_op(200,  fy,  '-',    no).
 
 
 
-% PARSER
+% GRAMMAR
 
 % current_rule_id/1
 % store the current identifier to be used in a rule
@@ -138,6 +182,23 @@ parse_rule(fasill_rule(head(Head), Body, [id(IdAtom),Info])) -->
        T = term('<'(_), [Head,Body_]), Body = body(Body_), Info = syntax(malp) ;
        T = Head, Body = empty, Info = syntax(fasill)
     )}, !, {auto_rule_id(Id), atom_number(IdAtom, Id)}.
+
+% parse_testcases/3
+% parse_testcases(?Testcase, +Chars, ?Rest)
+%
+% This predicate parses the set of testcases ?Testcases
+% from the input +Chars, leaving the characters ?Rest.
+parse_testcases([H|T]) --> parse_testcase(H), !, parse_testcases(T), blanks.
+parse_testcases([]) --> [].
+
+% parse_testcase/3
+% parse_testcase(?Testcase, +Chars, ?Rest)
+%
+% This predicate parses the testcase ?Testcase from
+% the input +Chars, leaving the characters ?Rest.
+parse_testcase(testcase(TD, Goal)) -->
+    parse_expr(1300, Expr), dot,
+    {Expr = term('->', [TD, Goal])}.
 
 % parse_operator/6
 % parse an operator T with Priority, Specifier and Name 
