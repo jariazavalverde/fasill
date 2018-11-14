@@ -62,6 +62,47 @@ findall_symbolic_cons(term(Term, Args), [sym(Type, Name, Arity)|Sym]) :-
 findall_symbolic_cons(term(_, Args), Sym) :- !, findall_symbolic_cons(Args, Sym).
 findall_symbolic_cons(_, []).
 
+% symbolic_substitution/2
+% symbolic_substitution(+Symbols, -Substitution)
+%
+% This predicate succeeds when +Symbols is a set of symbolic
+% constants and -Substitution is a possible symbolic substitution
+% for constants +Symbols. This predicate can be used for generating,
+% by reevaluation, all possible symbolic substitutions for the constants.
+symbolic_substitution([], []).
+symbolic_substitution([H|T], [H/H_|T_]) :-
+    symbolic_substitution(H, H_),
+    symbolic_substitution(T, T_).
+symbolic_substitution(sym(td,_,0), val(td,Value,0)) :-
+    lattice_call_members(Members),
+    member(Value, Members).
+symbolic_substitution(sym(Type,_,Arity), val(Type,Name,Arity)) :-
+    Arity > 0,
+    Arity_ is Arity + 1,
+    atom_concat(Type, '_', Type_),
+    current_predicate(environment:Predicate/Arity_),
+    atom_concat(Type_, Name, Predicate).
+
+% apply_symbolic_substitution/3
+% apply_symbolic_substitution(+ExpressionIn, +Substitution, -ExpressionOut)
+%
+% This predicate succeeds when +ExpressionOut is the resulting
+% expression after applying the symbolic substitution +Substitution
+% to the expression +ExpressionIn.
+apply_symbolic_substitution('#'(Name), Subs, Value) :-
+    member(sym(td,Name,0)/val(td,Value,0), Subs), !.
+apply_symbolic_substitution(term(Term,Args), Subs, Value) :-
+    Term =.. [Op, Name],
+    length(Args, Length),
+    member((Op,Type), [('#&',and),('#|',or),('#@',agr),('#?',con)]),
+    member(sym(Type,Name,Length)/val(Type,Value,Length), Subs), !.
+apply_symbolic_substitution(term(Name,Args), Subs, term(Name,Args_)) :-
+    apply_symbolic_substitution(Args, Subs, Args_), !.
+apply_symbolic_substitution([H|T], Subs, [H_|T_]) :-
+    apply_symbolic_substitution(H, Subs, H_),
+    apply_symbolic_substitution(T, Subs, T_), !.
+apply_symbolic_substitution(X, _, X).
+
 
 
 % TUNING THRESHOLDED TECHNIQUE
@@ -72,17 +113,17 @@ findall_symbolic_cons(_, []).
 % This predicate succeeds when ?Substitution is the best
 % symbolic substitution for the set of test cases loaded
 % into the current environment, with deviation ?Deviation.
-tuning_thresholded(Subs, Deviation) :- 
+tuning_thresholded(Best, Deviation) :- 
     retractall(tuning_best_substitution(_,_)),
 	findall_symbolic_cons(Sym),
 	findall(testcase(TD,SFCA), (
         fasill_testcase(TD, Goal),
         query(Goal, SFCA)
     ), Tests),
-	( tuning_combination(Sym, Combination),
-	  tuning_thresholded(Tests, Combination, 0.0),
+	( symbolic_substitution(Sym, Subs),
+	  tuning_thresholded(Tests, Subs, 0.0),
       fail ; true ),
-    tuning_best_substitution(Subs, Deviation).
+    tuning_best_substitution(Best, Deviation).
 
 % tuning_thresholded/3
 % tuning_thresholded(+Tests, +Substitution, ?Error)
@@ -96,8 +137,9 @@ tuning_thresholded([], Subs, Error) :- !,
 	retractall(tuning_best_substitution(_,_)),
 	asserta(tuning_best_substitution(Subs, Error)).
 tuning_thresholded([testcase(TD,SFCA)|Tests], Subs, Error) :-
-	(tuning_best_substitution(_, Best) -> Best > Error ; true),
-    query(SFCA, state(TD_, _)),
+    (tuning_best_substitution(_, Best) -> Best > Error ; true),
+    apply_symbolic_substitution(SFCA, Subs, FCA),
+    query(FCA, state(TD_, _)),
 	lattice_call_distance(TD, TD_, Distance),
 	Error_ is Error + Distance,
     tuning_thresholded(Tests, Subs, Error_).

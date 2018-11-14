@@ -35,13 +35,15 @@
     lattice_call_bot/1,
     lattice_call_top/1,
     lattice_call_member/1,
+    lattice_call_members/1,
     lattice_call_distance/3,
     lattice_call_connective/3,
     lattice_reduce_connective/3,
     lattice_consult/1,
     similarity_tnorm/1,
     similarity_between/4,
-    similarity_consult/1
+    similarity_consult/1,
+    testcases_consult/1
 ]).
 
 :- use_module(parser).
@@ -50,6 +52,7 @@
 
 :- dynamic(
     fasill_rule/3,
+    fasill_testcase/2,
     fasill_predicate/1,
     fasill_lattice_tnorm/1,
     '~'/1,
@@ -329,6 +332,19 @@ lattice_call_member(_) :-
     existence_error(procedure, member/1, lattice/0, Error),
     throw_exception(Error).
 
+% lattice_call_members/1
+% lattice_call_members(-Members)
+%
+% This predicate succeeds when -Members is a list of
+% members of the lattice loaded into the environment.
+lattice_call_members(Members) :-
+    current_predicate(members/1), !,
+    members(Prolog),
+    maplist(from_prolog, Prolog, Members).
+lattice_call_members(_) :-
+    existence_error(procedure, members/1, lattice/0, Error),
+    throw_exception(Error).
+
 % lattice_call_distance/3
 % lattice_call_distance(+Member1, +Member2, -Distance)
 %
@@ -520,3 +536,20 @@ similarity_closure_transitive(Dom, _, Tnorm, _, _) :-
     lattice_call_connective('|'(Tnorm), [TDPxy,TDz], TD),
     to_prolog(TD, TDP),
     assertz('~'(X/Length,Y/Length = TDP)).
+
+
+
+% TEST CASES
+
+% testcases_consult/1
+% testcases_consult(+Path)
+%
+% This predicate loads the set of FASILL test cases
+% from the file +Path into the environment. This
+% predicate cleans the previous test cases.
+testcases_consult(Path) :-
+    retractall(fasill_testcase(_,_)),
+    file_testcases(Path, Tests),
+    ( member(Test, Tests),
+      assertz(Test),
+      fail ; true ).

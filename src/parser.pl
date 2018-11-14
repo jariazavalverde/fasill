@@ -198,7 +198,7 @@ parse_testcases([]) --> [].
 %
 % This predicate parses the testcase ?Testcase from
 % the input +Chars, leaving the characters ?Rest.
-parse_testcase(testcase(TD, Goal)) -->
+parse_testcase(fasill_testcase(TD, Goal)) -->
     {current_fasill_flag(symbolic, Flag),
     set_fasill_flag(symbolic, false)},
     ( parse_expr(1300, Expr), dot,
