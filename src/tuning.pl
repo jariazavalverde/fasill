@@ -89,13 +89,16 @@ symbolic_substitution(sym(Type,_,Arity), val(Type,Name,Arity)) :-
 % This predicate succeeds when +ExpressionOut is the resulting
 % expression after applying the symbolic substitution +Substitution
 % to the expression +ExpressionIn.
-apply_symbolic_substitution('#'(Name), Subs, Value) :-
+apply_symbolic_substitution(term('#'(Name),[]), Subs, Value) :-
     member(sym(td,Name,0)/val(td,Value,0), Subs), !.
-apply_symbolic_substitution(term(Term,Args), Subs, Value) :-
+apply_symbolic_substitution(term(Term,Args), Subs, term(Term2,Args_)) :-
     Term =.. [Op, Name],
     length(Args, Length),
     member((Op,Type), [('#&',and),('#|',or),('#@',agr),('#?',con)]),
-    member(sym(Type,Name,Length)/val(Type,Value,Length), Subs), !.
+    member(sym(Type,Name,Length)/val(Type2,Value,Length), Subs),
+    member((Op2,Type2), [('&',and),('|',or),('@',agr)]),
+    Term2 =.. [Op2, Value],
+    apply_symbolic_substitution(Args, Subs, Args_), !.
 apply_symbolic_substitution(term(Name,Args), Subs, term(Name,Args_)) :-
     apply_symbolic_substitution(Args, Subs, Args_), !.
 apply_symbolic_substitution([H|T], Subs, [H_|T_]) :-
@@ -113,12 +116,12 @@ apply_symbolic_substitution(X, _, X).
 % This predicate succeeds when ?Substitution is the best
 % symbolic substitution for the set of test cases loaded
 % into the current environment, with deviation ?Deviation.
-tuning_thresholded(Best, Deviation) :- 
+tuning_thresholded(Best, Deviation) :-
     retractall(tuning_best_substitution(_,_)),
 	findall_symbolic_cons(Sym),
 	findall(testcase(TD,SFCA), (
         fasill_testcase(TD, Goal),
-        query(Goal, SFCA)
+        query(Goal, state(SFCA,_))
     ), Tests),
 	( symbolic_substitution(Sym, Subs),
 	  tuning_thresholded(Tests, Subs, 0.0),
@@ -140,6 +143,6 @@ tuning_thresholded([testcase(TD,SFCA)|Tests], Subs, Error) :-
     (tuning_best_substitution(_, Best) -> Best > Error ; true),
     apply_symbolic_substitution(SFCA, Subs, FCA),
     query(FCA, state(TD_, _)),
-	lattice_call_distance(TD, TD_, Distance),
+	lattice_call_distance(TD, TD_, num(Distance)),
 	Error_ is Error + Distance,
     tuning_thresholded(Tests, Subs, Error_).

@@ -3,7 +3,7 @@
   * FILENAME: sandbox.pl
   * DESCRIPTION: This module contains predicates for the web interface.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 11.11.2018
+  * UPDATED: 14.11.2018
   * 
   **/
 
@@ -12,12 +12,14 @@
 :- module(sandbox, [
     sandbox_run/5,
     sandbox_listing/1,
-    sandbox_unfold/4
+    sandbox_unfold/4,
+    sandbox_tune/5
 ]).
 
 :- use_module('environment').
 :- use_module('parser').
 :- use_module('unfolding').
+:- use_module('tuning').
 
 
 
@@ -34,6 +36,13 @@ sandbox_write(fasill_rule(head(Head), body(Body), [id(Id)|_])) :- !,
     write(Id), write(' '),
     sandbox_write(Head), write(' <- '),
     sandbox_write(Body), write('.').
+sandbox_write(symbolic_subs(Subs)) :- !, write('{'), sandbox_write(Subs), write('}').
+sandbox_write(sym(Type1,Cons,Arity)/val(Type2,Name,Arity)) :- !,
+    Types = [(td,''),(and,'&'),(or,'|'),(agr,'@'),(con,'?')],
+    member((Type1,Op1), Types),
+    member((Type2,Op2), Types),
+    write('#'), write(Op1), write(Cons), write('/'), write(Op2),
+    (Type1 = td -> sandbox_write(Name) ; write(Name)).
 sandbox_write(top) :- write(top).
 sandbox_write(bot) :- write(bot).
 sandbox_write(num(X)) :- write(X).
@@ -75,7 +84,7 @@ sandbox_write_list(X) :- write('|'), sandbox_write(X).
 % sandbox_run(+Program, +Lattice, +Sim, +Goal, +Limit)
 % 
 % This predicate loads the program <+Program, +Lattice, +Sim>
-% into the environemnt and runs the goal +Goal, with a limit
+% into the environment and runs the goal +Goal, with a limit
 % of derivations +Limit, and writes in the standard output
 % the resulting derivations.
 sandbox_run(Program, Lattice, Sim, Goal, Limit) :-
@@ -114,3 +123,22 @@ sandbox_unfold(Program, Lattice, Sim, Rule) :-
     ( fasill_rule(Head, Body, _),
       sandbox_write(rule(Head, Body)),
       nl, fail ; true).
+
+% sandbox_tune/5
+% sandbox_tune(+Program, +Lattice, +Sim, +Tests, +Limit)
+% 
+% This predicate loads the program <+Program, +Lattice, +Sim>
+% into the environment and tune the program w.r.t. the set
+% of test cases +Tests, with a limit of derivations +Limit,
+% and writes in the standard output the resulting substitution.
+sandbox_tune(Program, Lattice, Sim, Tests, Limit) :-
+    set_fasill_flag(trace, true),
+    set_fasill_flag(max_inferences, num(Limit)),
+    lattice_consult(Lattice),
+    program_consult(Program),
+    testcases_consult(Tests),
+    catch(similarity_consult(Sim), Error, (write('uncaught exception in similarities: '), sandbox_write(Error), nl)),
+    tuning_thresholded(Subs, Deviation),
+    write('best symbolic substitution: '),
+    sandbox_write(symbolic_subs(Subs)), nl,
+    write('deviation: '), write(Deviation).
