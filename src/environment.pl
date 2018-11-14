@@ -3,7 +3,7 @@
   * FILENAME: environment.pl
   * DESCRIPTION: This module contains predicates for manipulating programs, lattices and similarity relations.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 09.11.2018
+  * UPDATED: 14.11.2018
   * 
   **/
 
@@ -35,6 +35,7 @@
     lattice_call_bot/1,
     lattice_call_top/1,
     lattice_call_member/1,
+    lattice_call_distance/3,
     lattice_call_connective/3,
     lattice_reduce_connective/3,
     lattice_consult/1,
@@ -326,6 +327,24 @@ lattice_call_member(Member) :-
     member(Prolog).
 lattice_call_member(_) :-
     existence_error(procedure, member/1, lattice/0, Error),
+    throw_exception(Error).
+
+% lattice_call_distance/3
+% lattice_call_distance(+Member1, +Member2, -Distance)
+%
+% This predicate succeeds when +Member1 and +Member2 are
+% members of the lattice loaded into the environment, and
+% -Distance is the distace between them.
+lattice_call_distance(Member1, Member2, Distance) :-
+    current_predicate(distance/3), !,
+    lattice_call_member(Member1),
+    lattice_call_member(Member2),
+    to_prolog(Member1, Prolog1),
+    to_prolog(Member2, Prolog2),
+    distance(Prolog1, Prolog2, Prolog3),
+    from_prolog(Prolog3, Distance).
+lattice_call_distance(_, _, _) :-
+    existence_error(procedure, distance/3, lattice/0, Error),
     throw_exception(Error).
 
 % lattice_call_connective/3
