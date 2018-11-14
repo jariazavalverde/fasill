@@ -20,6 +20,35 @@
 
 
 
+% findall_symbolic_cons/1
+% findall_symbolic_cons(?Symbols)
+%
+% This predicate succeeds when ?Symbols is the set of symbolic
+% constants contained in the FASILL rules asserted in the current
+% environment.
+findall_symbolic_cons(Symbols) :-
+    findall(Body, (fasill_rule(_, body(Body), _)), Rules),
+    findall_symbolic_cons(Rules, Symbols).
+
+% findall_symbolic_cons/2
+% findall_symbolic_cons(+Expression, ?Symbols)
+%
+% This predicate succeeds when ?Symbols is the set of symbolic
+% constants contained in +Expression.
+findall_symbolic_cons([], []) :- !.
+findall_symbolic_cons([H|T], Sym) :- !,
+    findall_symbolic_cons(H, SymH),
+    findall_symbolic_cons(T, SymT),
+    append(SymH, SymT, Sym).
+findall_symbolic_cons(term('#'(Name),[]), [sym(td, Name, 0)]) :- !.
+findall_symbolic_cons(term(Term, Args), [sym(Type, Name, Arity)|Sym]) :-
+    Term =.. [Op,Name],
+    member((Op,Type), [('#&',and),('#|',or),('#@',agr),('#?',con)]),
+    !, length(Args, Arity),
+    findall_symbolic_cons(Args, Sym).
+findall_symbolic_cons(term(_, Args), Sym) :- !, findall_symbolic_cons(Args, Sym).
+findall_symbolic_cons(_, []).
+
 % tuning_tau/1
 % tuning_tau(?Tau)
 %
@@ -43,7 +72,7 @@ tuning_thresholded(Subs, Error) :-
     retractall(tuning_substitution(_)),
     retractall(tuning_tau(_)),
     asserta(tuning_tau(inf)),
-	findall_symbolic_constants(Sym),
+	findall_symbolic_cons(Sym),
 	findall(testcase(TD,SFCA), (
         fasill_testcase(TD, Goal),
         query(Goal, SFCA)
