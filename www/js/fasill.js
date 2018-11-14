@@ -2,9 +2,11 @@ var program;
 var lattice;
 var sim;
 var goal;
+var tests;
 var limit;
 var output;
 var derivation;
+var substitution;
 
 window.addEventListener("load", function() {
 	var program_value = document.getElementById("program").innerHTML.replace(/&lt;/g,"<").replace(/&gt;/g,">");
@@ -97,6 +99,57 @@ function cancel(e) {
 		lst.innerHTML = "";
 }
 
+function addClassName( elem, name ) {
+	var arr = elem.className.split(" ");
+	if( arr.indexOf(name) == -1 )
+		elem.className += " " + name;
+}
+
+function removeClassName( elem, name ) {
+	elem.className = elem.className.replace(name, "");
+} 
+
+function show_running() {
+	var t = document.getElementById("button-show-tuning");
+	var r = document.getElementById("button-show-run");
+	addClassName(t, "btn-secondary"); removeClassName(t, "btn-primary");
+	addClassName(r, "btn-primary"); removeClassName(r, "btn-secondary");
+	document.getElementById("collapse-tuning").style.display = "none";
+	document.getElementById("collapse-run").style.display = "block";
+	document.getElementById("output-tuning").style.display = "none";
+	document.getElementById("output-run").style.display = "block";
+}
+
+function show_tuning() {
+	var t = document.getElementById("button-show-tuning");
+	var r = document.getElementById("button-show-run");
+	addClassName(r, "btn-secondary"); removeClassName(r, "btn-primary");
+	addClassName(t, "btn-primary"); removeClassName(t, "btn-secondary");
+	document.getElementById("collapse-run").style.display = "none";
+	document.getElementById("collapse-tuning").style.display = "block";
+	document.getElementById("output-run").style.display = "none";
+	document.getElementById("output-tuning").style.display = "block";
+	if(!tests) {
+		var tests_value = document.getElementById("tests").innerHTML.replace(/&lt;/g,"<").replace(/&gt;/g,">");
+		document.getElementById("tests").innerHTML = "";
+		tests = CodeMirror(document.getElementById("tests"), {
+			value: tests_value,
+			lineNumbers: true,
+			theme: "fasill",
+			placeholder: "Your test cases here...",
+			mode: "prolog"
+		});
+		tests.setSize("100%", "100%");
+		substitution = CodeMirror(document.getElementById("symbolic-substitution"), {
+			lineNumbers: true,
+			theme: "fasill",
+			mode: "prolog",
+			readOnly: true
+		});
+		substitution.setSize("100%", "100%");
+	}
+}
+
 function fasill_run() {
 	var data = jQuery.param({
 		"program": program.getValue(),
@@ -159,5 +212,22 @@ function fasill_unfold(e, rule) {
 		data = data.trim();
 		if(data !== "")
 			program.setValue(data);
+	});
+}
+
+function fasill_tuning() {
+	var data = jQuery.param({
+		"program": program.getValue(),
+		"lattice": lattice.getValue(),
+		"sim": sim.getValue(),
+		"tests": tests.getValue(),
+		"limit": limit.getValue()
+	});
+	substitution.setValue("Tuning...");
+	post("php/tuning.php", data, function(data) {
+		data = data.trim();
+		if(data === "")
+			data = "uncaught exception: unknown";
+		substitution.setValue(data);
 	});
 }
