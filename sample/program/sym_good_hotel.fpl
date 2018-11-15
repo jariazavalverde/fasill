@@ -1,4 +1,0 @@
-vanguardist(hydropolis) <- #s1.
-elegant(ritz)           <- 0.8.
-close(hydropolis, taxi) <- 0.7.
-good_hotel(X)           <- elegant(X) #&s2 @very(close(X, metro)).

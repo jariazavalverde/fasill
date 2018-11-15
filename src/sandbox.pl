@@ -3,7 +3,7 @@
   * FILENAME: sandbox.pl
   * DESCRIPTION: This module contains predicates for the web interface.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 14.11.2018
+  * UPDATED: 15.11.2018
   * 
   **/
 
@@ -138,7 +138,7 @@ sandbox_tune(Program, Lattice, Sim, Tests, Limit, Options) :-
     program_consult(Program),
     testcases_consult(Tests),
     catch(similarity_consult(Sim), Error, (write('uncaught exception in similarities: '), sandbox_write(Error), nl)),
-    statistics(runtime,[_,T0]),
+    statistics(runtime,[_,_]),
     tuning_thresholded(Subs, Deviation),
     statistics(runtime,[_,T1]),
     (member(runtime, Options) -> (write('execution time: '), write(T1), writeln(' milliseconds')) ; true),

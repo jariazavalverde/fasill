@@ -1,0 +1,13 @@
+popularity(X) #<s1 facilities(X) #|s2 @aver(location(X),rates(X)) with 0.9.
+
+facilities(sun) with #s3.
+location(sun) with 0.4.
+rates(sun) with 0.7.
+
+facilities(sweet) with 0.5.
+location(sweet) with 0.3.
+rates(sweet).
+
+facilities(lux) with 0.9.
+location(lux) with 0.8.
+rates(lux) with 0.2.
