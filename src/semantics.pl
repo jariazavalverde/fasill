@@ -3,7 +3,7 @@
   * FILENAME: semantics.pl
   * DESCRIPTION: This module contains predicates implementing the semantics for FASILL.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 11.11.2018
+  * UPDATED: 15.11.2018
   * 
   **/
 
@@ -94,10 +94,6 @@ mgu(X, var(Y), Subs, Subs_) :- !, mgu(var(Y), X, Subs, Subs_).
 %%% num with num
 mgu(num(X), num(X), Subs, Subs) :- !.
 %%% term with term
-mgu(term(X,Xs), term(X,Ys), Subs, Subs_) :- !,
-    length(Xs, Length),
-    length(Ys, Length),
-    mgu(Xs, Ys, Subs, Subs_).
 mgu(term(X,Xs), term(X,Ys), Subs, Subs_) :- !,
     length(Xs, Length),
     length(Ys, Length),

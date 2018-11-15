@@ -110,6 +110,7 @@ parse_testcases(Input, Testcases) :-
 % current_op/4
 % initial operator table
 :- dynamic current_op/4.
+current_op(1300, xfx, '#<',   yes).
 current_op(1300, xfx, '<-',   no).
 current_op(1300, xfx, '->',   no).
 current_op(1300, xfx, '<',    yes).
@@ -182,6 +183,8 @@ parse_rule(fasill_rule(head(Head), Body, [id(IdAtom),Info])) -->
        T = term('<'(Implication), [Head, term(with, [BodyWith,TD])]), Body = body(term('&'(Implication), [TD,BodyWith])), Info = syntax(malp) ;
        T = term('<-', [Head,Body_]), Body = body(Body_), Info = syntax(fasill) ;
        T = term('<'(_), [Head,Body_]), Body = body(Body_), Info = syntax(malp) ;
+       T = term('#<'(Implication), [Head, term(with, [BodyWith,TD])]), Body = body(term('#&'(Implication), [TD,BodyWith])), Info = syntax(smalp) ;
+       T = term('#<'(_), [Head,Body_]), Body = body(Body_), Info = syntax(smalp) ;
        T = Head, Body = empty, Info = syntax(fasill)
     )}, !, {auto_rule_id(Id), atom_number(IdAtom, Id)}.
 
