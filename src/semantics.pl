@@ -258,12 +258,16 @@ success_step(From, state(Goal,Subs), state(Goal_,Subs_), Info) :-
         (program_has_predicate(Name/Arity) -> (
             lattice_tnorm(Tnorm),
             lattice_call_bot(Bot),
+            lattice_call_top(Top),
             program_clause(Name2/Arity, Rule),
             (Name = Name2 -> true ; similarity_between(Name, Name2, Arity, Sim), Sim \= Bot),
             Rule = fasill_rule(head(Head),Body,_),
             rename([Head,Body], [HeadR,BodyR]),
             wmgu(Expr, HeadR, state(TD,SubsExpr)),
-            (BodyR = empty -> Var = TD ; (BodyR = body(Body_), Var = term('&'(Tnorm), [TD,Body_]))),
+            (BodyR = empty -> Var = TD ; (
+                BodyR = body(Body_),
+                (TD == Top -> Var = Body_ ; Var = term('&'(Tnorm), [TD,Body_]))
+            )),
             apply(ExprVar, SubsExpr, Goal_),
             compose(Subs, SubsExpr, Subs_),
             Info = Name2/Arity
