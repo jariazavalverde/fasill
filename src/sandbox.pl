@@ -10,7 +10,7 @@
 
 
 :- module(sandbox, [
-    sandbox_run/5,
+    sandbox_run/6,
     sandbox_listing/1,
     sandbox_unfold/4,
     sandbox_tune/6
@@ -87,14 +87,18 @@ sandbox_write_list(X) :- write('|'), sandbox_write(X).
 % into the environment and runs the goal +Goal, with a limit
 % of derivations +Limit, and writes in the standard output
 % the resulting derivations.
-sandbox_run(Program, Lattice, Sim, Goal, Limit) :-
+sandbox_run(Program, Lattice, Sim, Goal, Limit, Options) :-
     set_fasill_flag(trace, true),
     set_fasill_flag(max_inferences, num(Limit)),
     lattice_consult(Lattice),
     program_consult(Program),
     catch(similarity_consult(Sim), Error, (write('uncaught exception in similarities: '), sandbox_write(Error), nl)),
+    statistics(runtime,[_,_]),
     ( query_consult(Goal, State),
-      sandbox_write(State), nl, fail ; true ), nl,
+      sandbox_write(State), nl, fail ; true ),
+    statistics(runtime,[_,T1]),
+    (member(runtime, Options) -> (write('execution time: '), write(T1), writeln(' milliseconds')) ; true),
+    nl,
     ( semantics:trace_derivation(Trace),
       sandbox_write(Trace), nl, fail ; true).
 
@@ -141,7 +145,7 @@ sandbox_tune(Program, Lattice, Sim, Tests, Limit, Options) :-
     statistics(runtime,[_,_]),
     tuning_thresholded(Subs, Deviation),
     statistics(runtime,[_,T1]),
-    (member(runtime, Options) -> (write('execution time: '), write(T1), writeln(' milliseconds')) ; true),
     write('best symbolic substitution: '),
     sandbox_write(symbolic_subs(Subs)), nl,
-    write('deviation: '), write(Deviation).
+    write('deviation: '), write(Deviation),
+    (member(runtime, Options) -> (nl, write('execution time: '), write(T1), write(' milliseconds')) ; true).
