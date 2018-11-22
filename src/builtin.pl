@@ -3,7 +3,7 @@
   * FILENAME: builtin.pl
   * DESCRIPTION: This module contains the definition of the FASILL built-in predicates.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 09.11.2018
+  * UPDATED: 22.11.2018
   * 
   **/
 
@@ -70,6 +70,7 @@ is_builtin_predicate(Name/Arity) :-
         float/1,
         var/1,
         nonvar/1,
+        ground/1,
         % atom processing
         atom_length/2,
         atom_concat/3
@@ -500,6 +501,14 @@ eval_builtin_predicate(float/1, state(_, Subs), selected(ExprVar, top, Atom), st
 eval_builtin_predicate(integer/1, state(_, Subs), selected(ExprVar, top, Atom), state(ExprVar, Subs)) :-
     Atom = term(integer, [num(X)]),
     integer(X).
+
+%%% ground/1
+%%% ground(@term)
+%%%
+%%% Check if ground term.
+%%% ground(X) is true if and only if X is a ground term.
+eval_builtin_predicate(ground/1, state(_, Subs), selected(ExprVar, top, Atom), state(ExprVar, Subs)) :-
+    Atom = term(ground, [X]), fasill_ground(X).
 
 
 

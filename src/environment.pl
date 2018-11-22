@@ -3,7 +3,7 @@
   * FILENAME: environment.pl
   * DESCRIPTION: This module contains predicates for manipulating programs, lattices and similarity relations.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 14.11.2018
+  * UPDATED: 22.11.2018
   * 
   **/
 
@@ -21,6 +21,7 @@
     fasill_number/1,
     fasill_term/1,
     fasill_var/1,
+    fasill_ground/1,
     fasill_callable/1,
     fasill_list/1,
     fasill_connective/1,
@@ -179,6 +180,14 @@ fasill_term(term(_,_)).
 %
 % This predicate succeeds when +Term is a FASILL variable.
 fasill_var(var(_)).
+
+% fasill_ground/1
+% fasill_ground(+Term)
+%
+% This predicate succeeds when +Term is a FASILL ground term.
+fasill_ground(num(_)).
+fasill_ground(str(_)).
+fasill_ground(term(_,Xs)) :- maplist(fasill_ground, Xs).
 
 % fasill_callable/1
 % fasill_callable(+Term)
