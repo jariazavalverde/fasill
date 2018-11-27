@@ -30,10 +30,10 @@ foreach( scandir("pages/src-doc") as $f ) {
 	<div class="container px-0 pt-4 pb-0">
 		<h3>Acknowledgment <span class="text-secondary">(in alphabetical order)</span></h3>
 		<ul>
-			<li><a href="http://dectau.uclm.es/Gines.Moreno/" target="_blank">Ginés Moreno</a> (suggestions)</li>
-			<li><a href="http://dectau.uclm.es/Jaime.Penabad/" target="_blank">Jaime Penabad</a> (suggestions)</li>
+			<li><a href="http://dectau.uclm.es/Gines.Moreno/" target="_blank">Ginés Moreno</a> (language design, suggestions)</li>
+			<li><a href="http://dectau.uclm.es/Jaime.Penabad/" target="_blank">Jaime Penabad</a> (language design, suggestions)</li>
 			<li><a href="http://www.josemariagarcia.es/" target="_blank">José M. García</a> (documentation)</li>
-			<li><a href="http://dectau.uclm.es/Pascual.Julian/" target="_blank">Pascual Julián</a> (suggestions)</li>
+			<li><a href="http://dectau.uclm.es/Pascual.Julian/" target="_blank">Pascual Julián</a> (language design, suggestions)</li>
 		</ul>
 	</div>
 </div>

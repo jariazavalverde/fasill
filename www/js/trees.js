@@ -24,7 +24,7 @@
 		obj.deep = deep;
 		obj.parent = parent;
 		obj.rule = str.split(" <")[0].replace(/ /g, "");
-		obj.goal = str.split(" <")[1].split(", {")[0].replace(/ /g, "");
+		obj.goal = str.split(" <")[1].split(", {")[0];
 		obj.goal = obj.goal.length > 100 ? obj.goal.substring(0, 100) + "..." : obj.goal;
 		obj.subs = "{" + str.split("<")[1].split(", {")[1].replace("}>", "}").replace(/ /g, "");
 		obj.subs = obj.subs.length > 100 ? obj.unifier.substring(0, 100) + "..." : obj.subs;

@@ -22,7 +22,7 @@ fclose( $file_sim );
 fclose( $file_goal );
 
 try {
-	$cmd = "timeout 10s swipl -f '../src/sandbox.pl' -g \"sandbox_run('$ran-program.fpl', '$ran-lat.pl', '$ran-sim.pl', '$ran-goal.fpl', $limit),halt\"";
+	$cmd = "timeout 10s swipl -f '../src/sandbox.pl' -g \"sandbox_run('$ran-program.fpl', '$ran-lat.pl', '$ran-sim.pl', '$ran-goal.fpl', $limit, [runtime]),halt\"";
 	echo shell_exec( $cmd );
 } catch (Exception $e) {
     echo "There was an error.";

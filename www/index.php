@@ -34,7 +34,7 @@ include("pages/headers/$_VIEW.php");
 		<script src="js/fasill.js"></script>
 		<title>FASILL: <?php echo $_TITLE; ?></title>
 	</head>
-	<body>
+	<body onClick="cancel(event);">
 		<div class="container" id="nav">
 			<div class="row">
 				<?php if($_VIEW != "home") { ?>
