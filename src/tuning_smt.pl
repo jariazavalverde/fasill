@@ -18,13 +18,15 @@
 
 
 
-% tuning_smt/2
-% tuning_smt(?Substitution, ?Deviation)
+% tuning_smt/3
+% tuning_smt(+Lattice, ?Substitution, ?Deviation)
 %
 % This predicate succeeds when ?Substitution is the best
 % symbolic substitution for the set of test cases loaded
 % into the current environment, with deviation ?Deviation.
-tuning_smt(Best, Deviation) :-
+% +Lattice is an SMT-LIB script representing the corresponding
+% Prolog lattice.
+tuning_smt(Lattice, Best, Deviation) :-
     tuning_smt_minimize(Minimize),
     CheckSat = [reserved('check-sat')],
     GetModel = [reserved('get-model')].
