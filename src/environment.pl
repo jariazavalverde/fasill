@@ -27,6 +27,8 @@
     fasill_connective/1,
     fasill_rule/3,
     fasill_testcase/2,
+    fasill_show/1,
+    fasill_show/2,
     program_clause/2,
     program_rule_id/2,
     program_consult/1,
@@ -211,6 +213,52 @@ fasill_list(term('.',[_,T])) :- fasill_list(T).
 fasill_connective(term(Type,Arg)) :-
     (Type = '&' ; Type = '|' ; Type = '@'),
     (Arg = [] ; Arg = [_]).
+
+% fasill_show/2
+% fasill_show(+Term, ?Representation)
+%
+% This predicate succeeds when +Term is a valid FASILL term
+% and ?Representation is the Prolog term which represent the
+% literal FASILL term +Term.
+fasill_show(Term, Output) :- with_output_to(atom(Output), fasill_show(Term)).
+
+fasill_show([]) :- !.
+fasill_show(top) :- write(top).
+fasill_show(bot) :- write(bot).
+fasill_show(num(X)) :- write(X).
+fasill_show(var(X)) :- write(X).
+fasill_show(X/Y) :- write(X), write('/'), fasill_show(Y).
+fasill_show(term('#'(Name),[])) :- !, write('#'), write(Name).
+fasill_show(term('#@'(Name),Args)) :- !, write('#@'), write(Name), write('('), fasill_show(Args), write(')').
+fasill_show(term('#&'(Name),[X,Y])) :- !, write('('), fasill_show(X), write(' #&'), write(Name), write(' '), fasill_show(Y), write(')'). 
+fasill_show(term('#|'(Name),[X,Y])) :- !, write('('), fasill_show(X), write(' #|'), write(Name), write(' '), fasill_show(Y), write(')'). 
+fasill_show(term('&'(Name),[X,Y])) :- !, write('('), fasill_show(X), write(' &'), write(Name), write(' '), fasill_show(Y), write(')'). 
+fasill_show(term('|'(Name),[X,Y])) :- !, write('('), fasill_show(X), write(' |'), write(Name), write(' '), fasill_show(Y), write(')'). 
+fasill_show(term('.',[X,Y])) :- !, fasill_show_list(list(term('.',[X,Y]))). 
+fasill_show(term(X,[])) :- write(X).
+fasill_show(term(X,Y)) :- Y \= [], write(X), write('('), fasill_show(Y), write(')').
+fasill_show(exception(X)) :- write('uncaught exception in derivation: '), fasill_show(X).
+fasill_show(state(Goal,Subs)) :-
+    write('<'),
+    fasill_show(Goal),
+    write(', {'),
+    fasill_show(Subs),
+    write('}>').
+fasill_show([X|Y]) :-
+    Y \= [],
+    fasill_show(X),
+    write(', '),
+    fasill_show(Y).
+fasill_show([X]) :-
+    fasill_show(X).
+
+fasill_show_list(term('[]',[])) :- !.
+fasill_show_list(term([],[])) :- !.
+fasill_show_list(term('.',[X,Y])) :- !,
+    write(','), fasill_show(X), fasill_show_list(Y).
+fasill_show_list(list(term('.',[X,Y]))) :- !,
+    write('['), fasill_show(X), fasill_show_list(Y), write(']').
+fasill_show_list(X) :- write('|'), fasill_show(X).
 
 
 

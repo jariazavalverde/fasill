@@ -3,7 +3,7 @@
   * FILENAME: init.pl
   * DESCRIPTION: This file initialize the FASILL environment.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 14.11.2018
+  * UPDATED: 29.11.2018
   * 
   **/
 
@@ -20,8 +20,21 @@
 
 
 main :-
+    prompt1('fasill> '),
     current_stream(_, read, Stream),
-    read_stream_to_codes(Stream, Chars),
+    read_line_to_codes(Stream, Codes),
+    ( Codes = end_of_file, ! ;
+      atom_codes(Atom, Codes),
+      atom_chars(Atom, Chars),
+      parse_query(Chars, Goal),
+      query(Goal, SFCA),
+      fasill_show(SFCA, Show),
+      display(Show), display(' '),
+      read_line_to_codes(Stream, Codes),
+      % (command ;) -> next answer
+      (Codes = [59], nl, fail ; true)
+    ),
+    nl,
     main.
 
 
