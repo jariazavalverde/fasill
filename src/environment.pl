@@ -3,7 +3,7 @@
   * FILENAME: environment.pl
   * DESCRIPTION: This module contains predicates for manipulating programs, lattices and similarity relations.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 22.11.2018
+  * UPDATED: 29.11.2018
   * 
   **/
 

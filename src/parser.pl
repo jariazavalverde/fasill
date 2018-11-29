@@ -3,13 +3,14 @@
   * FILENAME: parser.pl
   * DESCRIPTION: This module contains predicates for parsing FASILL programs.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 15.11.2018
+  * UPDATED: 29.11.2018
   * 
   **/
 
 
 
 :- module(parser, [
+    escape_atom/2,
     file_program/2,
     file_query/2,
     file_testcases/2,
@@ -36,6 +37,18 @@ stream_to_list(Stream, [Char|Input]) :-
     char_code(Char, Code),
     stream_to_list(Stream, Input).
 
+% escape_atom/2
+% escape_atom(+Atom, ?Escape)
+%
+% This predicate succeeds when ?Escape is
+% the escape sequence of the atom +Atom.
+escape_atom(Atom, Atom) :-
+    atom_chars(Atom, Chars),
+    Chars \= [],
+    token_minus_identifier(_, Chars, []), !.
+escape_atom(Atom, Escape) :-
+    atom_concat('''', Atom, Atom1),
+    atom_concat(Atom1, '''', Escape).
 
 
 % FILE OPERATIONS
