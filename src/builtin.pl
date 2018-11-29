@@ -3,7 +3,7 @@
   * FILENAME: builtin.pl
   * DESCRIPTION: This module contains the definition of the FASILL built-in predicates.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 22.11.2018
+  * UPDATED: 29.11.2018
   * 
   **/
 
@@ -29,6 +29,10 @@
 % and Arity is a non-negative integer.
 is_builtin_predicate(Name/Arity) :-
     member(Name/Arity, [
+        % consult files
+        consult/1,
+        consult_lat/1,
+        consult_sim/1,
         % control constructs
         ','/2,
         ';'/2,
@@ -86,6 +90,37 @@ is_builtin_predicate(Name/Arity) :-
 % ?State2 is the resulting state of performing a
 % step over the state +State1 with selected atom
 % +Atom whose indicator is +Indicator.
+
+
+
+%% CONSULT FILES
+
+%%% consult/1
+%%% consult( +atom )
+%%%
+%%% consult(Path) is true if the file Path exists and is loaded
+%%% into the environment.
+eval_builtin_predicate(consult/1, state(_, Subs), selected(ExprVar, top, Term), state(ExprVar, Subs)) :-
+    Term = term(consult, [term(Path, [])]),
+    program_consult(Path).
+
+%%% consult_lat/1
+%%% consult_lat( +atom )
+%%%
+%%% consult_lat(Path) is true if the file Path exists and is loaded
+%%% into the environment.
+eval_builtin_predicate(consult_lat/1, state(_, Subs), selected(ExprVar, top, Term), state(ExprVar, Subs)) :-
+    Term = term(consult_lat, [term(Path, [])]),
+    lattice_consult(Path).
+
+%%% consult_sim/1
+%%% consult_sim( +atom )
+%%%
+%%% consult_sim(Path) is true if the file Path exists and is loaded
+%%% into the environment.
+eval_builtin_predicate(consult_sim/1, state(_, Subs), selected(ExprVar, top, Term), state(ExprVar, Subs)) :-
+    Term = term(consult_sim, [term(Path, [])]),
+    similarity_consult(Path).
 
 
 

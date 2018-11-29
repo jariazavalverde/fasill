@@ -74,6 +74,10 @@ print_term_list(X) :- ansi_format([bold,fg(yellow)], '|', []), print_term(X).
 %
 % This predicate runs the interactive mode of the FASILL
 % interpreter.
+init :-
+    lattice_consult('../lattices/real.lat.pl'),
+    tty_clear,
+    main.
 main :-
     prompt1('fasill> '),
     read_line_to_codes(user_input, Codes),
@@ -95,4 +99,4 @@ main :-
 
 
 
-?- main.
+?- init.
