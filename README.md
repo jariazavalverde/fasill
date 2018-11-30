@@ -4,7 +4,7 @@
 
 ## Fuzzy Aggregators and Similarities Into a Logic Language
 
-**FASILL** is a Prolog-like first order language containing variables, function symbols, predicate symbols, constants and several (arbitrary) connectives to increase language expressiveness. FASILL uses connectives to combine/propagate truth values through the rules: **conjunctive operators** (denoted by &amp;<sub>1</sub>, &amp;<sub>2</sub>, ..., &amp;<sub>i</sub>), **disjunctive operators** (|<sub>1</sub>, |<sub>2</sub>, ..., |<sub>j</sub>), and **aggregation operators** (usually denoted by @<sub>1</sub>, @<sub>2</sub>, ..., @<sub>k</sub>). Additionally, FASILL contains the truth values of a complete lattice equipped with a collection of connectives.
+**FASILL** is a Prolog-like first order language containing variables, function symbols, predicate symbols, constants and several (arbitrary) connectives to increase language expressiveness. FASILL uses connectives to combine/propagate truth values through the rules: **conjunctive operators**, **disjunctive operators**, and **aggregation operators**. Additionally, FASILL contains the truth values of a complete lattice equipped with a collection of connectives.
 
 ## Programs
 
@@ -78,6 +78,35 @@ bus ~ taxi = 0.4.
 ~tnorm = godel.
 ```
 
-## License
+# Installation
+FASILL runs over [SWI-Prolog](http://www.swi-prolog.org/). You can download the latest version of SWI-Prolog [here](http://www.swi-prolog.org/Download.html).
+
+### Install on Linux
+1. [Download](https://github.com/jariazavalverde/fasill/archive/master.zip) or clone the FASILL repository: `git clone https://github.com/jariazavalverde/fasill.git`
+2. Enter the fasill folder: `cd fasill`
+3. Execute the install.sh bash script: `sudo ./install.sh`
+4. That's all! Now you can run FASILL by typing fasill in your terminal: `fasill`
+
+# Documentation
+
+### Built-in Predicates
+
+FASILL has a large set of built-in predicates for arithmetic comparison, arithmetic evaluation, atom processing, control constructs, term comparison, term unification, type testing, list manipulation, etc.
+
+[**See FASILL Predicate Reference**](http://dectau.uclm.es/fasill/documentation#ref)
+
+### Weak Unification and Operational Semantics
+
+As a logic language, FASILL inherits the concepts of substitution, unifier and most general unifier. Some of them are extended to cope with similarities. Concretely, the most general unifier is replaced by the concept of weak most general unifier and a weak unification algorithm is introduced to compute it.
+
+The procedural semantics of FASILL is defined in a stepwise manner. First, an operational stage is introduced which proceeds similarly to SLD resolution in pure logic programming, returning an expression still containing values and connectives. Then, an interpretive stage evaluates these connectives and produces a final answer.
+
+[**More about Operational Semantics**](http://dectau.uclm.es/fasill/documentation/operational-semantics)
+
+### Refereces
+
+You can find all the related bibliography into the file [bibliography.bib](bibliography.bib).
+
+# License
 
 Source code is released under the terms of the [BSD 3-Clause License](LICENSE).
