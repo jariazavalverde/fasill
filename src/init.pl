@@ -3,7 +3,7 @@
   * FILENAME: init.pl
   * DESCRIPTION: This file initialize the FASILL environment.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 29.11.2018
+  * UPDATED: 30.11.2018
   * 
   **/
 
@@ -75,8 +75,11 @@ print_term_list(X) :- ansi_format([bold,fg(yellow)], '|', []), print_term(X).
 % This predicate runs the interactive mode of the FASILL
 % interpreter.
 init :-
-    lattice_consult('../lattices/real.lat.pl'),
     tty_clear,
+    writeln('FASILL (pre-alfa): http://dectau.uclm.es/fasill/'),
+    writeln('Copyright (C) 2018 José Antonio Riaza Valverde'),
+    writeln('Released under the BSD-3 Clause license'),
+    lattice_consult('../lattices/real.lat.pl'),
     main.
 main :-
     prompt1('fasill> '),
@@ -92,9 +95,8 @@ main :-
       char_code(Char, Code),
       display(Char),
       % (command ;) -> next answer
-      Code = 59, nl, fail ; true
+      Code = 59, nl, fail ; nl
     ),
-    nl,
     main.
 
 

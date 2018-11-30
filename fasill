@@ -1,0 +1,2 @@
+#!/bin/bash
+swipl /usr/local/fasill/src/init.pl
