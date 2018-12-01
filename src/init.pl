@@ -73,11 +73,13 @@ print_term_list(X) :- ansi_format([bold,fg(yellow)], '|', []), print_term(X).
 %
 % This predicate runs the FASILL interpreter.
 main :-
+    run_command(term(lattice,[term(library, [term(real, [])])])),
+    current_prolog_flag(argv, Args),
+    run_arguments(Args),
     tty_clear,
     writeln('FASILL (pre-alfa): http://dectau.uclm.es/fasill/'),
     writeln('Copyright (C) 2018 José Antonio Riaza Valverde'),
     writeln('Released under the BSD-3 Clause license'),
-    lattice_consult('../lattices/real.lat.pl'),
     interactive_mode.
 
 % interactive_mode/0
@@ -105,11 +107,25 @@ interactive_mode :-
     ),
     interactive_mode.
 
+% run_arguments/1
+% run_arguments(+Arguments)
+%
+% This predicate runs the list of arguments +Arguments.
+run_arguments([]) :- !.
+% -lat $lattice
+run_arguments(['-lat',Lat|Args]) :-
+    run_command(term(lattice,[term(library, [term(Lat, [])])])), !,
+    run_arguments(Args).
+% unknown command
+run_arguments(X) :-
+    write('unknown command: '),
+    writeln(X),
+    halt.
+
 % run_command/1
 % run_command(+Command)
 %
 % This predicate runs the command +Command.
-
 %% Load lattice from file
 run_command(term(lattice,[term(Path, [])])) :- lattice_consult(Path), !.
 %% Load library lattice

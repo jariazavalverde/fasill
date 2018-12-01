@@ -1,2 +1,2 @@
 #!/bin/bash
-swipl /usr/local/fasill/src/init.pl
+swipl /usr/local/fasill/src/init.pl $@
