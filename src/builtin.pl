@@ -31,7 +31,6 @@ is_builtin_predicate(Name/Arity) :-
     member(Name/Arity, [
         % consult files
         consult/1,
-        consult_lat/1,
         consult_sim/1,
         % control constructs
         ','/2,
@@ -103,15 +102,6 @@ is_builtin_predicate(Name/Arity) :-
 eval_builtin_predicate(consult/1, state(_, Subs), selected(ExprVar, top, Term), state(ExprVar, Subs)) :-
     Term = term(consult, [term(Path, [])]),
     program_consult(Path).
-
-%%% consult_lat/1
-%%% consult_lat( +atom )
-%%%
-%%% consult_lat(Path) is true if the file Path exists and is loaded
-%%% into the environment.
-eval_builtin_predicate(consult_lat/1, state(_, Subs), selected(ExprVar, top, Term), state(ExprVar, Subs)) :-
-    Term = term(consult_lat, [term(Path, [])]),
-    lattice_consult(Path).
 
 %%% consult_sim/1
 %%% consult_sim( +atom )

@@ -3,13 +3,14 @@
   * FILENAME: parser.pl
   * DESCRIPTION: This module contains predicates for parsing FASILL programs.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 29.11.2018
+  * UPDATED: 01.12.2018
   * 
   **/
 
 
 
 :- module(parser, [
+    stream_to_list/2,
     escape_atom/2,
     file_program/2,
     file_query/2,
@@ -163,6 +164,7 @@ current_op(400,  yfx, 'rem',  no).
 current_op(400,  yfx, 'mod',  no).
 current_op(200,  fy,  '+',    no).
 current_op(200,  fy,  '-',    no).
+current_op(200,  fx,  ':',    no).
 
 
 

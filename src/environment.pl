@@ -468,6 +468,20 @@ lattice_reduce_connective(_, [], Bot) :- lattice_call_bot(Bot).
 % This predicate loads the lattice of the file +Path into
 % the environment. This predicate cleans the previous lattice.
 lattice_consult(Path) :-
+    abolish(member/1),
+    abolish(members/1),
+    abolish(distance/3),
+    abolish(bot/1),
+    abolish(top/1),
+    abolish(leq/2),
+    abolish(tnorm/1),
+    abolish(tconorm/1),
+    ( current_predicate(X/3),
+      ( atom_concat(and_, _, X) ;
+        atom_concat(agr_, _, X) ;
+        atom_concat(or_, _, X) ),
+      abolish(X/3), fail ; true
+    ),
     consult(Path).
 
 

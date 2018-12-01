@@ -3,7 +3,7 @@
   * FILENAME: init.pl
   * DESCRIPTION: This file initialize the FASILL environment.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 30.11.2018
+  * UPDATED: 01.12.2018
   * 
   **/
 
@@ -58,7 +58,6 @@ print_term([X|Y]) :-
     print_term(Y).
 print_term([X]) :-
     print_term(X).
-
 print_term_list(term('[]',[])) :- !.
 print_term_list(term([],[])) :- !.
 print_term_list(term('.',[X,Y])) :- !,
@@ -72,33 +71,64 @@ print_term_list(X) :- ansi_format([bold,fg(yellow)], '|', []), print_term(X).
 % main/0
 % main
 %
-% This predicate runs the interactive mode of the FASILL
-% interpreter.
-init :-
+% This predicate runs the FASILL interpreter.
+main :-
     tty_clear,
     writeln('FASILL (pre-alfa): http://dectau.uclm.es/fasill/'),
     writeln('Copyright (C) 2018 José Antonio Riaza Valverde'),
     writeln('Released under the BSD-3 Clause license'),
     lattice_consult('../lattices/real.lat.pl'),
-    main.
-main :-
+    interactive_mode.
+
+% interactive_mode/0
+% interactive_mode
+%
+% This predicate runs the interactive mode of the FASILL
+% interpreter.
+interactive_mode :-
     prompt1('fasill> '),
     read_line_to_codes(user_input, Codes),
     ( Codes = end_of_file, ! ;
       atom_codes(Atom, Codes),
       atom_chars(Atom, Chars),
       parse_query(Chars, Goal),
-      query(Goal, SFCA),
-      once(print_term(SFCA)),
-      display(' '),
-      get_single_char(Code),
-      char_code(Char, Code),
-      display(Char),
-      % (command ;) -> next answer
-      Code = 59, nl, fail ; nl
+      ( Goal = term(':',[X]) -> run_command(X) ; (
+        query(Goal, SFCA),
+        once(print_term(SFCA)),
+        write(' '),
+        get_single_char(Code),
+        char_code(Char, Code),
+        write(Char),
+        % (command ;) -> next answer
+        Code = 59, nl, fail ; nl )
+      )
     ),
-    main.
+    interactive_mode.
+
+% run_command/1
+% run_command(+Command)
+%
+% This predicate runs the command +Command.
+
+%% Load lattice from file
+run_command(term(lattice,[term(Path, [])])) :- lattice_consult(Path), !.
+%% Load library lattice
+run_command(term(lattice,[term(library, [term(Lat, [])])])) :-
+    prolog_load_context(directory, Dir_),
+    atom_concat(Dir_, '/../lattices/', Dir),
+    atom_concat(Dir, Lat, Path_),
+    atom_concat(Path_, '.lat.pl', Path),
+    lattice_consult(Path), !.
+%% Show license
+run_command(term(license,[])) :-
+    prolog_load_context(directory, Dir),
+    atom_concat(Dir, '/../LICENSE', Path),
+    open(Path, read, Stream),
+    stream_to_list(Stream, Chars),
+    close(Stream),
+    atom_chars(Atom, Chars),
+    writeln(Atom).
 
 
 
-?- init.
+?- main.
