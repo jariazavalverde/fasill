@@ -44,13 +44,13 @@ print_term(term(X,Y)) :- Y \= [],
     ansi_format([bold,fg(yellow)], '(', []),
     print_term(Y),
     ansi_format([bold,fg(yellow)], ')', []).
-print_term(exception(X)) :- ansi_format([bold,fg(red)], 'uncaught exception in derivation: ', []), print_term(X).
+print_term(exception(X)) :- ansi_format([bold,fg(red)], 'uncaught exception: ', []), print_term(X).
 print_term(state(Goal,Subs)) :-
     ansi_format([bold,fg(yellow)], '< ', []),
     print_term(Goal),
     ansi_format([bold,fg(yellow)], ', {', []),
     print_term(Subs),
-    ansi_format([bold,fg(yellow)], '} > ', []).
+    ansi_format([bold,fg(yellow)], '} >', []).
 print_term([X|Y]) :-
     Y \= [],
     print_term(X),
@@ -99,13 +99,10 @@ interactive_mode :-
         once(print_term(SFCA)),
         write(' '),
         get_single_char(Code),
-        char_code(Char, Code),
-        write(Char),
-        % (command ;) -> next answer
-        Code = 59, nl, fail ; nl )
-      )
-    ),
-    interactive_mode.
+        ( Code = 59 -> writeln(';'), fail ; writeln('.') )
+      ; nl ) )
+    ), !, interactive_mode.
+interactive_mode :- interactive_mode.
 
 % run_arguments/1
 % run_arguments(+Arguments)
@@ -126,17 +123,31 @@ run_arguments(X) :-
 % run_command(+Command)
 %
 % This predicate runs the command +Command.
+%% Exit
+run_command(term(exit,[])) :- !,
+    halt.
+%% Help
+run_command(term(help,[])) :- !,
+    ansi_format([bold,fg(white)], ':exit', []), writeln('          exit FASILL.'),
+    ansi_format([bold,fg(white)], ':help', []), writeln('          print this message.'),
+    ansi_format([bold,fg(white)], ':lattice(Path)', []), writeln(' change lattice from file Path.'),
+    ansi_format([bold,fg(white)], ':license', []), writeln('       print license message.'),
+    nl.
 %% Load lattice from file
-run_command(term(lattice,[term(Path, [])])) :- lattice_consult(Path), !.
+run_command(term(lattice,[term(Path, [])])) :- !,
+    ( exists_file(Path) ->
+      lattice_consult(Path) ;
+      existence_error(source_sink, Path, top_level/0, Error),
+      print_term(exception(Error)), nl, nl ).
 %% Load library lattice
-run_command(term(lattice,[term(library, [term(Lat, [])])])) :-
+run_command(term(lattice,[term(library, [term(Lat, [])])])) :- !,
     prolog_load_context(directory, Dir_),
     atom_concat(Dir_, '/../lattices/', Dir),
     atom_concat(Dir, Lat, Path_),
     atom_concat(Path_, '.lat.pl', Path),
-    lattice_consult(Path), !.
+    run_command(term(lattice,[term(Path, [])])).
 %% Show license
-run_command(term(license,[])) :-
+run_command(term(license,[])) :- !,
     prolog_load_context(directory, Dir),
     atom_concat(Dir, '/../LICENSE', Path),
     open(Path, read, Stream),
@@ -144,6 +155,11 @@ run_command(term(license,[])) :-
     close(Stream),
     atom_chars(Atom, Chars),
     writeln(Atom).
+%% Otherwise
+run_command(term(Name,Args)) :-
+    length(Args, Arity),
+    existence_error(command, Name/Arity, top_level/0, Error),
+    print_term(exception(Error)), nl, nl.
 
 
 
