@@ -23,6 +23,10 @@ include("pages/headers/$_VIEW.php");
 		<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
 		<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+		<!-- Highlight.js -->
+		<script src="js/highlight.js"></script>
+		<link rel="stylesheet" href="css/highlight.css">
+		<script>hljs.initHighlightingOnLoad();</script>
 		<!-- Codemirror -->
 		<script src="codemirror/lib/codemirror.js"></script>
 		<link rel="stylesheet" href="codemirror/lib/codemirror.css">
@@ -37,12 +41,10 @@ include("pages/headers/$_VIEW.php");
 	<body onClick="cancel(event);">
 		<div class="container" id="nav">
 			<div class="row">
-				<?php if($_VIEW != "home") { ?>
-				<div class="col-sm"><a id="nav-logo" href="./">&nbsp;</a></div>
-				<?php } ?>
-				<div class="col-sm"><a href="downloads">Downloads</a></div>
-				<div class="col-sm"><a href="documentation">Documentation</a></div>
-				<div class="col-sm"><a href="sandbox">Sandbox</a></div>
+				<div class="col-sm"><a id="nav-logo" href="./" title="Home">&nbsp;</a><span id="nav-logo-preload"></span></div>
+				<div class="col-sm"><a href="downloads" title="Downloads">Downloads</a></div>
+				<div class="col-sm"><a href="documentation" title="Documentation">Documentation</a></div>
+				<div class="col-sm"><a href="sandbox" title="Sandbox">Sandbox</a></div>
 			</div>
 		</div>
 <?php if ($_VIEW != "home") { ?>

@@ -1,5 +1,7 @@
 local/
 www/src
+www/js/highlight.js
+www/css/highlight.css
 www/codemirror/*
 !www/codemirror/theme/
 www/codemirror/theme/*

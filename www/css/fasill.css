@@ -19,6 +19,10 @@ h1 a:hover, h2 a:hover, h3 a:hover, h4 a:hover {
 	color: #b83d4e;
 }
 
+#bibbase_header {
+	display: none!important;
+}
+
 .container-sep {
 	height: 30px;
 }
@@ -27,7 +31,7 @@ h1 a:hover, h2 a:hover, h3 a:hover, h4 a:hover {
 	background: #ffffff url("../img/grayxs48.png") center center no-repeat;
 }
 
-#nav-logo:hover {
+#nav-logo-preload, #nav-logo:hover {
 	background: #ffffff url("../img/colorxs48.png") center center no-repeat;
 }
 

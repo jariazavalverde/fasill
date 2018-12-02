@@ -12,6 +12,10 @@ ErrorDocument 404 /404
 	RewriteCond %{REQUEST_FILENAME} !-f
 	RewriteCond %{REQUEST_FILENAME} !-d
 	RewriteRule ^documentation/src/([a-zA-Z-]+)/?$ index.php?view=source&module=$1 [L,NC,QSA]
+	
+	RewriteCond %{REQUEST_FILENAME} !-f
+	RewriteCond %{REQUEST_FILENAME} !-d
+	RewriteRule ^documentation/([a-zA-Z-]+)/?$ index.php?view=$1 [L,NC,QSA]
 
 	RewriteCond %{REQUEST_FILENAME} !-f
 	RewriteCond %{REQUEST_FILENAME} !-d
