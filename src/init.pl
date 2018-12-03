@@ -75,11 +75,12 @@ print_term_list(X) :- ansi_format([bold,fg(yellow)], '|', []), print_term(X).
 main :-
     run_command(term(lattice,[term(library, [term(real, [])])])),
     current_prolog_flag(argv, Args),
+    ( member('-halt', Args) -> true ;
+        tty_clear,
+        writeln('FASILL (pre-alfa): http://dectau.uclm.es/fasill/'),
+        writeln('Copyright (C) 2018 José Antonio Riaza Valverde'),
+        writeln('Released under the BSD-3 Clause license') ),
     run_arguments(Args),
-    tty_clear,
-    writeln('FASILL (pre-alfa): http://dectau.uclm.es/fasill/'),
-    writeln('Copyright (C) 2018 José Antonio Riaza Valverde'),
-    writeln('Released under the BSD-3 Clause license'),
     interactive_mode.
 
 % interactive_mode/0
@@ -113,6 +114,19 @@ run_arguments([]) :- !.
 run_arguments(['-lat',Lat|Args]) :-
     run_command(term(lattice,[term(library, [term(Lat, [])])])), !,
     run_arguments(Args).
+% -goal $goal
+run_arguments(['-goal',Atom|Args]) :-
+    atom_chars(Atom, Chars),
+    parse_query(Chars, Goal),
+    ( Goal = term(':',[X]) -> run_command(X) ; (
+      query(Goal, SFCA),
+      once(print_term(SFCA)),
+      writeln(' ;'),
+      fail ; nl ) ),
+    run_arguments(Args).
+% -halt
+run_arguments(['-halt'|_]) :-
+    halt.
 % unknown command
 run_arguments(X) :-
     write('unknown command: '),
