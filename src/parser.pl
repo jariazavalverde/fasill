@@ -3,7 +3,7 @@
   * FILENAME: parser.pl
   * DESCRIPTION: This module contains predicates for parsing FASILL programs.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 01.12.2018
+  * UPDATED: 04.12.2018
   * 
   **/
 
@@ -163,6 +163,9 @@ current_op(400,  yfx, '/',    no).
 current_op(400,  yfx, '//',   no).
 current_op(400,  yfx, 'rem',  no).
 current_op(400,  yfx, 'mod',  no).
+current_op(200,  xfx, '**',   no).
+current_op(200,  xfy, '^',    no).
+current_op(200,  xfy, '^^',   no).
 current_op(200,  fy,  '+',    no).
 current_op(200,  fy,  '-',    no).
 current_op(200,  fx,  ':',    no).
@@ -276,6 +279,7 @@ parse_expr_zero(str(T)) --> token_string(T), !.
 parse_expr_zero(var(T)) --> token_variable(T), !.
 parse_expr_zero(T) --> lparen, !, parse_expr(1300, T), rparen.
 parse_expr_zero(T) --> parse_list(T), !.
+parse_expr_zero(T) --> parse_brace(T), !.
 parse_expr_zero(T) --> parse_agr(T), !.
 parse_expr_zero(T) --> parse_term(T), !.
 
@@ -300,6 +304,11 @@ parse_list2(term('.', [H,T])) --> parse_expr(999, H), parse_list3(T).
 parse_list3(term('.', [H,T])) --> comma, parse_expr(999, H), parse_list3(T).
 parse_list3(T) --> bar, parse_expr(999, T), rbracket.
 parse_list3(term('[]', [])) --> rbracket.
+
+% parse_brace/3
+% parse a brace
+parse_brace(term('{}', [T])) --> lbrace, parse_expr(999, T), blanks, rbrace, !.
+parse_brace(term('{}', [])) --> lbrace, blanks, rbrace.
 
 
 
@@ -382,6 +391,8 @@ quote_content(['\\']) --> ['\\','\\'], !.
 quote_content([]) --> [].
 
 % Proper symbols
+lbrace --> ['{'].
+rbrace --> ['}'].
 lparen --> ['('].
 rparen --> blanks, [')'].
 lbracket --> ['['].
