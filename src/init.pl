@@ -111,11 +111,11 @@ interactive_mode :- interactive_mode.
 % This predicate runs the list of arguments +Arguments.
 run_arguments([]) :- !.
 % -lat $lattice
-run_arguments(['-lat',Lat|Args]) :-
+run_arguments(['-lat',Lat|Args]) :- !,
     run_command(term(lattice,[term(library, [term(Lat, [])])])), !,
     run_arguments(Args).
 % -goal $goal
-run_arguments(['-goal',Atom|Args]) :-
+run_arguments(['-goal',Atom|Args]) :- !,
     atom_chars(Atom, Chars),
     parse_query(Chars, Goal),
     ( Goal = term(':',[X]) -> run_command(X) ; (
@@ -125,7 +125,7 @@ run_arguments(['-goal',Atom|Args]) :-
       fail ; nl ) ),
     run_arguments(Args).
 % -halt
-run_arguments(['-halt'|_]) :-
+run_arguments(['-halt'|_]) :- !,
     halt.
 % unknown command
 run_arguments(X) :-
