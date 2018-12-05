@@ -234,7 +234,7 @@ parse_testcase(fasill_testcase(TD, Goal)) -->
 parse_operator(Priority, Specifier, T, Name) -->
     blanks, token_atom(Op), {current_op(Priority, Specifier, Op, Name)},
     ({Name = yes}, token_minus_identifier(Identifier), {T =.. [Op, Identifier]} ; 
-        {current_op(Priority, Specifier, Op, no), T = Op}).
+        {current_op(Priority, Specifier, Op, no), T = Op}), !.
 
 % next_priority/2
 % give the next priority to derivate an expression
@@ -253,8 +253,6 @@ next_priority(200, 0).
 %%% level 0
 parse_expr(0, X) --> blanks, parse_expr_zero(X).
 %%% level n, n > 0
-%%%%%% next level
-parse_expr(Priority, T) --> {Priority > 0, next_priority(Priority, Next)}, parse_expr(Next, T).
 %%%%%% fx, fy
 parse_expr(Priority, term(Op, [T])) --> {Priority > 0}, parse_operator(Priority, fy, Op, _), parse_expr(Priority, T).
 parse_expr(Priority, term(Op, [T])) --> {Priority > 0}, parse_operator(Priority, fx, Op, _), {next_priority(Priority, Next)}, parse_expr(Next, T).
@@ -262,10 +260,11 @@ parse_expr(Priority, term(Op, [T])) --> {Priority > 0}, parse_operator(Priority,
 parse_expr(Priority, T) -->
     {Priority > 0, next_priority(Priority, Next)},
     parse_expr(Next, Left),
-    {(Specifier = xfx, PriorityRight = Next ; Specifier = yfx, PriorityRight = Next ; Specifier = xfy, PriorityRight = Priority)},
-    parse_operator(Priority, Specifier, Op, _),
-    parse_expr(PriorityRight, Right),
-    ({Specifier = yfx} -> parse_expr2(Priority, term(Op, [Left,Right]), T) ; {T = term(Op, [Left,Right])}).
+    (   {(Specifier = xfx, PriorityRight = Next ; Specifier = yfx, PriorityRight = Next ; Specifier = xfy, PriorityRight = Priority)},
+        parse_operator(Priority, Specifier, Op, _),
+        parse_expr(PriorityRight, Right),
+        ({Specifier = yfx} -> parse_expr2(Priority, term(Op, [Left,Right]), T) ; {T = term(Op, [Left,Right])}), !
+    ; {T = Left} ).
 %%%%%% yfx
 parse_expr2(Priority, Left, T) -->
     {Priority > 0, next_priority(Priority, Next)},
@@ -370,10 +369,11 @@ numbers([N]) --> number(N).
 % Strings
 token_string(T) --> double_quote, double_quote_content(T), double_quote.
 double_quote --> ['"'].
-double_quote_content(X) --> [X], {X \= '"'}.
-double_quote_content(['"']) --> ['"','"'].
-double_quote_content(['"']) --> ['\\','"'].
-double_quote_content(['\\']) --> ['\\','\\'].
+double_quote_content([X|Xs]) --> [X], {X \= '"'}, !, double_quote_content(Xs).
+double_quote_content(['"'|Xs]) --> ['"','"'], !, double_quote_content(Xs).
+double_quote_content(['"'|Xs]) --> ['\\','"'], !, double_quote_content(Xs).
+double_quote_content(['\\'|Xs]) --> ['\\','\\'], !, double_quote_content(Xs).
+double_quote_content([]) --> [].
 
 % Atoms
 token_atom('!') --> ['!'].
@@ -385,9 +385,9 @@ token_atom(T) --> token_minus_identifier(T).
 quoted(X) --> quote, quote_content(X), quote.
 quote --> [''''].
 quote_content([X|Xs]) --> [X], {X \= ''''}, !, quote_content(Xs).
-quote_content(['''']) --> ['''',''''], !.
-quote_content(['''']) --> ['\\',''''], !.
-quote_content(['\\']) --> ['\\','\\'], !.
+quote_content([''''|Xs]) --> ['''',''''], !, quote_content(Xs).
+quote_content([''''|Xs]) --> ['\\',''''], !, quote_content(Xs).
+quote_content(['\\'|Xs]) --> ['\\','\\'], !, quote_content(Xs).
 quote_content([]) --> [].
 
 % Proper symbols

@@ -3,16 +3,17 @@
   * FILENAME: tuning_smt.pl
   * DESCRIPTION: This module contains predicates for tuning symbolic FASILL programs with the Z3 SMT solver.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 27.11.2018
+  * UPDATED: 05.12.2018
   * 
   **/
 
 
 
 :- module(tuning_smt, [
-    tuning_smt/2
+    tuning_smt/3
 ]).
 
+:- use_module(library(smtlib)).
 :- use_module('environment').
 :- use_module('semantics').
 
