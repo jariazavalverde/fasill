@@ -3,7 +3,7 @@
   * FILENAME: sandbox.pl
   * DESCRIPTION: This module contains predicates for the web interface.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 15.11.2018
+  * UPDATED: 05.12.2018
   * 
   **/
 
@@ -55,8 +55,8 @@ sandbox_write(term('#|'(Name),[X,Y])) :- !, write('('), sandbox_write(X), write(
 sandbox_write(term('&'(Name),[X,Y])) :- !, write('('), sandbox_write(X), write(' &'), write(Name), write(' '), sandbox_write(Y), write(')'). 
 sandbox_write(term('|'(Name),[X,Y])) :- !, write('('), sandbox_write(X), write(' |'), write(Name), write(' '), sandbox_write(Y), write(')'). 
 sandbox_write(term('.',[X,Y])) :- !, sandbox_write_list(list(term('.',[X,Y]))). 
-sandbox_write(term(X,[])) :- write(X).
-sandbox_write(term(X,Y)) :- Y \= [], write(X), write('('), sandbox_write(Y), write(')').
+sandbox_write(term(X,[])) :- escape_atom(X, X_), write(X_).
+sandbox_write(term(X,Y)) :- Y \= [], escape_atom(X, X_), write(X_), write('('), sandbox_write(Y), write(')').
 sandbox_write(exception(X)) :- write('uncaught exception in derivation: '), sandbox_write(X).
 sandbox_write(state(Goal,Subs)) :-
     write('<'),

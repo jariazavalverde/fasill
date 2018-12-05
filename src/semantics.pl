@@ -456,6 +456,8 @@ arithmetic_op(mod, [X,_], [float,_], _) :- throw(type(integer, X)).
 arithmetic_op(mod, [_,Y], [_,float], _) :- throw(type(integer, Y)).
 arithmetic_op(mod, [_,0], _, _) :- !, throw(evaluation(zero_division)).
 arithmetic_op(mod, [X,Y], _, num(Z)) :- Z is mod(X,Y).
+arithmetic_op(min, [X,Y], _, num(Z)) :- Z is min(X,Y).
+arithmetic_op(max, [X,Y], _, num(Z)) :- Z is max(X,Y).
 arithmetic_op('<<', [X,_], [float,_], _) :- throw(type(integer, X)).
 arithmetic_op('<<', [_,Y], [_,float], _) :- throw(type(integer, Y)).
 arithmetic_op('<<', [X,Y], _, num(Z)) :- Z is X << Y.
