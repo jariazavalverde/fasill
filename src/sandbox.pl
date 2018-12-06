@@ -3,7 +3,7 @@
   * FILENAME: sandbox.pl
   * DESCRIPTION: This module contains predicates for the web interface.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 05.12.2018
+  * UPDATED: 06.12.2018
   * 
   **/
 
@@ -53,6 +53,7 @@ sandbox_write(term('#@'(Name),Args)) :- !, write('#@'), write(Name), write('('),
 sandbox_write(term('#&'(Name),[X,Y])) :- !, write('('), sandbox_write(X), write(' #&'), write(Name), write(' '), sandbox_write(Y), write(')'). 
 sandbox_write(term('#|'(Name),[X,Y])) :- !, write('('), sandbox_write(X), write(' #|'), write(Name), write(' '), sandbox_write(Y), write(')'). 
 sandbox_write(term('&'(Name),[X,Y])) :- !, write('('), sandbox_write(X), write(' &'), write(Name), write(' '), sandbox_write(Y), write(')'). 
+sandbox_write(term('@'(Name),Xs)) :- !, write(@), write(Name), write('('), sandbox_write(Xs), write(')').
 sandbox_write(term('|'(Name),[X,Y])) :- !, write('('), sandbox_write(X), write(' |'), write(Name), write(' '), sandbox_write(Y), write(')'). 
 sandbox_write(term('.',[X,Y])) :- !, sandbox_write_list(list(term('.',[X,Y]))). 
 sandbox_write(term(X,[])) :- escape_atom(X, X_), write(X_).

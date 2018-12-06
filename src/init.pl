@@ -3,7 +3,7 @@
   * FILENAME: init.pl
   * DESCRIPTION: This file initialize the FASILL environment.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 01.12.2018
+  * UPDATED: 06.12.2018
   * 
   **/
 
@@ -35,6 +35,7 @@ print_term(term('#@'(Name),Args)) :- !, write('#@'), write(Name), write('('), pr
 print_term(term('#&'(Name),[X,Y])) :- !, write('('), print_term(X), write(' #&'), write(Name), write(' '), print_term(Y), write(')'). 
 print_term(term('#|'(Name),[X,Y])) :- !, write('('), print_term(X), write(' #|'), write(Name), write(' '), print_term(Y), write(')'). 
 print_term(term('&'(Name),[X,Y])) :- !, write('('), print_term(X), write(' &'), write(Name), write(' '), print_term(Y), write(')'). 
+print_term(term('@'(Name),Xs)) :- !, write(@), write(Name), write('('), print_term(Xs), write(')').
 print_term(term('|'(Name),[X,Y])) :- !, write('('), print_term(X), write(' |'), write(Name), write(' '), print_term(Y), write(')'). 
 print_term(term('.',[X,Y])) :- !, print_term_list(list(term('.',[X,Y]))). 
 print_term(term(X,[])) :- escape_atom(X, X_), ansi_format([bold,fg(blue)], X_, []).
