@@ -3,7 +3,7 @@
   * FILENAME: tuning.pl
   * DESCRIPTION: This module contains predicates for tuning symbolic FASILL programs.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 04.12.2018
+  * UPDATED: 06.12.2018
   * 
   **/
 
@@ -41,7 +41,9 @@ findall_symbolic_cons(Set) :-
         fasill_rule(head(Head), Body_, _),
         (Body_ = body(Body) -> BodyT = [Body] ; BodyT = [])
     ), Rules),
-    findall_symbolic_cons(Rules, Symbols),
+    findall(Test, fasill_testcase(_, Test), Tests),
+    append(Rules, Tests, Search),
+    findall_symbolic_cons(Search, Symbols),
     list_to_set(Symbols, Set).
 
 % findall_symbolic_cons/2
