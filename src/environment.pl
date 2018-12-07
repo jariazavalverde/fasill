@@ -3,7 +3,7 @@
   * FILENAME: environment.pl
   * DESCRIPTION: This module contains predicates for manipulating programs, lattices and similarity relations.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 29.11.2018
+  * UPDATED: 07.12.2018
   * 
   **/
 
@@ -118,6 +118,10 @@ to_prolog([X|Xs], [Y|Ys]) :-
     to_prolog(Xs,Ys).
 to_prolog(num(X), X) :- !.
 to_prolog(var(_), _).
+to_prolog(term('[]',[]), []) :- !.
+to_prolog(term('.',[X,Y]), [X_|Y_]) :- !,
+    to_prolog(X, X_),
+    to_prolog(Y, Y_).
 to_prolog(term(X,Xs), Term) :-
     atom(X),
     !, to_prolog(Xs, Ys),
@@ -128,7 +132,7 @@ to_prolog(term(X,Xs), Term) :-
 %
 % This predicate takes the Prolog object +Prolog
 % and returns the object ?FASILL in FASILL notation.
-from_prolog([], term([], [])) :- !.
+from_prolog([], term('[]', [])) :- !.
 from_prolog([X|Xs], term('.', [Y,Ys])) :-
     !, from_prolog(X,Y),
     from_prolog(Xs,Ys).

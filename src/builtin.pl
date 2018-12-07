@@ -3,7 +3,7 @@
   * FILENAME: builtin.pl
   * DESCRIPTION: This module contains the definition of the FASILL built-in predicates.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 29.11.2018
+  * UPDATED: 07.12.2018
   * 
   **/
 
@@ -56,6 +56,8 @@ is_builtin_predicate(Name/Arity) :-
         '@=<'/2,
         '@>='/2,
         '\\=='/2,
+        % term creation and decomposition
+        '=..'/2,
         % arithmetic comparison
         '<'/2,
         '=:='/2,
@@ -389,6 +391,26 @@ eval_builtin_predicate('@>='/2, state(_, Subs), selected(ExprVar, top, Term), st
     (( X = var(X_), Y = var(Y_)) -> X_ @>= Y_ ;
         ( to_prolog(X, X_), to_prolog(Y, Y_), X_ @>= Y_ )
     ).
+
+
+
+%% TERM CREATION AND DECOMPOSITION
+
+%%% '=..'/2
+%%% Check the descomposition of a term.
+%%%
+%%% Term =.. List is true if and only if (1) Term is an atomic term
+%%% and List is a list consisted of just one element, Term, or (2)
+%%% Term is a compound term and List is a list which has the functor
+%%% name of Term as head and the arguments of that functor as tail.
+eval_builtin_predicate('=..'/2, state(_, Subs), selected(ExprVar, Expr, Atom), state(ExprVar, Subs)) :-
+    Atom = term('=..', [Term, List]),
+    to_prolog(Term, X),
+    to_prolog(List, Y),
+    X =.. Y,
+    from_prolog(X, Term_),
+    from_prolog(Y, List_),
+    Expr = term('&', [term('=',[Term,Term_]), term('=',[List,List_])]).
 
 
 
