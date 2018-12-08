@@ -410,7 +410,7 @@ eval_builtin_predicate('=..'/2, state(_, Subs), selected(ExprVar, Expr, Atom), s
     X =.. Y,
     from_prolog(X, Term_),
     from_prolog(Y, List_),
-    Expr = term('&', [term('=',[Term,Term_]), term('=',[List,List_])]).
+    Expr = term('&', [term('~',[Term,Term_]), term('~',[List,List_])]).
 
 
 

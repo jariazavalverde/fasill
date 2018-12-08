@@ -3,13 +3,14 @@
   * FILENAME: tuning.pl
   * DESCRIPTION: This module contains predicates for tuning symbolic FASILL programs.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 06.12.2018
+  * UPDATED: 08.12.2018
   * 
   **/
 
 
 
 :- module(tuning, [
+    findall_symbolic_cons/1,
     tuning_thresholded/2
 ]).
 

@@ -24,6 +24,8 @@ or_bool(_, _, true).
 % Aggregators
 agr_xor(X, X, false).
 agr_xor(_, _, true).
+agr_not(false, true).
+agr_not(true, false).
 
 % Default connectives
 tnorm(bool).

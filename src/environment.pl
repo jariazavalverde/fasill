@@ -112,19 +112,15 @@ set_fasill_flag(Flag, Value) :-
 %
 % This predicate takes the FASILL object +FASILL
 % and returns the object ?Prolog in Prolog notation.
-to_prolog([], []) :- !.
-to_prolog([X|Xs], [Y|Ys]) :-
-    !, to_prolog(X,Y),
-    to_prolog(Xs,Ys).
 to_prolog(num(X), X) :- !.
-to_prolog(var(_), _).
+to_prolog(var(_), _) :- !.
 to_prolog(term('[]',[]), []) :- !.
 to_prolog(term('.',[X,Y]), [X_|Y_]) :- !,
     to_prolog(X, X_),
     to_prolog(Y, Y_).
 to_prolog(term(X,Xs), Term) :-
-    atom(X),
-    !, to_prolog(Xs, Ys),
+    atom(X), !,
+    maplist(to_prolog, Xs, Ys),
     Term =.. [X|Ys].
 
 % from_prolog/2
@@ -132,12 +128,13 @@ to_prolog(term(X,Xs), Term) :-
 %
 % This predicate takes the Prolog object +Prolog
 % and returns the object ?FASILL in FASILL notation.
+from_prolog(X, var(X)) :- var(X), !.
+from_prolog(X, num(X)) :- number(X), !.
+from_prolog(X, term(X, [])) :- atom(X), !.
 from_prolog([], term('[]', [])) :- !.
 from_prolog([X|Xs], term('.', [Y,Ys])) :-
     !, from_prolog(X,Y),
     from_prolog(Xs,Ys).
-from_prolog(X, num(X)) :- number(X), !.
-from_prolog(X, term(X, [])) :- atom(X), !.
 from_prolog(X, term(H,Args)) :-
     compound(X), !,
     X =.. [H|T],
