@@ -28,7 +28,7 @@
 % into the current environment, with deviation ?Deviation.
 % +Domain is an SMT-LIB script representing the corresponding
 % Prolog lattice.
-tuning_smt(Domain, Best, Deviation) :-
+tuning_smt(Domain, _, _) :-
     downcase_atom(Domain, DomName),
     (prolog_load_context(directory, Dir_) ; Dir_ = '.'), !,
     atom_concat(Dir_, '/../lattices/', Dir),
@@ -37,12 +37,15 @@ tuning_smt(Domain, Best, Deviation) :-
     smtlib_read_script(Path, list(Lattice)),
     findall_symbolic_cons(Cons),
     tuning_smt_decl_const(Domain, Cons, Declarations),
+    (member([reserved('define-fun'), symbol('lat!member')|_], Lattice) ->
+        tuning_smt_members(Cons, Members);
+        Members = []),
     tuning_smt_minimize(Minimize),
+    tuning_theory_options(Domain, TheoryOpts),
     GetModel = [[reserved('check-sat')], [reserved('get-model')]],
-    append([Lattice, Declarations, Minimize, GetModel], Script),
+    append([Lattice, Declarations, Members, Minimize, TheoryOpts, GetModel], Script),
     smtlib_write_to_file('tuning.smt2', list(Script)),
-    shell('z3 -smt2 tuning.smt2 > result.smt2', _).
-
+    shell('z3 -smt2 tuning.smt2', _).
 
 % tuning_smt_decl_const/2
 % tuning_smt_decl_const(+Domain, +FASILL, ?SMTLIB)
@@ -61,6 +64,19 @@ tuning_smt_decl_const(_, sym(Type,Name,Arity), [reserved('declare-const'), symbo
     atom_concat('lat!', Type, LatType),
     atom_concat(LatType, Arity_, LatTypeArity),
     atom_concat(LatTypeArity, Name, Sym).
+
+% tuning_smt_members/2
+% tuning_smt_members(+Constants, ?Members)
+%
+% This predicate succeeds when +Constants is a list
+% of symbolic FASILL constants and ?Members is a list
+% of membering assertions of that constants in SMT-LIB.
+tuning_smt_members([], []) :- !.
+tuning_smt_members([sym(td,Name,0)|Cons], [[reserved('assert'), [symbol('lat!member'), symbol(Sym)]]|Members]) :- !,
+    atom_concat('sym!td!0!', Name, Sym),
+    tuning_smt_members(Cons, Members).
+tuning_smt_members([_|Cons], Members) :- !,
+    tuning_smt_members(Cons, Members).
 
 % tuning_smt_minimize/1
 % tuning_smt(?Minimize)
@@ -113,3 +129,11 @@ sfca_to_smtlib(term(X,Xs), [symbol(Con)|Xs2]) :-
     atom_concat(Fun_, Atom, Con),
     maplist(sfca_to_smtlib, Xs, Xs2).
 sfca_to_smtlib(term(X,[]), symbol(X)).
+
+% tuning_theory_options/2
+% tuning_theory_options(+Theory, -Options)
+%
+% This predicate succeeds when -Options is a list of
+% options in SMT-LIB format for the theory +Theroy.
+tuning_theory_options('Bool', []).
+tuning_theory_options('Real', [[reserved('set-option'), keyword('pp.decimal'), symbol(true)]]).
