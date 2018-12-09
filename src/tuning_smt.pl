@@ -61,9 +61,11 @@ tuning_smt_decl_const(Domain, sym(td,Name,0), [reserved('declare-const'), symbol
     atom_concat('sym!td!0!', Name, Sym).
 tuning_smt_decl_const(_, sym(Type,Name,Arity), [reserved('declare-const'), symbol(Sym), symbol('String')]) :- !,
     atom_number(Arity_, Arity),
-    atom_concat('lat!', Type, LatType),
-    atom_concat(LatType, Arity_, LatTypeArity),
-    atom_concat(LatTypeArity, Name, Sym).
+    atom_concat('sym!', Type, LatType),
+    atom_concat(LatType, '!', LatType_),
+    atom_concat(LatType_, Arity_, LatTypeArity),
+    atom_concat(LatTypeArity, '!', LatTypeArity_),  
+    atom_concat(LatTypeArity_, Name, Sym).
 
 % tuning_smt_members/2
 % tuning_smt_members(+Constants, ?Members)
@@ -75,7 +77,14 @@ tuning_smt_members([], []) :- !.
 tuning_smt_members([sym(td,Name,0)|Cons], [[reserved('assert'), [symbol('lat!member'), symbol(Sym)]]|Members]) :- !,
     atom_concat('sym!td!0!', Name, Sym),
     tuning_smt_members(Cons, Members).
-tuning_smt_members([_|Cons], Members) :- !,
+tuning_smt_members([sym(Type,Name,Arity)|Cons], [[reserved('assert'), [symbol(Dom), symbol(Sym)]]|Members]) :- !,
+    atom_concat('sym!', Type, SymType),
+    atom_concat(SymType, '!', SymType_),
+    atom_number(Arity_, Arity),
+    atom_concat(SymType_, Arity_, SymTypeArity),
+    atom_concat('dom!', SymTypeArity, Dom),
+    atom_concat(SymTypeArity, '!', SymTypeArity_),
+    atom_concat(SymTypeArity_, Name, Sym),
     tuning_smt_members(Cons, Members).
 
 % tuning_smt_minimize/1
@@ -110,7 +119,7 @@ sfca_to_smtlib(term(X,Xs), [symbol(Con2),symbol(Name4)|Xs2]) :-
     length(Xs, Length),
     atom_number(Atom, Length),
     atom_concat(Pre, Atom, Con),
-    atom_concat('call!', Con, Con2),
+    atom_concat('call!sym!', Con, Con2),
     atom_concat('sym!', Con, Name2),
     atom_concat(Name2, '!', Name3),
     atom_concat(Name3, Name, Name4),

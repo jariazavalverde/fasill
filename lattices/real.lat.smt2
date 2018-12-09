@@ -51,44 +51,44 @@
 ;; domain of symbolic conjunctions (arity 2)
 (define-fun dom!sym!and!2 ((s String)) Bool 
 	(or
-		(= s "godel") 
-		(= s "luka") 
-		(= s "prod")))
+		(= s "and_godel") 
+		(= s "and_luka") 
+		(= s "and_prod")))
 
 ;; domain of symbolic disjunctions (arity 2)
 (define-fun dom!sym!or!2 ((s String)) Bool 
 	(or
-		(= s "godel") 
-		(= s "luka") 
-		(= s "prod")))
+		(= s "or_godel") 
+		(= s "or_luka") 
+		(= s "or_prod")))
 
 ;; domain of symbolic aggregators (arity 1)
 (define-fun dom!sym!agr!1 ((s String)) Bool 
 	(or
-		(= s "very")))
+		(= s "agr_very")))
 
 ;; domain of symbolic aggregators (arity 2)
 (define-fun dom!sym!agr!2 ((s String)) Bool 
 	(or 
-		(= s "aver")))
+		(= s "agr_aver")))
 
 ;; eval symbolic conjunctions (arity 2)
 (define-fun call!sym!and!2 ((s String) (x Real) (y Real)) Real 
 	(ite 
-		(= s "godel") 
+		(= s "and_godel") 
 		(lat!and!godel!2 x y) 
 		(ite 
-			(= s "luka") 
+			(= s "and_luka") 
 			(lat!and!luka!2 x y)
 			(lat!and!prod!2 x y))))
 
 ;; eval symbolic disjunctions (arity 2)
 (define-fun call!sym!or!2 ((s String) (x Real) (y Real)) Real 
 	(ite 
-		(= s "godel") 
+		(= s "or_godel") 
 		(lat!or!godel!2 x y) 
 		(ite 
-			(= s "luka") 
+			(= s "or_luka") 
 			(lat!or!luka!2 x y) 
 			(lat!or!prod!2 x y))))
 
