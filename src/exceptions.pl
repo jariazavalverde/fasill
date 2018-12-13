@@ -14,7 +14,8 @@
     instantiation_error/2,
     type_error/4,
     evaluation_error/3,
-    existence_error/4
+    existence_error/4,
+    domain_error/3
 ]).
 
 :- use_module('environment').
@@ -77,4 +78,14 @@ evaluation_error(Cause, Indicator, term(error, [term(evaluation_error,[Cause_]),
 existence_error(Cause, Term, Indicator, term(error, [term(existence_error,[Cause_,Term_]), Indicator_])) :-
     from_prolog(Cause, Cause_),
     from_prolog(Term, Term_),
+    from_prolog(Indicator, Indicator_).
+
+% domain_error/3
+% domain_error(+Domain, +Indicator, ?Error)
+%
+% This predicate succeeds when ?Error is the domain
+% error produced by the term +Term in the predicate
+% +Indicator.
+domain_error(Domain, Indicator, term(error, [term(domain_error,[Domain_]), Indicator_])) :-
+    from_prolog(Domain, Domain_),
     from_prolog(Indicator, Indicator_).

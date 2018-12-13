@@ -11,7 +11,7 @@
 
 :- module(directives, [
     is_directive/1,
-    eval_directive/2
+    eval_directive/1
 ]).
 
 :- use_module('environment').
@@ -33,21 +33,21 @@ is_directive(Name/Arity) :-
 
 
 
-% eval_directive/2
-% eval_directive(+Indicator, +Directive)
+% eval_directive/1
+% eval_directive(+Directive)
 %
-% This predicate succeeds when +Indicator is the
-% indicator of a directive of FASILL, and +Directive
-% is a FASILL term.
+% This predicate succeeds when +Directive is a valid
+% FASILL directive and it can be executed.
 
 %%% set_fasill_flag/2
 %%% set_fasill_flag( +atom, +term )
 %%%
 %%% set_fasill_flag(Flag, Value) sets the value of the Flag to Value.
-eval_directive(set_fasill_flag/2, term(set_fasill_flag, [Flag,Value])) :-
-    ((\+fasill_ground(Flag) ; \+fasill_ground(Value) ) -> instantiation_error(set_fasill_flag/2, Error), throw_error(Error) ;
-     (\+fasill_atom(Flag) -> type_error(Flag, atom, set_fasill_flag/2), throw_error(Error) ;
-     (\+current_fasill_flag(Flag, _) -> domain_error(fasill_flag, set_fasill_flag/2) ; 
-     (\+is_fasill_flag_value(Flag, Value) -> domain_error(flag_value+(Flag,Value), set_fasill_flag/2) ; 
-     set_fasill_flag(Flag, Value)
+eval_directive(term(set_fasill_flag, [Flag,Value])) :-
+    (Flag = term(FlagName, []) ; true), !,
+    ((\+fasill_ground(Flag) ; \+fasill_ground(Value) ) -> instantiation_error(set_fasill_flag/2, Error), throw_exception(Error) ;
+     (\+fasill_atom(Flag) -> type_error(Flag, atom, set_fasill_flag/2, Error), throw_exception(Error) ;
+     (\+current_fasill_flag(FlagName, _) -> domain_error(fasill_flag, set_fasill_flag/2, Error), throw_exception(Error) ; 
+     (\+is_fasill_flag_value(FlagName, Value) -> domain_error(flag_value+(FlagName,Value), set_fasill_flag/2, Error), throw_exception(Error) ; 
+     set_fasill_flag(FlagName, Value)
     )))).
