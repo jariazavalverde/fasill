@@ -258,7 +258,7 @@ eval_builtin_predicate(findall/4, state(_, Subs), selected(ExprVar, Var, Term), 
                 lattice_call_bot(Bot),
                 get_variables(Goal, GoalVars),
                 (trace_level(Level) -> Level_ is Level+1, retractall(trace_level(_)), assertz(trace_level(Level_)) ; true),
-                (current_fasill_flag(trace, true) -> assertz(trace_derivation(trace(Level_, findall/4, state(Goal,GoalVars)))) ; true),
+                (current_fasill_flag(trace, term(true,[])) -> assertz(trace_derivation(trace(Level_, findall/4, state(Goal,GoalVars)))) ; true),
                 findall([TD,Template_], (
                     derivation(findall/4, state(Goal,GoalVars), State, _),
                     (State = state(TD,Subs_) -> TD \= Bot, apply(Template, Subs_, Template_) ;
@@ -287,7 +287,10 @@ eval_builtin_predicate(findall/4, state(_, Subs), selected(ExprVar, Var, Term), 
 %%% True if the weak unification succeeds.
 eval_builtin_predicate('~'/2, state(_, Subs), selected(ExprVar, TD, Term), state(ExprSubs, Subs_)) :-
     Term = term('~', [X,Y]),
-    wmgu(X, Y, state(TD, SubsUnification)),
+    (current_fasill_flag(weak_unification, term(true,[])) ->
+        wmgu(X, Y, state(TD, SubsUnification)) ;
+        (mgu(X, Y, SubsUnification), TD = top)
+    ),
     apply(ExprVar, SubsUnification, ExprSubs),
     compose(Subs, SubsUnification, Subs_).
 

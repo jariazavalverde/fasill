@@ -76,7 +76,7 @@
 % with ?CurrentValue as the current value in the environment.
 :- dynamic(fasill_flag/3).
 fasill_flag(trace, [term(false,[]), term(true,[])], term(false,[])).
-fasill_flag(unification, [term(weak,[]), term(strict,[])], term(weak,[])).
+fasill_flag(weak_unification, [term(false,[]), term(true,[])], term(true,[])).
 fasill_flag(quoted_chars, [term(chars,[]), term(codes,[]), term(atom,[])], term(chars,[])).
 fasill_flag(unknown, [term(error,[]), term(fail,[]), term(warning,[])], term(error,[])).
 fasill_flag(occurs_check, [term(false,[]), term(true,[])], term(false,[])).

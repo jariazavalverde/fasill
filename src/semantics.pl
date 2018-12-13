@@ -259,7 +259,10 @@ success_step(From, state(Goal,Subs), state(Goal_,Subs_), Info) :-
             (Name = Name2 -> true ; similarity_between(Name, Name2, Arity, Sim), Sim \= Bot),
             Rule = fasill_rule(head(Head),Body,_),
             rename([Head,Body], [HeadR,BodyR]),
-            wmgu(Expr, HeadR, state(TD,SubsExpr)),
+            (current_fasill_flag(weak_unification, term(true,[])) ->
+                wmgu(Expr, HeadR, state(TD,SubsExpr)) ;
+                (mgu(Expr, HeadR, SubsExpr), TD = Top)
+            ),
             (BodyR = empty -> Var = TD ; (
                 BodyR = body(Body_),
                 (TD == Top -> Var = Body_ ; Var = term('&'(Tnorm), [TD,Body_]))
