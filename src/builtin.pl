@@ -187,7 +187,7 @@ eval_builtin_predicate(throw/1, _, selected(_, _, Term), _) :-
 eval_builtin_predicate(catch/3, state(_, Subs), selected(ExprVar, Goal_, Term), state(ExprVar, Subs_)) :-
     Term = term(catch, [Goal, Catcher, Handler]),
     (trace_level(Level) -> Level_ is Level+1, retractall(trace_level(_)), assertz(trace_level(Level_)) ; true),
-    (current_fasill_flag(trace, true) -> assertz(trace_derivation(trace(Level_, catch/3, state(Goal,Subs)))) ; true),
+    (current_fasill_flag(trace, term(true,[])) -> assertz(trace_derivation(trace(Level_, catch/3, state(Goal,Subs)))) ; true),
     derivation(catch/3, state(Goal,Subs), State, _),
     ( State = state(Goal_,Subs_) -> true ; (
         State = exception(Exception), !,
@@ -220,7 +220,7 @@ eval_builtin_predicate(bot/0, state(_, Subs), selected(ExprVar, bot, _), state(E
 eval_builtin_predicate(truth_degree/2, state(_, Subs), selected(ExprVar, Var, Term), state(ExprVar, Subs_)) :-
     Term = term(truth_degree, [Goal,TD]),
     (trace_level(Level) -> Level_ is Level+1, retractall(trace_level(_)), assertz(trace_level(Level_)) ; true),
-    (current_fasill_flag(trace, true) -> assertz(trace_derivation(trace(Level_, truth_degree/2, state(Goal,Subs)))) ; true),
+    (current_fasill_flag(trace, term(true,[])) -> assertz(trace_derivation(trace(Level_, truth_degree/2, state(Goal,Subs)))) ; true),
     derivation(truth_degree/2, state(Goal,Subs), State, _),
     (State = state(TD_,Subs_) -> Var = term('~',[TD,TD_]) ; State = exception(Error), throw_exception(Error)).
 

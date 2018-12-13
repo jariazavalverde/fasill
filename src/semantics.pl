@@ -170,7 +170,7 @@ query(Goal, Answer) :-
     assertz(trace_level(0)),
     get_variables(Goal, Vars),
     State = state(Goal, Vars),
-    (current_fasill_flag(trace, true) -> assertz(trace_derivation(trace(0, 'GOAL', State))) ; true),
+    (current_fasill_flag(trace, term(true,[])) -> assertz(trace_derivation(trace(0, 'GOAL', State))) ; true),
     derivation(top_level/0, State, Answer, _).
 
 % get_variables/2
@@ -205,7 +205,7 @@ derivation(_, state(Goal,Subs), State, []) :-
 derivation(From, State, State_, [X|Xs]) :-
     (trace_level(Level) -> Level_ is Level+1 ; Level_ = false),
     catch(inference(From, State, State1, X), Error, (State1 = exception(Error), !)),
-    (current_fasill_flag(trace, true), State1 \= exception(_) -> assertz(trace_derivation(trace(Level_, X, State1))) ; true),
+    (current_fasill_flag(trace, term(true,[])), State1 \= exception(_) -> assertz(trace_derivation(trace(Level_, X, State1))) ; true),
     ( Level_\= false -> retractall(trace_level(_)), assertz(trace_level(Level_)) ; true),
     derivation(X, State1, State_, Xs).
 
