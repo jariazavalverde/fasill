@@ -3,7 +3,7 @@
   * FILENAME: parser.pl
   * DESCRIPTION: This module contains predicates for parsing FASILL programs.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 07.12.2018
+  * UPDATED: 13.12.2018
   * 
   **/
 
@@ -21,6 +21,7 @@
 ]).
 
 :- use_module('environment').
+:- use_module('directives').
 
 
 
@@ -129,6 +130,8 @@ current_op(1300, xfx, ':-',   no).
 current_op(1300, xfx, '<-',   no).
 current_op(1300, xfx, '->',   no).
 current_op(1300, xfx, '<',    yes).
+current_op(1300, fx, '<-',    no).
+current_op(1300, fx, ':-',    no).
 current_op(1200, xfx, 'with', no).
 current_op(1100, xfy, '#|',   yes).
 current_op(1100, xfy, '|',    yes).
@@ -190,14 +193,17 @@ reset_rule_id :- retract(current_rule_id(_)), assertz(current_rule_id(1)).
 
 % parse_program/3
 % parse a fuzzy logic program
-parse_program([H|T]) --> parse_rule(H), !, parse_program(T), blanks.
+parse_program(Program) --> parse_rule(H), !, parse_program(T), blanks,
+    {(H = fasill_rule(_, _, Info), member(directive, Info)) -> Program = T ; Program = [H|T]}.
 parse_program([]) --> [].
 
 % parse_rule/3
 % parse a malp or fasill rule
 parse_rule(fasill_rule(head(Head), Body, [id(IdAtom),Info])) -->
     parse_expr(1300, T), dot,
-    {( T = term(with, [Head, TD]), Body = body(TD), Info = syntax(malp) ;
+    {(
+       % rule
+       T = term(with, [Head, TD]), Body = body(TD), Info = syntax(malp) ;
        T = term('<-', [Head, term(with, [BodyWith,TD])]), Body = body(term('&', [TD,BodyWith])), Info = syntax(malp) ;
        T = term('<'(Implication), [Head, term(with, [BodyWith,TD])]), Body = body(term('&'(Implication), [TD,BodyWith])), Info = syntax(malp) ;
        T = term('<-', [Head,Body_]), Body = body(Body_), Info = syntax(fasill) ;
@@ -205,6 +211,10 @@ parse_rule(fasill_rule(head(Head), Body, [id(IdAtom),Info])) -->
        T = term('#<'(Implication), [Head, term(with, [BodyWith,TD])]), Body = body(term('#&'(Implication), [TD,BodyWith])), Info = syntax(smalp) ;
        T = term('#<'(_), [Head,Body_]), Body = body(Body_), Info = syntax(smalp) ;
        T = term(':-', [Head, Body_]), Body = body(Body_), Info = syntax(prolog) ;
+       % directive
+       T = term(':-', [Directive]), eval_directive(Directive), Info = directive ;
+       T = term('<-', [Directive]), eval_directive(Directive), Info = directive ;
+       % fact
        T = Head, Body = empty, Info = syntax(fasill)
     )}, !, {auto_rule_id(Id), atom_number(IdAtom, Id)}.
 
@@ -222,12 +232,9 @@ parse_testcases([]) --> [].
 % This predicate parses the testcase ?Testcase from
 % the input +Chars, leaving the characters ?Rest.
 parse_testcase(fasill_testcase(TD, Goal)) -->
-    {current_fasill_flag(symbolic, Flag),
-    set_fasill_flag(symbolic, false)},
     ( parse_expr(1300, Expr), dot,
-      {Expr = term('->', [TD, Goal]),
-        set_fasill_flag(symbolic, Flag)}, !
-    ; {set_fasill_flag(symbolic, Flag), fail} ).
+      {Expr = term('->', [TD, Goal]), !
+    ; fail} ).
 
 % parse_operator/6
 % parse an operator T with Priority, Specifier and Name 

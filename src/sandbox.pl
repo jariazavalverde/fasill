@@ -91,7 +91,7 @@ sandbox_write_list(X) :- write('|'), sandbox_write(X).
 % of derivations +Limit, and writes in the standard output
 % the resulting derivations.
 sandbox_run(Program, Lattice, Sim, Goal, Limit, Options) :-
-    set_fasill_flag(trace, true),
+    set_fasill_flag(trace, term(true,[])),
     set_fasill_flag(max_inferences, num(Limit)),
     lattice_consult(Lattice),
     program_consult(Program),
@@ -139,7 +139,6 @@ sandbox_unfold(Program, Lattice, Sim, Rule) :-
 % of test cases +Tests, with a limit of derivations +Limit,
 % and writes in the standard output the resulting substitution.
 sandbox_tune(Program, Lattice, Sim, Tests, Limit, Options) :-
-    set_fasill_flag(trace, true),
     set_fasill_flag(max_inferences, num(Limit)),
     lattice_consult(Lattice),
     program_consult(Program),
@@ -162,7 +161,6 @@ sandbox_tune(Program, Lattice, Sim, Tests, Limit, Options) :-
 % with a limit of derivations +Limit, and writes in the standard
 % output the resulting substitution.
 sandbox_tune_smt(Program, Lattice, Sim, Tests, Domain, Limit, Options) :-
-    set_fasill_flag(trace, true),
     set_fasill_flag(max_inferences, num(Limit)),
     lattice_consult(Lattice),
     program_consult(Program),
