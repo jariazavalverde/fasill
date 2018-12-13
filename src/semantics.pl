@@ -283,6 +283,7 @@ success_step(From, state(Goal,Subs), state(Goal_,Subs_), Info) :-
 % from the state +State1 to the state ?State2. ?Info is an
 % atom containg information about the failure.
 failure_step(state(Goal,Subs), state(Goal_,Subs), 'FS') :-
+    current_fasill_flag(failure_steps, term(true, [])),
     lattice_call_bot(Bot),
     select_atom(Goal, Goal_, Bot, _).
 
