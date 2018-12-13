@@ -109,8 +109,8 @@ tuning_smt_minimize([Assert, Minimize]) :-
 % This predicate succeeds when +SFCA is a valid FASILL term
 % representing a symbolic fuzzy computed answer and ?SMTLIB
 % is the corresponding answer in SMT-LIB format.
-sfca_to_smtlib(num(X), numeral(X)) :- number(X), !.
-sfca_to_smtlib(num(X), decimal(X)) :- float(X), !.
+sfca_to_smtlib(num(X), numeral(X)) :- integer(X), !.
+sfca_to_smtlib(num(X), decimal(Y)) :- float(X), Y is ceil(X*10)/10, !.
 sfca_to_smtlib(term('#'(X),[]), symbol(Y)) :- atom_concat('sym!td!0!', X, Y), !.
 sfca_to_smtlib(term(X,[]), symbol(X)) :- atomic(X), !.
 sfca_to_smtlib(term(X,Xs), [symbol(Con2),symbol(Name4)|Xs2]) :-
