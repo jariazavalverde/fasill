@@ -3,7 +3,7 @@
   * FILENAME: environment.pl
   * DESCRIPTION: This module contains predicates for manipulating programs, lattices and similarity relations.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 07.12.2018
+  * UPDATED: 13.12.2018
   * 
   **/
 
@@ -14,6 +14,7 @@
     from_prolog/2,
     from_prolog_list/2,
     current_fasill_flag/2,
+    is_fasill_flag_value/2,
     set_fasill_flag/2,
     fasill_atom/1,
     fasill_float/1,
@@ -74,13 +75,14 @@
 % that can take the serie of values ?PossibleValues and
 % with ?CurrentValue as the current value in the environment.
 :- dynamic(fasill_flag/3).
-fasill_flag(trace, [false, true], false).
-fasill_flag(unification, [weak, strict], weak).
-fasill_flag(quoted_chars, [chars, codes, atom], chars).
-fasill_flag(unknown, [error, fail, warning], error).
-fasill_flag(occurs_check, [false, true], false).
-fasill_flag(max_inferences, [false, num(_)], false).
-fasill_flag(symbolic, [false, true], true).
+fasill_flag(trace, [term(false,[]), term(true,[])], term(false,[])).
+fasill_flag(unification, [term(weak,[]), term(strict,[])], term(weak,[])).
+fasill_flag(quoted_chars, [term(chars,[]), term(codes,[]), term(atom,[])], term(chars,[])).
+fasill_flag(unknown, [term(error,[]), term(fail,[]), term(warning,[])], term(error,[])).
+fasill_flag(occurs_check, [term(false,[]), term(true,[])], term(false,[])).
+fasill_flag(max_inferences, [term(false,[]), num(_)], term(false,[])).
+fasill_flag(symbolic, [term(false,[]), term(true,[])], term(true,[])).
+fasill_flag(failure_steps, [term(false,[]), term(true,[])], term(true,[])).
 
 % current_fasill_flag/2
 % current_fasill_flag(?Flag, ?Value)
@@ -89,6 +91,16 @@ fasill_flag(symbolic, [false, true], true).
 % and ?Value is the current value of the flag in the
 % environment.
 current_fasill_flag(Flag, Value) :- fasill_flag(Flag, _, Value).
+
+% is_fasill_flag_value/2
+% is_fasill_flag_value(+Flag, +Value)
+%
+% This predicate succeeds when +Flag is a FASILL flag
+% and +Value is a possible value for the flag.
+is_fasill_flag_value(Flag, Value) :-
+    atomic(Flag), nonvar(Value),
+    fasill_flag(Flag, Values, _),
+    member(Value, Values), !.
 
 % set_fasill_flag/2
 % set_fasill_flag(+Flag, +Value)
