@@ -3,7 +3,7 @@
   * FILENAME: semantics.pl
   * DESCRIPTION: This module contains predicates implementing the semantics for FASILL.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 15.11.2018
+  * UPDATED: 17.12.2018
   * 
   **/
 
@@ -46,6 +46,9 @@
 wmgu(ExprA, ExprB, State) :-
     lattice_call_top(Top),
     wmgu(ExprA, ExprB, state(Top,[]), State).
+%%% anonymous variable
+wmgu(var('_'), _, State, State) :- !.
+wmgu(_, var('_'), State, State) :- !.
 %%% var with expression
 wmgu(var(X), Y, state(TD,Subs), State_) :-
     member(X/Z, Subs), !,
@@ -84,6 +87,9 @@ wmgu([X|Xs], [Y|Ys], State, State_) :- !,
 % ?MGU of the expressions +ExpressionA and +ExpressionB.
 mgu(ExprA, ExprB, Subs) :-
     mgu(ExprA, ExprB, [], Subs).
+%%% anonymous variable
+mgu(var('_'), _, Subs, Subs) :- !.
+mgu(_, var('_'), Subs, Subs) :- !.
 %%% var with expression
 mgu(var(X), Y, Subs, Subs_) :-
     member(X/Z, Subs), !,
