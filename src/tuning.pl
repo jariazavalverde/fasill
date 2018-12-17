@@ -3,7 +3,7 @@
   * FILENAME: tuning.pl
   * DESCRIPTION: This module contains predicates for tuning symbolic FASILL programs.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 08.12.2018
+  * UPDATED: 17.12.2018
   * 
   **/
 
@@ -125,7 +125,7 @@ tuning_thresholded(Best, Deviation) :-
 	findall_symbolic_cons(Sym),
 	findall(testcase(TD,SFCA), (
         fasill_testcase(TD, Goal),
-        query(Goal, state(SFCA,_))
+        (query(Goal, state(SFCA, _)) -> true ; lattice_call_bot(SFCA))
     ), Tests),
 	( symbolic_substitution(Sym, Subs),
 	  tuning_thresholded(Tests, Subs, 0.0),

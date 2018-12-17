@@ -3,7 +3,7 @@
   * FILENAME: tuning_smt.pl
   * DESCRIPTION: This module contains predicates for tuning symbolic FASILL programs with the Z3 SMT solver.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 09.12.2018
+  * UPDATED: 17.12.2018
   * 
   **/
 
@@ -96,7 +96,7 @@ tuning_smt_members([sym(Type,Name,Arity)|Cons], [[reserved('assert'), [symbol(Do
 tuning_smt_minimize([Assert, Minimize]) :-
     findall([symbol('lat!distance'), TD_, SMT], (
         fasill_testcase(TD, Goal),
-        query(Goal, state(SFCA,_)),
+        (query(Goal, state(SFCA, _)) -> true ; lattice_call_bot(SFCA)),
         sfca_to_smtlib(TD, TD_),
         sfca_to_smtlib(SFCA, SMT)
     ), Distances),
