@@ -261,8 +261,17 @@ next_priority(200, 0).
 parse_expr(0, X) --> blanks, parse_expr_zero(X).
 %%% level n, n > 0
 %%%%%% fx, fy
-parse_expr(Priority, term(Op, [T])) --> {Priority > 0}, parse_operator(Priority, fy, Op, _), parse_expr(Priority, T).
-parse_expr(Priority, term(Op, [T])) --> {Priority > 0}, parse_operator(Priority, fx, Op, _), {next_priority(Priority, Next)}, parse_expr(Next, T).
+parse_expr(Priority, Q) -->
+    {Priority > 0},
+    parse_operator(Priority, fy, Op, _),
+    parse_expr(Priority, T),
+    {(Op = '-', T = num(X)) -> (Y is X*(-1), Q = num(Y)) ; (Q = term(Op, [T]))}.
+parse_expr(Priority, Q) -->
+    {Priority > 0},
+    parse_operator(Priority, fx, Op, _),
+    {next_priority(Priority, Next)},
+    parse_expr(Next, T),
+    {(Op = '-', T = num(X)) -> (Y is X*(-1), Q = num(Y)) ; (Q = term(Op, [T]))}.
 %%%%%% xfx, xfy, yfx
 parse_expr(Priority, T) -->
     {Priority > 0, next_priority(Priority, Next)},
