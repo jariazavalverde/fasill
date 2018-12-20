@@ -3,7 +3,7 @@
   * FILENAME: sandbox.pl
   * DESCRIPTION: This module contains predicates for the web interface.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 09.12.2018
+  * UPDATED: 20.12.2018
   * 
   **/
 
@@ -14,7 +14,7 @@
     sandbox_listing/1,
     sandbox_unfold/4,
     sandbox_tune/6,
-    sandbox_tune_smt/7
+    sandbox_tune_smt/8
 ]).
 
 :- use_module('environment').
@@ -152,7 +152,7 @@ sandbox_tune(Program, Lattice, Sim, Tests, Limit, Options) :-
     write('deviation: '), write(Deviation),
     (member(runtime, Options) -> (nl, write('execution time: '), write(T1), write(' milliseconds')) ; true).
 
-% sandbox_tune_smt/7
+% sandbox_tune_smt/8
 % sandbox_tune_smt(+Program, +Lattice, +Sim, +Tests, +Domain, +Limit, +Options)
 % 
 % This predicate loads the program <+Program, +Lattice, +Sim>
@@ -160,13 +160,13 @@ sandbox_tune(Program, Lattice, Sim, Tests, Limit, Options) :-
 % of test cases +Tests, using an SMT solver with theory of +Domain,
 % with a limit of derivations +Limit, and writes in the standard
 % output the resulting substitution.
-sandbox_tune_smt(Program, Lattice, Sim, Tests, Domain, Limit, Options) :-
+sandbox_tune_smt(Program, Lattice, Sim, Tests, Domain, LatticeSMT, Limit, Options) :-
     set_fasill_flag(max_inferences, num(Limit)),
     lattice_consult(Lattice),
     program_consult(Program),
     testcases_consult(Tests),
     catch(similarity_consult(Sim), Error, (write('uncaught exception in similarities: '), sandbox_write(Error), nl)),
     statistics(runtime,[_,_]),
-    tuning_smt(Domain, _, _),
+    tuning_smt(Domain, LatticeSMT, _, _),
     statistics(runtime,[_,T1]),
     (member(runtime, Options) -> (nl, write('execution time: '), write(T1), write(' milliseconds')) ; true).

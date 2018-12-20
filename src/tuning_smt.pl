@@ -3,14 +3,14 @@
   * FILENAME: tuning_smt.pl
   * DESCRIPTION: This module contains predicates for tuning symbolic FASILL programs with the Z3 SMT solver.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 17.12.2018
+  * UPDATED: 20.12.2018
   * 
   **/
 
 
 
 :- module(tuning_smt, [
-    tuning_smt/3
+    tuning_smt/4
 ]).
 
 :- use_module(library(smtlib)).
@@ -20,21 +20,16 @@
 
 
 
-% tuning_smt/3
-% tuning_smt(+Domain, ?Substitution, ?Deviation)
+% tuning_smt/4
+% tuning_smt(+Domain, +LatFile, ?Substitution, ?Deviation)
 %
 % This predicate succeeds when ?Substitution is the best
 % symbolic substitution for the set of test cases loaded
 % into the current environment, with deviation ?Deviation.
-% +Domain is an SMT-LIB script representing the corresponding
+% +LatFile is an SMT-LIB script representing the corresponding
 % Prolog lattice.
-tuning_smt(Domain, _, _) :-
-    downcase_atom(Domain, DomName),
-    (prolog_load_context(directory, Dir_) ; Dir_ = '.'), !,
-    atom_concat(Dir_, '/../lattices/', Dir),
-    atom_concat(Dir, DomName, DirName),
-    atom_concat(DirName, '.lat.smt2', Path),
-    smtlib_read_script(Path, list(Lattice)),
+tuning_smt(Domain, LatFile, _, _) :-
+    smtlib_read_script(LatFile, list(Lattice)),
     findall_symbolic_cons(Cons),
     tuning_smt_decl_const(Domain, Cons, Declarations),
     (member([reserved('define-fun'), symbol('lat!member')|_], Lattice) ->
@@ -44,8 +39,8 @@ tuning_smt(Domain, _, _) :-
     tuning_theory_options(Domain, TheoryOpts),
     GetModel = [[reserved('check-sat')], [reserved('get-model')]],
     append([Lattice, Declarations, Members, Minimize, TheoryOpts, GetModel], Script),
-    smtlib_write_to_file('tuning.smt2', list(Script)),
-    shell('z3 -smt2 tuning.smt2', _).
+    smtlib_write_to_file('.tuning.smt2', list(Script)),
+    shell('z3 -smt2 .tuning.smt2', _).
 
 % tuning_smt_decl_const/2
 % tuning_smt_decl_const(+Domain, +FASILL, ?SMTLIB)
