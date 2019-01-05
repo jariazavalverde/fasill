@@ -3,7 +3,7 @@
   * FILENAME: sandbox.pl
   * DESCRIPTION: This module contains predicates for the web interface.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 20.12.2018
+  * UPDATED: 05.01.2019
   * 
   **/
 
@@ -167,6 +167,9 @@ sandbox_tune_smt(Program, Lattice, Sim, Tests, Domain, LatticeSMT, Limit, Option
     testcases_consult(Tests),
     catch(similarity_consult(Sim), Error, (write('uncaught exception in similarities: '), sandbox_write(Error), nl)),
     statistics(runtime,[_,_]),
-    tuning_smt(Domain, LatticeSMT, _, _),
+    tuning_smt(Domain, LatticeSMT, Subs, Deviation),
     statistics(runtime,[_,T1]),
+    write('best symbolic substitution: '),
+    sandbox_write(symbolic_subs(Subs)), nl,
+    write('deviation: '), write(Deviation),
     (member(runtime, Options) -> (nl, write('execution time: '), write(T1), write(' milliseconds')) ; true).

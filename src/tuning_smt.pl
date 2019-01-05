@@ -3,7 +3,7 @@
   * FILENAME: tuning_smt.pl
   * DESCRIPTION: This module contains predicates for tuning symbolic FASILL programs with the Z3 SMT solver.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 20.12.2018
+  * UPDATED: 05.01.2019
   * 
   **/
 
@@ -28,7 +28,7 @@
 % into the current environment, with deviation ?Deviation.
 % +LatFile is an SMT-LIB script representing the corresponding
 % Prolog lattice.
-tuning_smt(Domain, LatFile, _, _) :-
+tuning_smt(Domain, LatFile, Substitution, Deviation) :-
     smtlib_read_script(LatFile, list(Lattice)),
     findall_symbolic_cons(Cons),
     tuning_smt_decl_const(Domain, Cons, Declarations),
@@ -40,7 +40,29 @@ tuning_smt(Domain, LatFile, _, _) :-
     GetModel = [[reserved('check-sat')], [reserved('get-model')]],
     append([Lattice, Declarations, Members, Minimize, TheoryOpts, GetModel], Script),
     smtlib_write_to_file('.tuning.smt2', list(Script)),
-    shell('z3 -smt2 .tuning.smt2', _).
+    shell('z3 -smt2 .tuning.smt2 > .result.tuning.smt2', _),
+    smtlib_read_expressions('.result.tuning.smt2', Z3answer),
+    tuning_smt_answer(Z3answer, Substitution, Deviation).
+
+% tuning_smt_answer/3
+% tuning_smt_answer(+Z3answer, ?Substitution, ?Deviation)
+%
+% This predicate succeeds when +Z3answer is the answer
+% of the Z3 solver and ?Substitution is the best symbolic
+% substitution of the tuning process with deviation ?Deviation.
+tuning_smt_answer([H|_], Substitution, Deviation) :-
+    member([reserved('define-fun'), symbol('deviation!'), [], symbol('Real'), decimal(Deviation)], H), !,
+    findall(sym(Con,Name,Arity_)/val(Con,Y,Arity_), (
+        member([reserved('define-fun'), symbol(Symbol), [], symbol(Type), Value], H),
+        atomic_list_concat(['sym', Con, Arity, Name], '!', Symbol),
+        atom_number(Arity, Arity_),
+        Value =.. [_,X],
+        (Con = td ->
+            from_prolog(X, Y) ;
+            (atomic_list_concat([_|X2], '_', X), atomic_list_concat(X2, '_', Y))
+        )
+    ), Substitution).
+tuning_smt_answer([_|T], Substitution, Deviation) :- tuning_smt_answer(T, Substitution, Deviation).
 
 % tuning_smt_decl_const/2
 % tuning_smt_decl_const(+Domain, +FASILL, ?SMTLIB)
@@ -105,7 +127,7 @@ tuning_smt_minimize([Assert, Minimize]) :-
 % representing a symbolic fuzzy computed answer and ?SMTLIB
 % is the corresponding answer in SMT-LIB format.
 sfca_to_smtlib(num(X), numeral(X)) :- integer(X), !.
-sfca_to_smtlib(num(X), decimal(Y)) :- float(X), Y is ceil(X*10)/10, !.
+sfca_to_smtlib(num(X), decimal(Y)) :- float(X), Y is ceil(X*100)/100, !.
 sfca_to_smtlib(term('#'(X),[]), symbol(Y)) :- atom_concat('sym!td!0!', X, Y), !.
 sfca_to_smtlib(term(X,[]), symbol(X)) :- atomic(X), !.
 sfca_to_smtlib(term(X,Xs), [symbol(Con2),symbol(Name4)|Xs2]) :-
