@@ -3,7 +3,7 @@
   * FILENAME: tuning_smt.pl
   * DESCRIPTION: This module contains predicates for tuning symbolic FASILL programs with the Z3 SMT solver.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 05.01.2019
+  * UPDATED: 20.01.2019
   * 
   **/
 
@@ -51,9 +51,9 @@ tuning_smt(Domain, LatFile, Substitution, Deviation) :-
 % of the Z3 solver and ?Substitution is the best symbolic
 % substitution of the tuning process with deviation ?Deviation.
 tuning_smt_answer([H|_], Substitution, Deviation) :-
-    member([reserved('define-fun'), symbol('deviation!'), [], symbol('Real'), decimal(Deviation)], H), !,
+    member([reserved('define-fun'), symbol('deviation!'), [], symbol('Real'), decimal(Deviation)|_], H), !,
     findall(sym(Con,Name,Arity_)/val(Con,Y,Arity_), (
-        member([reserved('define-fun'), symbol(Symbol), [], symbol(Type), Value], H),
+        member([reserved('define-fun'), symbol(Symbol), [], symbol(_), Value|_], H),
         atomic_list_concat(['sym', Con, Arity, Name], '!', Symbol),
         atom_number(Arity, Arity_),
         Value =.. [_,X],

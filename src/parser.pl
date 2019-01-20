@@ -295,7 +295,7 @@ parse_expr_zero(var(T)) --> token_variable(T), !.
 parse_expr_zero(T) --> lparen, !, parse_expr(1300, T), rparen.
 parse_expr_zero(T) --> parse_list(T), !.
 parse_expr_zero(T) --> parse_brace(T), !.
-parse_expr_zero(T) --> parse_agr(T), !.
+parse_expr_zero(T) --> parse_con(T), !.
 parse_expr_zero(T) --> parse_term(T), !.
 
 % parse_term/3
@@ -306,10 +306,19 @@ parse_term2([]) --> [].
 parse_term3([H|T]) --> comma, !, parse_expr(999, H), parse_term3(T).
 parse_term3([]) --> rparen.
 
-% parse_agr/3
-% parse an aggregator
-parse_agr(term('#@'(Name), [H|T])) --> ['#','@'], token_atom(Name), lparen, parse_expr(999, H), parse_term3(T).
-parse_agr(term('@'(Name), [H|T])) --> ['@'], token_atom(Name), lparen, parse_expr(999, H), parse_term3(T).
+% parse_con/3
+% parse a prefix connective
+parse_con(term(Con, [H|T])) --> ['#',X],
+    {member(X, ['@','&','|'])},
+    token_atom(Name),
+    lparen, parse_expr(999, H), parse_term3(T),
+    {atom_concat('#', X, Y),
+    Con =.. [Y,Name]}.
+parse_con(term(Con, [H|T])) --> [X],
+    {member(X, ['@','&','|'])},
+    token_atom(Name),
+    lparen, parse_expr(999, H), parse_term3(T),
+    {Con =.. [X,Name]}.
 
 % parse_list/3
 % parse a list
