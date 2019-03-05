@@ -93,6 +93,9 @@ sandbox_write_list(X) :- write('|'), sandbox_write(X).
 sandbox_run(Program, Lattice, Sim, Goal, Limit, Options) :-
     set_fasill_flag(trace, term(true,[])),
     set_fasill_flag(max_inferences, num(Limit)),
+    (member(cut(LambdaPl), Options) ->
+        from_prolog(LambdaPl, Lambda), set_fasill_flag(lambda_unification, Lambda);
+        true),
     lattice_consult(Lattice),
     program_consult(Program),
     catch(similarity_consult(Sim), Error, (write('uncaught exception in similarities: '), sandbox_write(Error), nl)),
@@ -140,6 +143,9 @@ sandbox_unfold(Program, Lattice, Sim, Rule) :-
 % and writes in the standard output the resulting substitution.
 sandbox_tune(Program, Lattice, Sim, Tests, Limit, Options) :-
     set_fasill_flag(max_inferences, num(Limit)),
+    (member(cut(LambdaPl), Options) ->
+        from_prolog(LambdaPl, Lambda), set_fasill_flag(lambda_unification, Lambda);
+        true),
     lattice_consult(Lattice),
     program_consult(Program),
     testcases_consult(Tests),
@@ -162,6 +168,9 @@ sandbox_tune(Program, Lattice, Sim, Tests, Limit, Options) :-
 % output the resulting substitution.
 sandbox_tune_smt(Program, Lattice, Sim, Tests, Domain, LatticeSMT, Limit, Options) :-
     set_fasill_flag(max_inferences, num(Limit)),
+    (member(cut(LambdaPl), Options) ->
+        from_prolog(LambdaPl, Lambda), set_fasill_flag(lambda_unification, Lambda);
+        true),
     lattice_consult(Lattice),
     program_consult(Program),
     testcases_consult(Tests),

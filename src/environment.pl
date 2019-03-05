@@ -35,6 +35,7 @@
     program_consult/1,
     program_has_predicate/1,
     query_consult/2,
+    sort_rules_by_id/0,
     lattice_tnorm/1,
     lattice_tconorm/1,
     lattice_call_bot/1,
@@ -338,6 +339,35 @@ program_has_predicate(Name/Arity) :-
     similarity_between(Name, Other, Length, TD),
     TD \= Bot,
     fasill_predicate(Other/Length)), !.
+
+% sort_rules_by_id/0
+% sort_rules_by_id
+%
+% This predicate retracts all the rules from the current
+% environment and asserts them ordered by the identifier.
+sort_rules_by_id :-
+    findall(fasill_rule(X,Y,Z), fasill_rule(X,Y,Z), Rules),
+    predsort(compare_rule_id, Rules, Sorted),
+    retractall(fasill_rule(_,_,_)),
+    ( member(Rule, Sorted),
+      assertz(Rule),
+      fail ; true ).
+
+% compare_rule_id/3
+% compare_rule_id(?Delta, +Rule1, +Rule2)
+%
+% This predicate succeeds when ?Delta is the ordering relation
+% (<, > or =) for rules +Rule1 and +Rule2, compared by their
+% identifiers.
+compare_rule_id(Delta, X, Y) :-
+    X = fasill_rule(_,_,[id(IdX)|_]),
+    Y = fasill_rule(_,_,[id(IdY)|_]),
+    atomic_list_concat(Xs, '-', IdX),
+    atomic_list_concat(Ys, '-', IdY),
+    maplist(atom_number, Xs, Xs_),
+    maplist(atom_number, Ys, Ys_),
+    compare(Delta, Xs_, Ys_).
+
 
 
 % LATTICES
