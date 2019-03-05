@@ -13,6 +13,7 @@
     lambda_wmgu/4,
     wmgu/3,
     mgu/3,
+    unify/3,
     query/2,
     select_atom/4,
     select_expression/4,
@@ -126,6 +127,27 @@ mgu([X|Xs], [Y|Ys], Subs1, Subs3) :- !,
     apply(Xs, Subs2, Xs_),
     apply(Ys, Subs2, Ys_),
     mgu(Xs_, Ys_, Subs2, Subs3).
+
+% unify/3
+% unify(+ExpressionA, +ExpressionB, ?State)
+%
+% This predicate returns the unification ?State of
+% expressions +ExpressionA and ExpressionB using
+% the (possible weak) unification algorithm.
+unify(Term1, Term2, Subs) :-
+    current_fasill_flag(weak_unification, term(true,[])), !,
+    current_fasill_flag(lambda_unification, Lambda_),
+    (Lambda_ == term(bot,[]) ->
+        lattice_call_bot(Lambda) ;
+        (Lambda == term(top,[]) ->
+            lattice_call_top(Lambda) ; 
+            Lambda = Lambda_
+        )
+    ),
+    lambda_wmgu(Term1, Term2, Lambda, Subs).
+unify(Term1, Term2, state(Top, Subs)) :-
+    mgu(Term1, Term2, Subs),
+    lattice_call_top(Top).
 
 
 
@@ -280,10 +302,7 @@ success_step(From, state(Goal,Subs), state(Goal_,Subs_), Info) :-
             (Name = Name2 -> true ; similarity_between(Name, Name2, Arity, Sim), Sim \= Bot),
             Rule = fasill_rule(head(Head),Body,_),
             rename([Head,Body], [HeadR,BodyR]),
-            (current_fasill_flag(weak_unification, term(true,[])) ->
-                wmgu(Expr, HeadR, state(TD,SubsExpr)) ;
-                (mgu(Expr, HeadR, SubsExpr), TD = Top)
-            ),
+            unify(Expr, HeadR, state(TD, SubsExpr)),
             (BodyR = empty -> Var = TD ; (
                 BodyR = body(Body_),
                 (TD == Top -> Var = Body_ ; Var = term('&'(Tnorm), [TD,Body_]))

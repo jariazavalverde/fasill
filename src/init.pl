@@ -74,12 +74,12 @@ print_term_list(X) :- ansi_format([bold,fg(yellow)], '|', []), print_term(X).
 %
 % This predicate runs the FASILL interpreter.
 main :-
-    run_command(term(lattice,[term(library, [term(real, [])])])),
+    run_command(term(lattice,[term(library, [term(unit, [])])])),
     current_prolog_flag(argv, Args),
     ( member('-halt', Args) -> true ;
         tty_clear,
         writeln('FASILL (pre-alfa): http://dectau.uclm.es/fasill/'),
-        writeln('Copyright (C) 2018 José Antonio Riaza Valverde'),
+        writeln('Copyright (C) 2018-2019 José Antonio Riaza Valverde'),
         writeln('Released under the BSD-3 Clause license') ),
     run_arguments(Args),
     interactive_mode.

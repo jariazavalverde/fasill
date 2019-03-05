@@ -192,7 +192,7 @@ eval_builtin_predicate(catch/3, state(_, Subs), selected(ExprVar, Goal_, Term), 
     ( State = state(Goal_,Subs_) -> true ; (
         State = exception(Exception), !,
         lattice_call_bot(Bot),
-        ((wmgu(Catcher, Exception, state(TD,_)), TD \= Bot) ->
+        ((unify(Catcher, Exception, state(TD, _)), TD \= Bot) ->
             Goal_ = term('&',[term('~',[Catcher,Exception]),Handler]), Subs_ = Subs ;
             throw_exception(Exception))
     )).
@@ -287,10 +287,7 @@ eval_builtin_predicate(findall/4, state(_, Subs), selected(ExprVar, Var, Term), 
 %%% True if the weak unification succeeds.
 eval_builtin_predicate('~'/2, state(_, Subs), selected(ExprVar, TD, Term), state(ExprSubs, Subs_)) :-
     Term = term('~', [X,Y]),
-    (current_fasill_flag(weak_unification, term(true,[])) ->
-        wmgu(X, Y, state(TD, SubsUnification)) ;
-        (mgu(X, Y, SubsUnification), TD = top)
-    ),
+    unify(X, Y, state(TD, SubsUnification)),
     apply(ExprVar, SubsUnification, ExprSubs),
     compose(Subs, SubsUnification, Subs_).
 
@@ -314,7 +311,7 @@ eval_builtin_predicate('='/2, state(_, Subs), selected(ExprVar, top, Term), stat
 eval_builtin_predicate('\\~'/2, state(_, Subs), selected(ExprVar, top, Term), state(ExprVar, Subs)) :-
     Term = term('\\~', [X,Y]),
     lattice_call_bot(Bot),
-    (wmgu(X, Y, state(TD,_)) -> TD == Bot ; true).
+    (unify(X, Y, state(TD,_)) -> TD == Bot ; true).
 
 %%% '\='/2
 %%% '\='(@term, @term)
