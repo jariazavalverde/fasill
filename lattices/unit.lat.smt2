@@ -1,4 +1,4 @@
-;; Real lattice
+;; Unit lattice
 
 ;; max
 (define-fun max ((x Real) (y Real)) Real 
