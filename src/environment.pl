@@ -37,6 +37,7 @@
     query_consult/2,
     sort_rules_by_id/0,
     max_variable/3,
+    count_variables/2,
     lattice_tnorm/1,
     lattice_tconorm/1,
     lattice_call_bot/1,
@@ -353,6 +354,25 @@ sort_rules_by_id :-
     ( member(Rule, Sorted),
       assertz(Rule),
       fail ; true ).
+
+% count_variables/2
+% count_variables(+Expression, ?Variables)
+%
+% This predicate succeeds when ?Variables is a 
+% list of pairs (Var-N) where Var is a varaible
+% and N is the number of occurrences of Var in 
+% the expression +Expression.
+count_variables(Expr, Vars) :-
+    count_variables(Expr, [], Vars).
+count_variables(var(X), Vars, [X-1|Vars]) :- \+member(X-_, Vars), !.
+count_variables(var(X), Vars, [X-M|Vars2]) :- !, select(X-N, Vars, Vars2), succ(N, M).
+count_variables(term(_, Xs), Vars, Vars2) :- !,
+    count_variables(Xs, Vars, Vars2).
+count_variables([], Vars, Vars) :- !.
+count_variables([X|Xs], Vars, Vars3) :- !,
+    count_variables(X, Vars, Vars2),
+    count_variables(Xs, Vars2, Vars3).
+count_variables(_, Vars, Vars).
 
 % max_variable/3
 % max_variable(+Expression, +Variable, ?Max)

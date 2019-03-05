@@ -30,23 +30,26 @@
 linearize_rename(X, Y, Subs) :-
     max_variable(X, 'V', N),
     succ(N, M),
-    linearize_rename(X, Y, M, _, [], Subs).
-linearize_rename(var(X), var(Y), N, M, Subs, [Y/var(X)|Subs]) :- 
-    !, succ(N, M),
+    count_variables(X, Vars),
+    linearize_rename(X, Y, Vars, M, _, [], Subs).
+linearize_rename(var(X), var(Y), Vars, N, M, Subs, [Y/var(X)|Subs]) :- 
+    member(X-C, Vars),
+    C > 1, !,
+    succ(N, M),
     atom_number(Atom, N),
     atom_concat('V', Atom, Y).
-linearize_rename(term(Name, Xs), term(Name, Ys), N, M, Subs, Subs_) :-
-    !, linearize_rename(Xs, Ys, N, M, Subs, Subs_).
-linearize_rename([], [], _, _, Subs, Subs) :- !.
-linearize_rename([X|Xs], [Y|Ys], N, S, Subs, Subs3) :-
-    !, linearize_rename(X, Y, N, M, Subs, Subs2),
-    linearize_rename(Xs, Ys, M, S, Subs2, Subs3).
-linearize_rename(X, Y, N, M, Subs, Subs_) :-
+linearize_rename(term(Name, Xs), term(Name, Ys), Vars, N, M, Subs, Subs_) :-
+    !, linearize_rename(Xs, Ys, Vars, N, M, Subs, Subs_).
+linearize_rename([], [], _, _, _, Subs, Subs) :- !.
+linearize_rename([X|Xs], [Y|Ys], Vars, N, S, Subs, Subs3) :-
+    !, linearize_rename(X, Y, Vars, N, M, Subs, Subs2),
+    linearize_rename(Xs, Ys, Vars, M, S, Subs2, Subs3).
+linearize_rename(X, Y, Vars, N, M, Subs, Subs_) :-
     compound(X), !,
     X =.. [Name|Args],
-    linearize_rename(Args, Args_, N, M, Subs, Subs_),
+    linearize_rename(Args, Args_, Vars, N, M, Subs, Subs_),
     Y =.. [Name|Args_].
-linearize_rename(X, X, _, _, Subs, Subs).
+linearize_rename(X, X, _, _, _, Subs, Subs).
 
 % linearize_substitution/2
 % linearize_substitution(?Substitution, ?Body)
