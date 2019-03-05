@@ -137,9 +137,9 @@ mgu([X|Xs], [Y|Ys], Subs1, Subs3) :- !,
 unify(Term1, Term2, Subs) :-
     current_fasill_flag(weak_unification, term(true,[])), !,
     current_fasill_flag(lambda_unification, Lambda_),
-    (Lambda_ == term(bot,[]) ->
+    (Lambda_ == bot ->
         lattice_call_bot(Lambda) ;
-        (Lambda == term(top,[]) ->
+        (Lambda == top ->
             lattice_call_top(Lambda) ; 
             Lambda = Lambda_
         )

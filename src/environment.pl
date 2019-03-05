@@ -85,7 +85,7 @@ fasill_flag(occurs_check, [term(false,[]), term(true,[])], term(false,[])).
 fasill_flag(max_inferences, [term(false,[]), num(_)], term(false,[])).
 fasill_flag(symbolic, [term(false,[]), term(true,[])], term(true,[])).
 fasill_flag(failure_steps, [term(false,[]), term(true,[])], term(true,[])).
-fasill_flag(lambda_unification, td, term(bot,[])).
+fasill_flag(lambda_unification, [_], bot).
 
 % current_fasill_flag/2
 % current_fasill_flag(?Flag, ?Value)
@@ -107,8 +107,8 @@ is_fasill_flag_value(Flag, Value) :-
     member(Value, Values), !.
 is_fasill_flag_value(Flag, Value) :-
     atomic(Flag), nonvar(Value),
-    fasill_flag(Flag, td, _),
-    (Value == term(bot,[]) ; Value == term(top,[]) ; lattice_call_member(Value)), !.
+    fasill_flag(Flag, td, _), !,
+    (Value == bot ; Value == top ; lattice_call_member(Value)), !.
 
 % set_fasill_flag/2
 % set_fasill_flag(+Flag, +Value)
@@ -119,8 +119,8 @@ is_fasill_flag_value(Flag, Value) :-
 set_fasill_flag(Flag, Value) :-
     atomic(Flag), nonvar(Value),
     is_fasill_flag_value(Flag, Value),
-    retractall(fasill_flag(Flag, _, _)),
     fasill_flag(Flag, Values, _),
+    retractall(fasill_flag(Flag, _, _)),
     assertz(fasill_flag(Flag, Values, Value)).
 
 

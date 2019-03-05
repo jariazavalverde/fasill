@@ -3,7 +3,7 @@
   * FILENAME: builtin.pl
   * DESCRIPTION: This module contains the definition of the FASILL built-in predicates.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 07.12.2018
+  * UPDATED: 05.03.2019
   * 
   **/
 

@@ -3,7 +3,7 @@
   * FILENAME: parser.pl
   * DESCRIPTION: This module contains predicates for parsing FASILL programs.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 13.12.2018
+  * UPDATED: 05.03.2019
   * 
   **/
 
@@ -193,8 +193,7 @@ reset_rule_id :- retract(current_rule_id(_)), assertz(current_rule_id(1)).
 
 % parse_program/3
 % parse a fuzzy logic program
-parse_program(Program) --> parse_rule(H), !, parse_program(T), blanks,
-    {(H = fasill_rule(_, _, Info), member(directive, Info)) -> Program = T ; Program = [H|T]}.
+parse_program(Program) --> parse_rule(H), !, parse_program(T), blanks, {Program = [H|T]}.
 parse_program([]) --> [].
 
 % parse_rule/3
@@ -212,8 +211,8 @@ parse_rule(fasill_rule(head(Head), Body, [id(IdAtom),Info])) -->
        T = term('#<'(_), [Head,Body_]), Body = body(Body_), Info = syntax(smalp) ;
        T = term(':-', [Head, Body_]), Body = body(Body_), Info = syntax(prolog) ;
        % directive
-       T = term(':-', [Directive]), eval_directive(Directive), Info = directive ;
-       T = term('<-', [Directive]), eval_directive(Directive), Info = directive ;
+       T = term(':-', [Directive]), eval_directive(Directive), T = Head, Body = empty, Info = directive ;
+       T = term('<-', [Directive]), eval_directive(Directive), T = Head, Body = empty, Info = directive ;
        % fact
        T = Head, Body = empty, Info = syntax(fasill)
     )}, !, {auto_rule_id(Id), atom_number(IdAtom, Id)}.
