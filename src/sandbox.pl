@@ -3,7 +3,7 @@
   * FILENAME: sandbox.pl
   * DESCRIPTION: This module contains predicates for the web interface.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 05.01.2019
+  * UPDATED: 05.03.2019
   * 
   **/
 
@@ -14,12 +14,14 @@
     sandbox_listing/1,
     sandbox_unfold/4,
     sandbox_tune/6,
-    sandbox_tune_smt/8
+    sandbox_tune_smt/8,
+    sandbox_linearize_heads/1
 ]).
 
 :- use_module('environment').
 :- use_module('parser').
 :- use_module('unfolding').
+:- use_module('linearization').
 :- use_module('tuning').
 :- use_module('tuning_smt').
 
@@ -112,7 +114,7 @@ sandbox_run(Program, Lattice, Sim, Goal, Limit, Options) :-
 % sandbox_listing(+Program)
 % 
 % This predicate loads the program +Program
-% into the environemnt and, and writes in the
+% into the environemnt, and writes in the
 % standard output the loaded rules.
 sandbox_listing(Program) :-
     program_consult(Program),
@@ -182,3 +184,17 @@ sandbox_tune_smt(Program, Lattice, Sim, Tests, Domain, LatticeSMT, Limit, Option
     sandbox_write(symbolic_subs(Subs)), nl,
     write('deviation: '), write(Deviation),
     (member(runtime, Options) -> (nl, write('execution time: '), write(T1), write(' milliseconds')) ; true).
+
+% sandbox_linearize_heads/1
+% sandbox_linearize_heads(+Program)
+% 
+% This predicate loads the program +Program
+% into the environemnt, and writes in the
+% standard output the loaded rules after
+% linearize the heads.
+sandbox_linearize_heads(Program) :-
+    program_consult(Program),
+    linearize_heads,
+    ( fasill_rule(Head, Body, _),
+      sandbox_write(rule(Head, Body)),
+      nl, fail ; true).

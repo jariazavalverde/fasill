@@ -36,6 +36,7 @@
     program_has_predicate/1,
     query_consult/2,
     sort_rules_by_id/0,
+    max_variable/3,
     lattice_tnorm/1,
     lattice_tconorm/1,
     lattice_call_bot/1,
@@ -352,6 +353,29 @@ sort_rules_by_id :-
     ( member(Rule, Sorted),
       assertz(Rule),
       fail ; true ).
+
+% max_variable/3
+% max_variable(+Expression, +Variable, ?Max)
+%
+% This predicate succeeds when ?Max is the maximum
+% natural number for wich +Variable?Max occurs in
+% the expression +Expression.
+max_variable(Expr, Variable, Max) :-
+    max_variable(Expr, Variable, 0, Max).
+max_variable(var(V), Variable, N, Max) :-
+    atom(V),
+    atom_length(Variable, Length),
+    sub_atom(V, 0, Length, _, Variable), !,
+    sub_atom(V, Length, _, 0, Rest),
+    atom_codes(Rest, Codes),
+    catch((number_codes(M, Codes), Max is max(N,M)), _, Max = N).
+max_variable(term(_, Xs), Variable, N, Max) :- !,
+    max_variable(Xs, Variable, N, Max).
+max_variable([], _, N, N) :- !.
+max_variable([X|Xs], Variable, N, Max) :- !,
+    max_variable(X, Variable, N, M),
+    max_variable(Xs, Variable, M, Max).
+max_variable(_, _, N, N).
 
 % compare_rule_id/3
 % compare_rule_id(?Delta, +Rule1, +Rule2)

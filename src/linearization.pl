@@ -28,7 +28,9 @@
 % the variables of the expression by fresh variables. ?Renamed
 % is the expression +Expression with fresh variables.
 linearize_rename(X, Y, Subs) :-
-    linearize_rename(X, Y, 0, _, [], Subs).
+    max_variable(X, 'V', N),
+    succ(N, M),
+    linearize_rename(X, Y, M, _, [], Subs).
 linearize_rename(var(X), var(Y), N, M, Subs, [Y/var(X)|Subs]) :- 
     !, succ(N, M),
     atom_number(Atom, N),
@@ -78,10 +80,11 @@ linearize_head(R1) :-
 linearize_head(R1, R2) :-
     R1 = fasill_rule(head(Head), Body, [id(Id)|Info]),
     linearize_rename(Head, Head2, Subs),
-    linearize_substitution(Subs, LinBody),
+    reverse(Subs, Subs_),
+    linearize_substitution(Subs_, LinBody),
     (Body == empty ->
         (LinBody == empty -> Body2 = empty ; Body2 = body(LinBody)) ;
-        (LinBody == empty -> Body2 = Body ; Body = body(Body_), Body2 = term('&', [LinBody, Body_]))
+        (LinBody == empty -> Body2 = Body ; Body = body(Body_), Body2 = body(term('&', [LinBody, Body_])))
     ),
     atom_concat(Id, 'L', IdL),
     R2 = fasill_rule(head(Head2), Body2, [id(IdL)|Info]).
