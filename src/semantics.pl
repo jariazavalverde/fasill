@@ -3,13 +3,14 @@
   * FILENAME: semantics.pl
   * DESCRIPTION: This module contains predicates implementing the semantics for FASILL.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 17.12.2018
+  * UPDATED: 05.03.2019
   * 
   **/
 
 
 
 :- module(semantics, [
+    lambda_wmgu/4,
     wmgu/3,
     mgu/3,
     query/2,
@@ -38,47 +39,61 @@
 
 % UNIFICATION
 
+% lambda_wmgu/4
+% lambda_wmgu(+ExpressionA, +ExpressionB, +Threshold, ?State)
+%
+% This predicate returns the thresholded weak most general unifier
+% (lambda-wmgu) ?State of the expressions +ExpressionA and
+% +ExpressionB with level +Threshold.
+lambda_wmgu(ExprA, ExprB, Lambda, State) :-
+    lattice_call_top(Top),
+    lambda_wmgu(ExprA, ExprB, Lambda, state(Top,[]), State).
+%%% anonymous variable
+lambda_wmgu(var('_'), _, _, State, State) :- !.
+lambda_wmgu(_, var('_'), _, State, State) :- !.
+%%% var with expression
+lambda_wmgu(var(X), Y, Lambda, state(TD,Subs), State_) :-
+    member(X/Z, Subs), !,
+    lambda_wmgu(Z, Y, Lambda, state(TD,Subs), State_).
+lambda_wmgu(var(X), Y, _, state(TD,Subs), state(TD,[X/Y|Subs_])) :- !,
+    compose(Subs, [X/Y], Subs_).
+%%% expression with var
+lambda_wmgu(X, var(Y), Lambda, State, State_) :- !,
+    lambda_wmgu(var(Y), X, Lambda, State, State_).
+%%% num with num
+lambda_wmgu(num(X), num(X), _, State, State) :- !.
+%%% term with term
+lambda_wmgu(term(X,Xs), term(X,Ys), Lambda, State, State_) :- !,
+    length(Xs, Length),
+    length(Ys, Length),
+    lambda_wmgu(Xs, Ys, Lambda, State, State_).
+lambda_wmgu(term(X,Xs), term(Y,Ys), Lambda, state(TD, Subs), State) :- !,
+    length(Xs, Length),
+    length(Ys, Length),
+    similarity_between(X, Y, Length, TDxy),
+    similarity_tnorm(Tnorm),
+    lattice_call_connective('&'(Tnorm), [TD, TDxy], TD2),
+    lattice_call_geq(TD2, Lambda),
+    lattice_call_bot(Bot),
+    TD2 \== Bot,
+    lambda_wmgu(Xs, Ys, Lambda, state(TD2, Subs), State).
+%%% arguments
+lambda_wmgu([], [], _, State, State) :- !.
+lambda_wmgu([X|Xs], [Y|Ys], Lambda, State, State_) :- !,
+    lambda_wmgu(X, Y, Lambda, State, StateXY),
+    StateXY = state(_, Subs),
+    apply(Xs, Subs, Xs_),
+    apply(Ys, Subs, Ys_),
+    lambda_wmgu(Xs_, Ys_, Lambda, StateXY, State_).
+
 % wmgu/3
 % wmgu(+ExpressionA, +ExpressionB, ?State)
 %
 % This predicate returns the weak most general unifier (wmgu)
 % ?State of the expressions +ExpressionA and +ExpressionB.
 wmgu(ExprA, ExprB, State) :-
-    lattice_call_top(Top),
-    wmgu(ExprA, ExprB, state(Top,[]), State).
-%%% anonymous variable
-wmgu(var('_'), _, State, State) :- !.
-wmgu(_, var('_'), State, State) :- !.
-%%% var with expression
-wmgu(var(X), Y, state(TD,Subs), State_) :-
-    member(X/Z, Subs), !,
-    wmgu(Z, Y, state(TD,Subs), State_).
-wmgu(var(X), Y, state(TD,Subs), state(TD,[X/Y|Subs_])) :- !, compose(Subs,[X/Y],Subs_).
-%%% expression with var
-wmgu(X, var(Y), State, State_) :- !, wmgu(var(Y), X, State, State_).
-%%% num with num
-wmgu(num(X), num(X), State, State) :- !.
-%%% term with term
-wmgu(term(X,Xs), term(X,Ys), State, State_) :- !,
-    length(Xs, Length),
-    length(Ys, Length),
-    wmgu(Xs, Ys, State, State_).
-wmgu(term(X,Xs), term(Y,Ys), state(TD, Subs), State) :- !,
-    length(Xs, Length),
-    length(Ys, Length),
-    similarity_between(X, Y, Length, TDxy),
-    similarity_tnorm(Tnorm),
-    lattice_call_connective('&'(Tnorm), [TD, TDxy], TD2),
-    wmgu(Xs, Ys, state(TD2, Subs), State).
-%%% arguments
-wmgu([], [], State, State) :- !.
-wmgu([X|Xs], [Y|Ys], State, State_) :- !,
-    wmgu(X, Y, State, StateXY),
-    StateXY = state(_,Subs),
-    apply(Xs, Subs, Xs_),
-    apply(Ys, Subs, Ys_),
-    wmgu(Xs_, Ys_, StateXY, State_).
-
+    lattice_call_bot(Bot),
+    lambda_wmgu(ExprA, ExprB, Bot, State).
 
 % mgu/3
 % mgu(+ExpressionA, +ExpressionB, ?MGU)
