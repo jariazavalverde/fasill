@@ -3,7 +3,7 @@
   * FILENAME: environment.pl
   * DESCRIPTION: This module contains predicates for manipulating programs, lattices and similarity relations.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 13.12.2018
+  * UPDATED: 05.03.2019
   * 
   **/
 
@@ -41,6 +41,8 @@
     lattice_call_top/1,
     lattice_call_member/1,
     lattice_call_members/1,
+    lattice_call_leq/2,
+    lattice_call_geq/2,
     lattice_call_distance/3,
     lattice_call_connective/3,
     lattice_reduce_connective/3,
@@ -83,6 +85,7 @@ fasill_flag(occurs_check, [term(false,[]), term(true,[])], term(false,[])).
 fasill_flag(max_inferences, [term(false,[]), num(_)], term(false,[])).
 fasill_flag(symbolic, [term(false,[]), term(true,[])], term(true,[])).
 fasill_flag(failure_steps, [term(false,[]), term(true,[])], term(true,[])).
+fasill_flag(lambda_unification, td, term(bot,[])).
 
 % current_fasill_flag/2
 % current_fasill_flag(?Flag, ?Value)
@@ -100,7 +103,12 @@ current_fasill_flag(Flag, Value) :- fasill_flag(Flag, _, Value).
 is_fasill_flag_value(Flag, Value) :-
     atomic(Flag), nonvar(Value),
     fasill_flag(Flag, Values, _),
+    is_list(Values), !,
     member(Value, Values), !.
+is_fasill_flag_value(Flag, Value) :-
+    atomic(Flag), nonvar(Value),
+    fasill_flag(Flag, td, _),
+    (Value == term(bot,[]) ; Value == term(top,[]) ; lattice_call_member(Value)), !.
 
 % set_fasill_flag/2
 % set_fasill_flag(+Flag, +Value)
@@ -110,9 +118,9 @@ is_fasill_flag_value(Flag, Value) :-
 % has the side effect of chaging the current value for the flag.
 set_fasill_flag(Flag, Value) :-
     atomic(Flag), nonvar(Value),
-    fasill_flag(Flag, Values, _),
-    member(Value, Values),
+    is_fasill_flag_value(Flag, Value),
     retractall(fasill_flag(Flag, _, _)),
+    fasill_flag(Flag, Values, _),
     assertz(fasill_flag(Flag, Values, Value)).
 
 
@@ -415,6 +423,32 @@ lattice_call_members(Members) :-
 lattice_call_members(_) :-
     existence_error(procedure, members/1, lattice/0, Error),
     throw_exception(Error).
+
+% lattice_call_leq/2
+% lattice_call_leq(+Member1, +Member2)
+%
+% This predicate succeeds when +Member1 is less
+% of equal than +Member2 with the lattice loaded
+% into the environment.
+lattice_call_leq(Member1, Member2) :-
+    current_predicate(leq/2), !,
+    to_prolog(Member1, Prolog1),
+    to_prolog(Member2, Prolog2),
+    leq(Prolog1, Prolog2).
+lattice_call_leq(_, _) :-
+    existence_error(procedure, leq/2, lattice/0, Error),
+    throw_exception(Error).
+
+% lattice_call_geq/2
+% lattice_call_geq(+Member1, +Member2)
+%
+% This predicate succeeds when +Member1 is greater
+% of equal than +Member2 with the lattice loaded
+% into the environment.
+lattice_call_geq(Member1, Member2) :-
+    (\+lattice_call_leq(Member1, Member2) ;
+    Member1 == Member2), !.
+
 
 % lattice_call_distance/3
 % lattice_call_distance(+Member1, +Member2, -Distance)
