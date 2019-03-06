@@ -139,7 +139,7 @@ unify(Term1, Term2, Subs) :-
     current_fasill_flag(lambda_unification, Lambda_),
     (Lambda_ == bot ->
         lattice_call_bot(Lambda) ;
-        (Lambda == top ->
+        (Lambda_ == top ->
             lattice_call_top(Lambda) ; 
             Lambda = Lambda_
         )
@@ -298,8 +298,8 @@ success_step(From, state(Goal,Subs), state(Goal_,Subs_), Info) :-
             lattice_tnorm(Tnorm),
             lattice_call_bot(Bot),
             lattice_call_top(Top),
+            (Name = Name2 ; similarity_between(Name, Name2, Arity, Sim), Name \= Name2, Sim \== Bot),
             program_clause(Name2/Arity, Rule),
-            (Name = Name2 -> true ; similarity_between(Name, Name2, Arity, Sim), Sim \= Bot),
             Rule = fasill_rule(head(Head),Body,_),
             rename([Head,Body], [HeadR,BodyR]),
             unify(Expr, HeadR, state(TD, SubsExpr)),

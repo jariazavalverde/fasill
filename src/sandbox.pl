@@ -3,7 +3,7 @@
   * FILENAME: sandbox.pl
   * DESCRIPTION: This module contains predicates for the web interface.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 05.03.2019
+  * UPDATED: 06.03.2019
   * 
   **/
 
@@ -15,7 +15,8 @@
     sandbox_unfold/4,
     sandbox_tune/6,
     sandbox_tune_smt/8,
-    sandbox_linearize_heads/1
+    sandbox_linearize_heads/1,
+    sandbox_extend/4
 ]).
 
 :- use_module('environment').
@@ -85,8 +86,8 @@ sandbox_write_list(list(term('.',[X,Y]))) :- !,
     write('['), sandbox_write(X), sandbox_write_list(Y), write(']').
 sandbox_write_list(X) :- write('|'), sandbox_write(X).
 
-% sandbox_run/5
-% sandbox_run(+Program, +Lattice, +Sim, +Goal, +Limit)
+% sandbox_run/6
+% sandbox_run(+Program, +Lattice, +Sim, +Goal, +Limit, +Options)
 % 
 % This predicate loads the program <+Program, +Lattice, +Sim>
 % into the environment and runs the goal +Goal, with a limit
@@ -191,10 +192,28 @@ sandbox_tune_smt(Program, Lattice, Sim, Tests, Domain, LatticeSMT, Limit, Option
 % This predicate loads the program +Program
 % into the environemnt, and writes in the
 % standard output the loaded rules after
-% linearize the heads.
+% linearizing the heads.
 sandbox_linearize_heads(Program) :-
     program_consult(Program),
-    linearize_heads,
+    linearize_head_program,
+    ( fasill_rule(Head, Body, _),
+      sandbox_write(rule(Head, Body)),
+      nl, fail ; true).
+
+% sandbox_extend/4
+% sandbox_extend(+Program, +Lattice, +Sim, +Options)
+% 
+% This predicate loads the program <+Program, +Lattice, +Sim>
+% into the environemnt, and writes in the standard output the
+% loaded rules after extending the program.
+sandbox_extend(Program, Lattice, Sim, Options) :-
+    (member(cut(LambdaPl), Options) ->
+        from_prolog(LambdaPl, Lambda), set_fasill_flag(lambda_unification, Lambda);
+        true),
+    lattice_consult(Lattice),
+    program_consult(Program),
+    catch(similarity_consult(Sim), Error, (write('uncaught exception in similarities: '), sandbox_write(Error), nl)),
+    extend_program,
     ( fasill_rule(Head, Body, _),
       sandbox_write(rule(Head, Body)),
       nl, fail ; true).
