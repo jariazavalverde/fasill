@@ -40,16 +40,11 @@ linearize_rename(var(X), var(Y), Vars, N, M, Subs, [Y/var(X)|Subs]) :-
     atom_concat('V', Atom, Y).
 linearize_rename(term(Name, Xs), term(Name, Ys), Vars, N, M, Subs, Subs_) :-
     !, linearize_rename(Xs, Ys, Vars, N, M, Subs, Subs_).
-linearize_rename([], [], _, _, _, Subs, Subs) :- !.
+linearize_rename([], [], _, N, N, Subs, Subs) :- !.
 linearize_rename([X|Xs], [Y|Ys], Vars, N, S, Subs, Subs3) :-
     !, linearize_rename(X, Y, Vars, N, M, Subs, Subs2),
     linearize_rename(Xs, Ys, Vars, M, S, Subs2, Subs3).
-linearize_rename(X, Y, Vars, N, M, Subs, Subs_) :-
-    compound(X), !,
-    X =.. [Name|Args],
-    linearize_rename(Args, Args_, Vars, N, M, Subs, Subs_),
-    Y =.. [Name|Args_].
-linearize_rename(X, X, _, _, _, Subs, Subs).
+linearize_rename(X, X, _, N, N, Subs, Subs).
 
 % linearize_substitution/2
 % linearize_substitution(?Substitution, ?Body)
