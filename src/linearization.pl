@@ -179,11 +179,15 @@ extend_rule(R1) :-
 % This predicate succeeds when +Rule is a FASILL rule
 % and ?Extended is an extended rule of +Rule.
 extend_rule(R1, R2) :-
+    lattice_call_top(Top),
     linearize_head_rule(R1, Rl),
     Rl = fasill_rule(head(HeadL), Body, [id(Id)|Info]),
     extend_term(HeadL, HeadE, TD),
     atom_concat(Id, ex, IdEx),
-    (Body == empty -> BodyE = body(TD) ; Body = body(Body_), BodyE = body(term('&', [TD, Body_]))),
+    (Body == empty ->
+        (TD == Top -> BodyE = empty ; BodyE = body(TD)) ;
+        (TD == Top -> BodyE = Body ; Body = body(Body_), BodyE = body(term('&', [TD, Body_])))
+    ),
     R2 = fasill_rule(head(HeadE), BodyE, [id(IdEx)|Info]).
 
 % extend_rule_by_id/1
