@@ -3,7 +3,7 @@
   * FILENAME: semantics.pl
   * DESCRIPTION: This module contains predicates implementing the semantics for FASILL.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 05.03.2019
+  * UPDATED: 06.03.2019
   * 
   **/
 
@@ -74,7 +74,7 @@ lambda_wmgu(term(X,Xs), term(Y,Ys), Lambda, state(TD, Subs), State) :- !,
     similarity_between(X, Y, Length, TDxy),
     similarity_tnorm(Tnorm),
     lattice_call_connective('&'(Tnorm), [TD, TDxy], TD2),
-    lattice_call_geq(TD2, Lambda),
+    lattice_call_leq(Lambda, TD2),
     lattice_call_bot(Bot),
     TD2 \== Bot,
     lambda_wmgu(Xs, Ys, Lambda, state(TD2, Subs), State).

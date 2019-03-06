@@ -3,7 +3,7 @@
   * FILENAME: environment.pl
   * DESCRIPTION: This module contains predicates for manipulating programs, lattices and similarity relations.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 05.03.2019
+  * UPDATED: 06.03.2019
   * 
   **/
 
@@ -45,7 +45,6 @@
     lattice_call_member/1,
     lattice_call_members/1,
     lattice_call_leq/2,
-    lattice_call_geq/2,
     lattice_call_distance/3,
     lattice_call_connective/3,
     lattice_reduce_connective/3,
@@ -512,17 +511,6 @@ lattice_call_leq(Member1, Member2) :-
 lattice_call_leq(_, _) :-
     existence_error(procedure, leq/2, lattice/0, Error),
     throw_exception(Error).
-
-% lattice_call_geq/2
-% lattice_call_geq(+Member1, +Member2)
-%
-% This predicate succeeds when +Member1 is greater
-% of equal than +Member2 with the lattice loaded
-% into the environment.
-lattice_call_geq(Member1, Member2) :-
-    (\+lattice_call_leq(Member1, Member2) ;
-    Member1 == Member2), !.
-
 
 % lattice_call_distance/3
 % lattice_call_distance(+Member1, +Member2, -Distance)

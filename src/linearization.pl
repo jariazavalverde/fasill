@@ -32,7 +32,8 @@ linearize_rename(X, Y, Subs) :-
     succ(N, M),
     count_variables(X, Vars),
     linearize_rename(X, Y, Vars, M, _, [], Subs).
-linearize_rename(var(X), var(Y), Vars, N, M, Subs, [Y/var(X)|Subs]) :- 
+linearize_rename(var(X), var(Y), Vars, N, M, Subs, [Y/var(X)|Subs]) :-
+    X \== '_',
     member(X-C, Vars),
     C > 1, !,
     succ(N, M),
