@@ -3,7 +3,7 @@
   * FILENAME: environment.pl
   * DESCRIPTION: This module contains predicates for manipulating programs, lattices and similarity relations.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 06.03.2019
+  * UPDATED: 27.03.2019
   * 
   **/
 
@@ -637,12 +637,10 @@ similarity_tnorm(Tnorm) :- lattice_tnorm(Tnorm), !.
 % to ?AtomB/?Length with truth degree ?TD, using the current
 % similarity relation in the environment.
 similarity_between(AtomA, AtomB, Length, TD) :-
-    environment:'~'(AtomA/Length, '='(AtomB/Length, Prolog)),
-    from_prolog(Prolog, TD).
+    environment:'~'(AtomA/Length, '='(AtomB/Length, TD)).
 similarity_between(AtomA, AtomB, 0, TD) :-
-    environment:'~'(AtomA, '='(AtomB, Prolog)),
-    AtomA \= '/'(_,_), AtomB \= '/'(_,_),
-    from_prolog(Prolog, TD).
+    environment:'~'(AtomA, '='(AtomB, TD)),
+    AtomA \= '/'(_,_), AtomB \= '/'(_,_).
 
 % similarity_retract/0
 % similarity_retract
@@ -671,25 +669,27 @@ similarity_consult(Path) :-
 % transitive closure of the similarity scheme asserted
 % into the current environment.
 similarity_closure :-
-    findall(Atom/Length, similarity_between(Atom, _, Length, _), Dom1),
-    findall(Atom/Length, similarity_between(_, Atom, Length, _), Dom2),
-    append(Dom1, Dom2, DomR),
+    findall(Atom/Length, (
+        similarity_between(Atom, _, Length, _);
+        similarity_between(_, Atom, Length, _)
+    ), DomR),
     list_to_set(DomR, Dom),
-    findall(sim(Atom1,Atom2,Length,TD), similarity_between(Atom1,Atom2,Length,TD), Scheme),
+    findall(sim(Atom1,Atom2,Length,TD), (
+        similarity_between(Atom1,Atom2,Length,TD2),
+        from_prolog(TD2,TD)
+    ), Scheme),
     similarity_tnorm(Tnorm),
     lattice_call_bot(Bot),
     lattice_call_top(Top),
     similarity_retract,
-    findall(_, similarity_closure_reflexive(Dom, Scheme, Tnorm, Bot, Top), _),
-    findall(_, similarity_closure_symmetric(Dom, Scheme, Tnorm, Bot, Top), _),
-    findall(_, similarity_closure_transitive(Dom, Scheme, Tnorm, Bot, Top), _),
+    (similarity_closure_reflexive(Dom, Scheme, Tnorm, Bot, Top), false ; true),
+    (similarity_closure_symmetric(Dom, Scheme, Tnorm, Bot, Top), false ; true),
+    (similarity_closure_transitive(Dom, Scheme, Tnorm, Bot, Top), false ; true),
     assertz('~'(tnorm=Tnorm)).
 
 similarity_closure_reflexive(Dom, _, _, _, Top) :-
-    to_prolog(Top,TopP),
     member(X/Length, Dom),
-    member(Y/Length, Dom),
-    (X = Y -> assertz('~'(X/Length,Y/Length = TopP)) ; true).
+    assertz('~'(X/Length,X/Length = Top)).
 
 similarity_closure_symmetric(Dom, Scheme, _, Bot, _) :-
     member(X/Length, Dom),
@@ -698,9 +698,8 @@ similarity_closure_symmetric(Dom, Scheme, _, Bot, _) :-
     (member(sim(X,Y,Length,TD), Scheme) -> true ; (
         member(sim(Y,X,Length,TD), Scheme) -> true ; TD = Bot)
     ),
-    to_prolog(TD, TDP),
-    assertz('~'(X/Length,Y/Length = TDP)),
-    assertz('~'(Y/Length,X/Length = TDP)).
+    assertz('~'(X/Length,Y/Length = TD)),
+    assertz('~'(Y/Length,X/Length = TD)).
 
 similarity_closure_transitive(Dom, _, Tnorm, _, _) :-
     member(Z/Length, Dom),
@@ -709,14 +708,10 @@ similarity_closure_transitive(Dom, _, Tnorm, _, _) :-
     once('~'(X/Length,Y/Length=TDxy)),
     once('~'(X/Length,Z/Length=TDxz)),
     once('~'(Z/Length,Y/Length=TDzy)),
-    from_prolog(TDxy, TDPxy),
-    from_prolog(TDxz, TDPxz),
-    from_prolog(TDzy, TDPzy),
     retract('~'(X/Length,Y/Length=TDxy)),
-    lattice_call_connective('&'(Tnorm), [TDPxz,TDPzy], TDz),
-    lattice_call_connective('|'(Tnorm), [TDPxy,TDz], TD),
-    to_prolog(TD, TDP),
-    assertz('~'(X/Length,Y/Length = TDP)).
+    lattice_call_connective('&'(Tnorm), [TDxz,TDzy], TDz),
+    lattice_call_connective('|'(Tnorm), [TDxy,TDz], TD),
+    assertz('~'(X/Length,Y/Length = TD)).
 
 
 
