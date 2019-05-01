@@ -3,7 +3,7 @@
   * FILENAME: parser.pl
   * DESCRIPTION: This module contains predicates for parsing FASILL programs.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 01.05.2019
+  * UPDATED: 02.05.2019
   * 
   **/
 
@@ -99,7 +99,6 @@ file_testcases(Path, Testcases) :-
 % This predicate parses a FASILL program ?Program
 % from a list of characters +Chars.
 parse_program(Input, Program) :-
-    reset_rule_id,
     reset_line,
     reset_column,
     catch(
@@ -114,14 +113,17 @@ parse_program(Input, Program) :-
 % This predicate parses a FASILL goal ?Goal
 % from a list of characters +Chars.
 parse_query(Input, Goal) :-
-    reset_rule_id,
     reset_line,
     reset_column,
+    parse_query(Input, Goal, 1, 1).
+parse_query(Input, Goal2, Line, Column) :-
     catch(
-        once((blanks(Input, Input2), parse_expr(1300, Goal, Input2, R1), (dot(R1, []);throw('point or operator')))),
+        once((blanks(Input, Input2), parse_expr(1300, Goal, Input2, R1), (dot(R1, R2), ! ; throw('point or operator expected')))),
         Exception,
         (current_line(L), current_column(C), syntax_error(L, C, Exception, Error), throw_exception(Error))
-    ).
+    ),
+    current_line(L), current_column(C),
+    (R2 = [] -> Goal2 = Goal ; (Goal2 = Goal ; parse_query(R2, Goal2, L, C))).
 
 % parse_testcases/2
 % parse_testcases(+Chars, ?Testcases)
@@ -245,13 +247,13 @@ reset_rule_id :- retract(current_rule_id(_)), assertz(current_rule_id(1)).
 % parse_program/3
 % parse a fuzzy logic program
 parse_program(Program) --> blanks, parse_program2(Program).
-parse_program2(Program) --> parse_rule(H), !, parse_program2(T), blanks, {Program = [H|T]}.
+parse_program2(Program) --> blanks, parse_rule(H), !, parse_program2(T), {Program = [H|T]}.
 parse_program2([]) --> [].
 
 % parse_rule/3
 % parse a malp or fasill rule
 parse_rule(fasill_rule(head(Head), Body, [id(IdAtom),Info])) -->
-    parse_expr(1300, T), (dot, ! ; {throw('point or operator')}),
+    parse_expr(1300, T), (dot, ! ; {throw('point or operator expected')}),
     {(
        % rule
        T = term(with, [Head, TD]), Body = body(TD), Info = syntax(malp) ;
@@ -275,7 +277,7 @@ parse_rule(fasill_rule(head(Head), Body, [id(IdAtom),Info])) -->
 % This predicate parses the set of testcases ?Testcases
 % from the input +Chars, leaving the characters ?Rest.
 parse_testcases(T) --> blanks, parse_testcases2(T).
-parse_testcases2([H|T]) --> parse_testcase(H), !, parse_testcases2(T), blanks.
+parse_testcases2([H|T]) --> parse_testcase(H), !, parse_testcases2(T).
 parse_testcases2([]) --> [].
 
 % parse_testcase/3
@@ -317,7 +319,7 @@ parse_expr(Priority, Q) -->
     {Priority > 0},
     parse_operator(Priority, F, Op, _),
     ({F = fy} -> {Next = Priority} ; {next_priority(Priority, Next)}),
-    (parse_expr(Next, T), ! ; {throw('expression')}),
+    (parse_expr(Next, T), ! ; {throw('expression expected')}),
     {(Op = '-', T = num(X)) -> (Y is X*(-1), Q = num(Y)) ; (Q = term(Op, [T]))}.
 %%%%%% xfx, xfy, yfx
 parse_expr(Priority, T) -->
@@ -325,34 +327,34 @@ parse_expr(Priority, T) -->
     parse_expr(Next, Left),
     (   parse_operator(Priority, Specifier, Op, _),
         {(Specifier = xfx, PriorityRight = Next ; Specifier = yfx, PriorityRight = Next ; Specifier = xfy, PriorityRight = Priority)},
-        (parse_expr(PriorityRight, Right), ! ; {throw('expression')}),
+        (parse_expr(PriorityRight, Right), ! ; {throw('expression expected')}),
         ({Specifier = yfx} -> parse_expr2(Priority, term(Op, [Left,Right]), T) ; {T = term(Op, [Left,Right])}), !
     ; {T = Left} ).
 %%%%%% yfx
 parse_expr2(Priority, Left, T) -->
     {Priority > 0, next_priority(Priority, Next)},
     parse_operator(Priority, yfx, Op, _),
-    (parse_expr(Next, Right), ! ; {throw('expression')}),
+    (parse_expr(Next, Right), ! ; {throw('expression expected')}),
     parse_expr2(Priority, term(Op, [Left,Right]), T).
 parse_expr2(_, T, T) --> [].
 
 parse_expr_zero(num(T)) --> token_number(T), blanks, !.
-parse_expr_zero(str(T)) --> token_string(T), blanks, !.
+parse_expr_zero(T) --> token_string(T), blanks, !.
 parse_expr_zero(var(T)) --> token_variable(T), blanks, !.
-parse_expr_zero(T) --> lparen, !, parse_expr(1300, T), (rparen, ! ; {throw('right parenthesis or operator')}), !.
+parse_expr_zero(T) --> lparen, !, parse_expr(1300, T), (rparen, ! ; {throw('operator or right parenthesis expected')}), !.
 parse_expr_zero(T) --> parse_list(T), blanks, !.
 parse_expr_zero(T) --> parse_brace(T), blanks, !.
 parse_expr_zero(T) --> parse_con(T), blanks, !.
 parse_expr_zero(T) --> parse_term(T), blanks, !.
-parse_expr_zero(_) --> [X], {throw('valid input')}.
+parse_expr_zero(_) --> [X], {atom_concat('invalid input ', X, Msg), throw(Msg)}.
 
 % parse_term/3
 % parse a (possible compound) term
 parse_term(term(Name, Args)) --> token_atom(Name), parse_term2(Args).
-parse_term2([H|T]) --> lparen, !, parse_expr(999, H), parse_term3(T).
+parse_term2([H|T]) --> lparen, !, (parse_expr(999, H), ! ; {throw('expression expected')}), parse_term3(T).
 parse_term2([]) --> blanks.
-parse_term3([H|T]) --> comma, !, parse_expr(999, H), parse_term3(T).
-parse_term3([]) --> rparen, blanks.
+parse_term3([H|T]) --> comma, !, (parse_expr(999, H), ! ; {throw('expression expected')}), parse_term3(T).
+parse_term3([]) --> (rparen, ! ; {throw('operator or right parenthesis expected')}), blanks.
 
 % parse_con/3
 % parse a prefix connective
@@ -372,15 +374,15 @@ parse_con(term(Con, [H|T])) --> [X],
 % parse a list
 parse_list(T) --> lbracket, parse_list2(T).
 parse_list2(term('.', [H,T])) --> parse_expr(999, H), !, parse_list3(T).
-parse_list2(term('[]', [])) --> (rbracket, ! ; {throw('coma or right bracket')}).
-parse_list3(term('.', [H,T])) --> comma, !, (parse_expr(999, H), ! ; {throw('expression')}), parse_list3(T).
-parse_list3(T) --> bar, !, (parse_expr(999, T), ! ; {throw('expression')}), (rbracket, ! ; {throw('right bracket or operator')}).
-parse_list3(term('[]', [])) --> (rbracket, ! ; {throw('right bracket or operator')}).
+parse_list2(term('[]', [])) --> (rbracket, ! ; {throw('operator or right bracket expected')}).
+parse_list3(term('.', [H,T])) --> comma, !, (parse_expr(999, H), ! ; {throw('expression expected')}), parse_list3(T).
+parse_list3(T) --> bar, !, (parse_expr(999, T), ! ; {throw('expression expected')}), (rbracket, ! ; {throw('operator or right bracket expected')}).
+parse_list3(term('[]', [])) --> (rbracket, ! ; {throw('operator or right bracket expected')}).
 
 % parse_brace/3
 % parse a brace
-parse_brace(term('{}', [T])) --> lbrace, parse_expr(999, T), !, (rbrace, ! ; {throw('right brace or operator')}).
-parse_brace(term('{}', [])) --> lbrace, (rbrace, ! ; {throw('right brace or expression')}).
+parse_brace(term('{}', [T])) --> lbrace, parse_expr(999, T), !, (rbrace, ! ; {throw('operator or right brace expected')}).
+parse_brace(term('{}', [])) --> lbrace, (rbrace, ! ; {throw('expression or right brace expected')}).
 
 
 
@@ -412,14 +414,19 @@ token_variable(T) --> mayus(X), identifier(Xs), {atom_chars(T,[X|Xs])}.
 token_variable(T) --> ['_'], {auto_column}, identifier(Xs), {atom_chars(T,['_'|Xs])}.
 
 % Numbers
-token_number(N) --> ['0','x'], {auto_column(2)}, hexadecimals(H), {atom_chars(C,['0','x'|H]), atom_number(C,N)}.
-token_number(N) --> ['0','b'], {auto_column(2)}, binaries(B), {atom_chars(C,['0','b'|B]), atom_number(C,N)}.
-token_number(N) --> ['0','o'], {auto_column(2)}, octals(O), {atom_chars(C,['0','o'|O]), atom_number(C,N)}.
-token_number(N) --> numbers(X), token_number2(Y), !, {append(X,Y,Z)}, {atom_chars(T,Z), atom_number(T,N)}.
-token_number2(N) --> ['.'], {auto_column}, numbers(X), !, token_number3(Y), {append(['.'|X],Y,N)}.
-token_number2([]) --> [].
-token_number3([e,'-'|X]) --> [e,'-'], {auto_column(2)}, !, numbers(X), !.
-token_number3([e|X]) --> [e], {auto_column}, numbers(X), !.
+token_number(N) --> ['0','x'], {auto_column(2)}, hexadecimals(H),
+    {(H \= [], ! ; throw('invalid hexadecimal number')), atom_chars(C,['0','x'|H]), atom_number(C,N)}.
+token_number(N) --> ['0','b'], {auto_column(2)}, binaries(B),
+    {(B \= [], ! ; throw('invalid binary number')), atom_chars(C,['0','b'|B]), atom_number(C,N)}.
+token_number(N) --> ['0','o'], {auto_column(2)}, octals(O),
+    {(O \= [], ! ; throw('invalid octal number')), atom_chars(C,['0','o'|O]), atom_number(C,N)}.
+token_number(N) --> numbers(X), {X \= []}, token_number2(Y), !, {append(X,Y,Z)}, {atom_chars(T,Z), atom_number(T,N)}.
+token_number2(N) --> ['.'], {auto_column}, numbers(X), {X \= []}, !, token_number3(Y), {append(['.'|X],Y,N)}.
+token_number2(X) --> token_number3(X).
+token_number3([e,'-'|X]) --> [e,'-'], {auto_column(2)}, !,
+    (numbers(X), {X \= []}, ! ; {throw('invalid number')}), !.
+token_number3([e|X]) --> [e], {auto_column},
+    (numbers(X), {X \= []}, ! ; {throw('invalid number')}), !.
 token_number3([]) --> [].
 
 binary('0') --> ['0'], {auto_column}.
@@ -436,18 +443,18 @@ hexadecimals([N|M]) --> hexadecimal(N), !, hexadecimals(M).
 hexadecimals([]) --> [].
 
 number(X) --> [X], {char_code(X,C), C >= 48, C =< 57, auto_column}.
-numbers([N|M]) --> number(N), numbers(M), !.
-numbers([N]) --> number(N).
+numbers([N|M]) --> number(N), !, numbers(M).
+numbers([]) --> [].
 
 % Strings
-token_string(T) --> double_quote, double_quote_content(T), double_quote.
+token_string(T) --> double_quote, double_quote_content(T), (double_quote, ! ; {throw('double quote expected')}), blanks.
 double_quote --> ['"'], {auto_column}.
-double_quote_content(['\n'|Xs]) --> ['\n'], !, {auto_line}, double_quote_content(Xs).
-double_quote_content([X|Xs]) --> [X], {X \= '"'}, {auto_column}, !, double_quote_content(Xs).
-double_quote_content(['"'|Xs]) --> ['"','"'], !, {auto_column(2)}, double_quote_content(Xs).
-double_quote_content(['"'|Xs]) --> ['\\','"'], !, {auto_column(2)}, double_quote_content(Xs).
-double_quote_content(['\\'|Xs]) --> ['\\','\\'], !, {auto_column(2)}, double_quote_content(Xs).
-double_quote_content([]) --> [].
+double_quote_content(term('.',[num(10),Xs])) --> ['\n'], !, {auto_line}, double_quote_content(Xs).
+double_quote_content(term('.',[num(C), Xs])) --> [X], {X \= '"'}, {auto_column, char_code(X, C)}, !, double_quote_content(Xs).
+double_quote_content(term('.',[num(34),Xs])) --> ['"','"'], !, {auto_column(2)}, double_quote_content(Xs).
+double_quote_content(term('.',[num(34),Xs])) --> ['\\','"'], !, {auto_column(2)}, double_quote_content(Xs).
+double_quote_content(term(',',[num(92),Xs])) --> ['\\','\\'], !, {auto_column(2)}, double_quote_content(Xs).
+double_quote_content(term('[]',[])) --> [].
 
 % Atoms
 token_atom('!') --> ['!'], {auto_column}.
@@ -456,7 +463,7 @@ token_atom(T) --> quoted(Xs), {atom_chars(T,Xs)}.
 token_atom(T) --> token_graphics(T).
 token_atom(T) --> token_minus_identifier(T).
 
-quoted(X) --> quote, quote_content(X), quote, blanks.
+quoted(X) --> quote, quote_content(X), (quote, ! ; {throw('single quote expected')}), blanks.
 quote --> [''''], {auto_column}.
 quote_content(['\n'|Xs]) --> ['\n'], !, {auto_line}, quote_content(Xs).
 quote_content([X|Xs]) --> [X], {X \= ''''}, !, {auto_column}, quote_content(Xs).

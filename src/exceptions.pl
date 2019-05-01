@@ -3,7 +3,7 @@
   * FILENAME: exceptions.pl
   * DESCRIPTION: This module contains predicates for manipulating errors.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 01.05.2018
+  * UPDATED: 02.05.2018
   * 
   **/
 
@@ -97,7 +97,7 @@ domain_error(Domain, Indicator, term(error, [term(domain_error,[Domain_]), Indic
 % This predicate succeeds when ?Error is the syntax
 % error produced in line +Line and Column +Column
 % with message +Message.
-syntax_error(Line, Column, Expected, term(error, [term(syntax_error,[Line_, Column_, Expected_])])) :-
+syntax_error(Line, Column, Message, term(error, [term(syntax_error,[Line_, Column_, Message_])])) :-
     from_prolog(line(Line), Line_),
     from_prolog(column(Column), Column_),
-    from_prolog(expected(Expected), Expected_).
+    from_prolog(message(Message), Message_).
