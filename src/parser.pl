@@ -292,10 +292,21 @@ parse_testcase(fasill_testcase(TD, Goal)) -->
 
 % parse_operator/6
 % parse an operator T with Priority, Specifier and Name 
-parse_operator(Priority, Specifier, T, Name) -->
-    token_atom(Op), {current_op(Priority, Specifier, Op, Name) -> true ; (atom_length(Op, L), L_ is -L, auto_column(L_), fail)},
-    ({Name = yes}, token_minus_identifier(Identifier), {T =.. [Op, Identifier]} ; 
-        {current_op(Priority, Specifier, Op, no), T = Op}), blanks, !.
+parse_operator(Priority, Specifier, T, yes) -->
+    {current_line(L), current_column(C)},
+    token_atom(Op), ((
+        {current_op(Priority, Specifier, Op, yes)},
+        token_minus_identifier(Identifier)
+    ) -> {T =.. [Op, Identifier]} ; {
+        retract(current_line(_)), retract(current_column(_)),
+        asserta(current_line(L)), asserta(current_column(C)), fail
+    }), blanks, !.
+parse_operator(Priority, Specifier, Op, no) -->
+    {current_line(L), current_column(C)},
+    token_atom(Op), {current_op(Priority, Specifier, Op, no) -> true ; (
+        retract(current_line(_)), retract(current_column(_)),
+        asserta(current_line(L)), asserta(current_column(C)), fail)},
+    blanks, !.
 
 % next_priority/2
 % give the next priority to derivate an expression
@@ -316,7 +327,7 @@ parse_expr(0, X) --> parse_expr_zero(X).
 %%% level n, n > 0
 %%%%%% fx, fy
 parse_expr(Priority, Q) -->
-    {Priority > 0},
+    {Priority > 0, member(F, [fx, fy])},
     parse_operator(Priority, F, Op, _),
     ({F = fy} -> {Next = Priority} ; {next_priority(Priority, Next)}),
     (parse_expr(Next, T), ! ; {throw('expression expected')}),
@@ -325,7 +336,7 @@ parse_expr(Priority, Q) -->
 parse_expr(Priority, T) -->
     {Priority > 0, next_priority(Priority, Next)},
     parse_expr(Next, Left),
-    (   parse_operator(Priority, Specifier, Op, _),
+    (   {member(Specifier, [xfx, yfx, xfy])}, parse_operator(Priority, Specifier, Op, _),
         {(Specifier = xfx, PriorityRight = Next ; Specifier = yfx, PriorityRight = Next ; Specifier = xfy, PriorityRight = Priority)},
         (parse_expr(PriorityRight, Right), ! ; {throw('expression expected')}),
         ({Specifier = yfx} -> parse_expr2(Priority, term(Op, [Left,Right]), T) ; {T = term(Op, [Left,Right])}), !
