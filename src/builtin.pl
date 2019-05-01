@@ -3,7 +3,7 @@
   * FILENAME: builtin.pl
   * DESCRIPTION: This module contains the definition of the FASILL built-in predicates.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 05.03.2019
+  * UPDATED: 27.03.2019
   * 
   **/
 
@@ -35,6 +35,7 @@ is_builtin_predicate(Name/Arity) :-
         % control constructs
         ','/2,
         ';'/2,
+        %'!'/0,
         call/_,
         throw/1,
         catch/3,
@@ -135,6 +136,15 @@ eval_builtin_predicate(','/2, state(_, Subs), selected(ExprVar, Var, Term), stat
 eval_builtin_predicate(';'/2, state(_, Subs), selected(ExprVar, Var, Term), state(ExprVar, Subs)) :-
     Term = term(';', [X,Y]),
     (Var = X ; Var = Y).
+
+%%% !/0
+%%% !
+%%%
+%%% Cut.
+%%% ! is true. All choice points between the cut and the parent goal are removed.
+%%% The effect is commit to use of both the current clause and the substitutions
+%%% found at the point of the cut.
+eval_builtin_predicate('!'/0, state(_, Subs), selected(ExprVar, top, term('!',[])), state(ExprVar, Subs)).
 
 %%% call/[1..]
 %%% call( +callable_term [, @term, ...] )

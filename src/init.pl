@@ -3,7 +3,7 @@
   * FILENAME: init.pl
   * DESCRIPTION: This file initialize the FASILL environment.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 06.12.2018
+  * UPDATED: 01.05.2018
   * 
   **/
 
@@ -80,6 +80,7 @@ main :-
         tty_clear,
         writeln('FASILL (pre-alfa): http://dectau.uclm.es/fasill/'),
         writeln('Copyright (C) 2018-2019 José Antonio Riaza Valverde'),
+        writeln('DEC-TAU research group, University of Castilla-La Mancha (UCLM)'),
         writeln('Released under the BSD-3 Clause license') ),
     run_arguments(Args),
     interactive_mode.

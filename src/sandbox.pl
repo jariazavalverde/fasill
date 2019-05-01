@@ -3,7 +3,7 @@
   * FILENAME: sandbox.pl
   * DESCRIPTION: This module contains predicates for the web interface.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 06.03.2019
+  * UPDATED: 01.05.2019
   * 
   **/
 
@@ -100,10 +100,10 @@ sandbox_run(Program, Lattice, Sim, Goal, Limit, Options) :-
         from_prolog(LambdaPl, Lambda), set_fasill_flag(lambda_unification, Lambda);
         true),
     lattice_consult(Lattice),
-    program_consult(Program),
-    catch(similarity_consult(Sim), Error, (write('uncaught exception in similarities: '), sandbox_write(Error), nl)),
+    catch(program_consult(Program), Error1, (write('uncaught exception in program: '), sandbox_write(Error1), nl)),
+    catch(similarity_consult(Sim), Error2, (write('uncaught exception in similarities: '), sandbox_write(Error2), nl)),
     statistics(runtime,[_,_]),
-    ( query_consult(Goal, State),
+    ( catch(query_consult(Goal, State), Error3, (write('uncaught exception in goal: '), sandbox_write(Error3), nl)),
       sandbox_write(State), nl, fail ; true ),
     statistics(runtime,[_,T1]),
     (member(runtime, Options) -> (write('execution time: '), write(T1), writeln(' milliseconds')) ; true),
@@ -118,7 +118,7 @@ sandbox_run(Program, Lattice, Sim, Goal, Limit, Options) :-
 % into the environemnt, and writes in the
 % standard output the loaded rules.
 sandbox_listing(Program) :-
-    program_consult(Program),
+    catch(program_consult(Program), Error1, (write('uncaught exception in program: '), sandbox_write(Error1), nl)),
     ( fasill_rule(Head, Body, Info),
       sandbox_write(fasill_rule(Head, Body, Info)),
       nl, fail ; true).
@@ -130,8 +130,8 @@ sandbox_listing(Program) :-
 % into the environemnt and runs the unfolding of the rule +Rule.
 sandbox_unfold(Program, Lattice, Sim, Rule) :-
     lattice_consult(Lattice),
-    program_consult(Program),
-    catch(similarity_consult(Sim), Error, (write('uncaught exception in similarities: '), sandbox_write(Error), nl)),
+    catch(program_consult(Program), Error1, (write('uncaught exception in program: '), sandbox_write(Error1), nl)),
+    catch(similarity_consult(Sim), Error2, (write('uncaught exception in similarities: '), sandbox_write(Error2), nl)),
     unfold_by_id(Rule),
     ( fasill_rule(Head, Body, _),
       sandbox_write(rule(Head, Body)),
@@ -150,9 +150,9 @@ sandbox_tune(Program, Lattice, Sim, Tests, Limit, Options) :-
         from_prolog(LambdaPl, Lambda), set_fasill_flag(lambda_unification, Lambda);
         true),
     lattice_consult(Lattice),
-    program_consult(Program),
-    testcases_consult(Tests),
-    catch(similarity_consult(Sim), Error, (write('uncaught exception in similarities: '), sandbox_write(Error), nl)),
+    catch(program_consult(Program), Error1, (write('uncaught exception in program: '), sandbox_write(Error1), nl)),
+    catch(testcases_consult(Tests), Error2, (write('uncaught exception in testcases: '), sandbox_write(Error2), nl)),
+    catch(similarity_consult(Sim), Error3, (write('uncaught exception in similarities: '), sandbox_write(Error3), nl)),
     statistics(runtime,[_,_]),
     tuning_thresholded(Subs, Deviation),
     statistics(runtime,[_,T1]),
@@ -175,9 +175,9 @@ sandbox_tune_smt(Program, Lattice, Sim, Tests, Domain, LatticeSMT, Limit, Option
         from_prolog(LambdaPl, Lambda), set_fasill_flag(lambda_unification, Lambda);
         true),
     lattice_consult(Lattice),
-    program_consult(Program),
+    catch(program_consult(Program), Error1, (write('uncaught exception in program: '), sandbox_write(Error1), nl)),
     testcases_consult(Tests),
-    catch(similarity_consult(Sim), Error, (write('uncaught exception in similarities: '), sandbox_write(Error), nl)),
+    catch(similarity_consult(Sim), Error2, (write('uncaught exception in similarities: '), sandbox_write(Error2), nl)),
     statistics(runtime,[_,_]),
     tuning_smt(Domain, LatticeSMT, Subs, Deviation),
     statistics(runtime,[_,T1]),
