@@ -1,6 +1,6 @@
 /**
   * 
-  * FILENAME: init.pl
+  * FILENAME: fasill.pl
   * DESCRIPTION: This file initialize the FASILL environment.
   * AUTHORS: José Antonio Riaza Valverde
   * UPDATED: 02.05.2018

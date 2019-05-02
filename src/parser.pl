@@ -113,10 +113,12 @@ parse_program(Input, Program) :-
 % This predicate parses a FASILL goal ?Goal
 % from a list of characters +Chars.
 parse_query(Input, Goal) :-
-    reset_line,
-    reset_column,
     parse_query(Input, Goal, 1, 1).
 parse_query(Input, Goal2, Line, Column) :-
+    retract(current_line(_)),
+    retract(current_column(_)),
+    asserta(current_line(Line)),
+    asserta(current_column(Column)),
     catch(
         once((blanks(Input, Input2), parse_expr(1300, Goal, Input2, R1), (dot(R1, R2), ! ; throw('point or operator expected')))),
         Exception,
