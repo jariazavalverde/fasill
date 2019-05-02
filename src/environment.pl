@@ -3,7 +3,7 @@
   * FILENAME: environment.pl
   * DESCRIPTION: This module contains predicates for manipulating programs, lattices and similarity relations.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 27.03.2019
+  * UPDATED: 03.05.2019
   * 
   **/
 
@@ -64,8 +64,9 @@
     fasill_testcase/2,
     fasill_predicate/1,
     fasill_lattice_tnorm/1,
-    '~'/1,
-    '~'/2
+    fasill_similarity_tnorm/1,
+    fasill_similarity_tconorm/1,
+    fasill_similarity/3
 ).
 
 
@@ -597,38 +598,18 @@ lattice_consult(Path) :-
 
 % SIMILARITY RELATIONS
 
-% ~/1
-% ~(+Assignment)
-%
-% This predicate succeeds when +Assignment is a valid 
-% assignment of a t-norm. A valid assignment is of the 
-% form ~tnorm = Atom, where Atom is an atom. This predicate
-% asserts Atom in the current environment as the current
-% t-norm for similarities. This predicate retracts the
-% current t-norm, if exists.
-:- op(750, fx, ~).
-:- multifile('~'/1).
 
-% ~/2
-% ~(+SimilarityEquation)
-%
-% This predicate succeeds when +SimilarityEquation is a
-% valid similarity equation and asserts it in the current
-% environment. A valid similarity equation is of the form
-% AtomA/Length ~ AtomB/Length = TD, where AtomA and AtomB
-% are atoms and Length is a non-negative integer. Note that
-% this equation is parsed with the default table operator
-% as '~'('/'(AtomA,Length), '='('/'(AtomB,Length),TD)).
-:- op(800, xfx, ~).
-:- multifile('~'/2).
 
-% similarity_tnorm/1
+% similarity_tnorm/1, similarity_tconorm/1
 % similarity_tnorm(?Tnorm)
+% similarity_tconorm(?Tconorm)
 %
 % This predicate succeeds when ?Tnorm is the current
 % t-norm asserted in the environment.
-similarity_tnorm(Tnorm) :- catch(~(tnorm=Tnorm), _, fail), !.
+similarity_tnorm(Tnorm) :- fasill_similarity_tnorm(Tnorm), !.
 similarity_tnorm(Tnorm) :- lattice_tnorm(Tnorm), !.
+similarity_tconorm(Tconorm) :- fasill_similarity_tconorm(Tconorm), !.
+similarity_tconorm(Tconorm) :- lattice_tconorm(Tconorm), !.
 
 % similarity_between/4
 % similarity_between(?AtomA, ?AtomB, ?Length, ?TD)
@@ -637,10 +618,7 @@ similarity_tnorm(Tnorm) :- lattice_tnorm(Tnorm), !.
 % to ?AtomB/?Length with truth degree ?TD, using the current
 % similarity relation in the environment.
 similarity_between(AtomA, AtomB, Length, TD) :-
-    environment:'~'(AtomA/Length, '='(AtomB/Length, TD)).
-similarity_between(AtomA, AtomB, 0, TD) :-
-    environment:'~'(AtomA, '='(AtomB, TD)),
-    AtomA \= '/'(_,_), AtomB \= '/'(_,_).
+    fasill_similarity(AtomA/Length, AtomB/Length, TD).
 
 % similarity_retract/0
 % similarity_retract
@@ -648,8 +626,9 @@ similarity_between(AtomA, AtomB, 0, TD) :-
 % This predicate succeeds and retracts all the clauses
 % of similarity from the current environment.
 similarity_retract :-
-    retractall(~(_, _)),
-    retractall(~(_)).
+    retractall(fasill_similarity(_, _, _)),
+    retractall(fasill_similarity_tnorm(_)),
+    retractall(fasill_similarity_tconorm(_)).
 
 % similarity_consult/1
 % similarity_consult(+Path)
@@ -659,7 +638,10 @@ similarity_retract :-
 % the previous similarity relations.
 similarity_consult(Path) :-
     similarity_retract,
-    load_files(Path, [imports(['~'/1,'~'/2])]),
+    file_similarity(Path, Equations),
+    (   member(Eq, Equations),
+        assertz(Eq),
+        fail ; true),
     similarity_closure.
 
 % similarity_closure/0
@@ -674,10 +656,7 @@ similarity_closure :-
         similarity_between(_, Atom, Length, _)
     ), DomR),
     list_to_set(DomR, Dom),
-    findall(sim(Atom1,Atom2,Length,TD), (
-        similarity_between(Atom1,Atom2,Length,TD2),
-        from_prolog(TD2,TD)
-    ), Scheme),
+    findall(sim(Atom1,Atom2,Length,TD), similarity_between(Atom1,Atom2,Length,TD), Scheme),
     similarity_tnorm(Tnorm),
     lattice_call_bot(Bot),
     lattice_call_top(Top),
@@ -685,33 +664,33 @@ similarity_closure :-
     (similarity_closure_reflexive(Dom, Scheme, Tnorm, Bot, Top), false ; true),
     (similarity_closure_symmetric(Dom, Scheme, Tnorm, Bot, Top), false ; true),
     (similarity_closure_transitive(Dom, Scheme, Tnorm, Bot, Top), false ; true),
-    assertz('~'(tnorm=Tnorm)).
+    assertz(fasill_similarity_tnorm(Tnorm)).
 
 similarity_closure_reflexive(Dom, _, _, _, Top) :-
     member(X/Length, Dom),
-    assertz('~'(X/Length,X/Length = Top)).
+    assertz(fasill_similarity(X/Length,X/Length,Top)).
 
 similarity_closure_symmetric(Dom, Scheme, _, Bot, _) :-
     member(X/Length, Dom),
     member(Y/Length, Dom),
-    \+('~'(X/Length,Y/Length = _)),
+    \+(fasill_similarity(X/Length,Y/Length,_)),
     (member(sim(X,Y,Length,TD), Scheme) -> true ; (
         member(sim(Y,X,Length,TD), Scheme) -> true ; TD = Bot)
     ),
-    assertz('~'(X/Length,Y/Length = TD)),
-    assertz('~'(Y/Length,X/Length = TD)).
+    assertz(fasill_similarity(X/Length,Y/Length,TD)),
+    assertz(fasill_similarity(Y/Length,X/Length,TD)).
 
 similarity_closure_transitive(Dom, _, Tnorm, _, _) :-
     member(Z/Length, Dom),
     member(X/Length, Dom),
     member(Y/Length, Dom),
-    once('~'(X/Length,Y/Length=TDxy)),
-    once('~'(X/Length,Z/Length=TDxz)),
-    once('~'(Z/Length,Y/Length=TDzy)),
-    retract('~'(X/Length,Y/Length=TDxy)),
+    once(fasill_similarity(X/Length,Y/Length,TDxy)),
+    once(fasill_similarity(X/Length,Z/Length,TDxz)),
+    once(fasill_similarity(Z/Length,Y/Length,TDzy)),
+    retract(fasill_similarity(X/Length,Y/Length,TDxy)),
     lattice_call_connective('&'(Tnorm), [TDxz,TDzy], TDz),
     lattice_call_connective('|'(Tnorm), [TDxy,TDz], TD),
-    assertz('~'(X/Length,Y/Length = TD)).
+    assertz(fasill_similarity(X/Length,Y/Length,TD)).
 
 
 

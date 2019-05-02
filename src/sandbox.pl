@@ -3,7 +3,7 @@
   * FILENAME: sandbox.pl
   * DESCRIPTION: This module contains predicates for the web interface.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 01.05.2019
+  * UPDATED: 03.05.2019
   * 
   **/
 

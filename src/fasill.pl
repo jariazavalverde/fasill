@@ -6,7 +6,7 @@
   * UPDATED: 02.05.2018
   * 
   **/
-:- module(fasill, [main/1, interactive_mode/0, print_term/1]).
+:- module(fasill, [main/1, initialize/1, interactive_mode/0, print_term/1]).
 
 
 
@@ -82,6 +82,14 @@ print_term_list(X) :- ansi_format([bold,fg(yellow)], '|', []), print_term(X).
 %
 % This predicate runs the FASILL interpreter.
 main(Args) :-
+    initialize(Args),
+    interactive_mode.
+
+% initialize/1
+% initialize(+Arguments)
+%
+% This predicate initializes the FASILL interpreter.
+initialize(Args) :-
     run_command(term(lattice,[term(library, [term(unit, [])])])),
     %current_prolog_flag(argv, Args),
     ( member('-halt', Args) -> true ;
@@ -90,8 +98,7 @@ main(Args) :-
         writeln('Copyright (C) 2018-2019 José Antonio Riaza Valverde'),
         writeln('DEC-TAU research group, University of Castilla-La Mancha (UCLM)'),
         writeln('Released under the BSD-3 Clause license') ),
-    run_arguments(Args),
-    interactive_mode.
+    run_arguments(Args).
 
 % interactive_mode/0
 % interactive_mode

@@ -3,7 +3,7 @@
   * FILENAME: parser.pl
   * DESCRIPTION: This module contains predicates for parsing FASILL programs.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 02.05.2019
+  * UPDATED: 03.05.2019
   * 
   **/
 
@@ -13,9 +13,11 @@
     stream_to_list/2,
     escape_atom/2,
     file_program/2,
+    file_similarity/2,
     file_query/2,
     file_testcases/2,
     parse_program/2,
+    parse_similarity/2,
     parse_query/2,
     parse_testcases/2
 ]).
@@ -67,6 +69,18 @@ file_program(Path, Program) :-
     close(Stream),
     parse_program(Input, Program).
 
+% file_similarity/2
+% file_similarity(+Path, ?Similarity)
+%
+% This predicate succeeds when file +Path exists and
+% it can be parsed as a FASILL similarity scheme
+% ?Similarity.
+file_similarity(Path, Similarity) :-
+    open(Path, read, Stream),
+    stream_to_list(Stream, Input),
+    close(Stream),
+    parse_similarity(Input, Similarity).
+
 % file_query/2
 % file_query(+Path, ?Goal)
 %
@@ -103,6 +117,20 @@ parse_program(Input, Program) :-
     reset_column,
     catch(
         once(parse_program(Program, Input, [])),
+        Exception,
+        (current_line(L), current_column(C), syntax_error(L, C, Exception, Error), throw_exception(Error))
+    ).
+
+% parse_similarity/2
+% parse_similarity(+Chars, ?Similarity)
+%
+% This predicate parses a FASILL similarity scheme
+% ?Similarity from a list of characters +Chars.
+parse_similarity(Input, Program) :-
+    reset_line,
+    reset_column,
+    catch(
+        once(parse_similarity(Program, Input, [])),
         Exception,
         (current_line(L), current_column(C), syntax_error(L, C, Exception, Error), throw_exception(Error))
     ).
@@ -249,7 +277,7 @@ reset_rule_id :- retract(current_rule_id(_)), assertz(current_rule_id(1)).
 % parse_program/3
 % parse a fuzzy logic program
 parse_program(Program) --> blanks, parse_program2(Program).
-parse_program2(Program) --> blanks, parse_rule(H), !, parse_program2(T), {Program = [H|T]}.
+parse_program2([H|T]) --> blanks, parse_rule(H), !, parse_program2(T).
 parse_program2([]) --> [].
 
 % parse_rule/3
@@ -272,6 +300,35 @@ parse_rule(fasill_rule(head(Head), Body, [id(IdAtom),Info])) -->
        % fact
        T = Head, Body = empty, Info = syntax(fasill)
     )}, {auto_rule_id(Id), atom_number(IdAtom, Id)}.
+
+% parse_similarity/3
+% parse a fasill similarity scheme
+parse_similarity([H|T]) --> blanks, parse_similarity_equation(H), !, parse_similarity(T).
+parse_similarity([]) --> [].
+
+% parse_similarity_equation/3
+% parse a fasill similarity equation
+parse_similarity_equation(Eq) -->
+    ['~'], !, {auto_column}, blanks,
+    (
+        [t,n,o,r,m], {Type = tnorm, auto_column(5)}, ! ;
+        [t,c,o,n,o,r,m], {Type = tconorm, auto_column(7)}, ! ;
+        {throw('tnorm or tconorm expected')}),
+    blanks, (['='], {auto_column}, ! ; {throw('equal expected')}),
+    blanks, (token_atom(Norm), ! ; {throw('atom expected')}),
+    blanks, (dot, ! ; {throw('point or operator expected')}),
+    {atom_concat('fasill_similarity_', Type, Pred), Eq =.. [Pred, Norm]}, !.
+parse_similarity_equation(fasill_similarity(P/N, Q/N, TD)) -->
+    token_atom(P), blanks,
+    (['/'], {auto_column}, !, blanks, (token_number(N), ! ; {throw('arity expected after /')}) ; {N = 0}), blanks,
+    (['~'], {auto_column}, ! ; {throw('~ expected')}), blanks,
+    (token_atom(Q), ! ; {throw('atom expected')}), blanks,
+    (['/'], {auto_column}, !, blanks, (token_number(M), ! ; {throw('arity expected after /')}) ; {M = 0}), blanks,
+    {N = M -> true ; throw('arities should be equal')},
+    {(integer(N), N >= 0) -> true ; throw('arities should be non-negative integers')},
+    (['='], {auto_column}, ! ; {throw('equal expected')}), blanks,
+    parse_expr(1300, TD), blanks,
+    (dot, ! ; {throw('point or operator expected')}).
 
 % parse_testcases/3
 % parse_testcases(?Testcase, +Chars, ?Rest)
