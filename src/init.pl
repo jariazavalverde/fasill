@@ -3,7 +3,7 @@
   * FILENAME: init.pl
   * DESCRIPTION: This file initialize the FASILL environment.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 01.05.2018
+  * UPDATED: 02.05.2018
   * 
   **/
 
@@ -96,7 +96,7 @@ interactive_mode :-
     ( Codes = end_of_file, ! ;
       atom_codes(Atom, Codes),
       atom_chars(Atom, Chars),
-      parse_query(Chars, Goal),
+      catch(parse_query(Chars, Goal), Error, (ansi_format([bold,fg(red)], 'uncaught exception in goal: ', []), print_term(Error), nl, fail)),
       ( Goal = term(':',[X]) -> run_command(X) ; (
         query(Goal, SFCA),
         once(print_term(SFCA)),
