@@ -1,2 +1,9 @@
 #!/bin/bash
-swipl /usr/local/fasill/src/fasill.pl $@
+function join_by { local IFS="$1"; shift; echo "$*"; }
+args=()
+for arg in $@
+do
+	args+=("'$arg'")
+done
+args=`join_by , ${args[@]}`
+swipl -l "/usr/local/fasill/src/fasill.pl" -g "main([$args])"

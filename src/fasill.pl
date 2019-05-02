@@ -6,6 +6,7 @@
   * UPDATED: 02.05.2018
   * 
   **/
+:- module(fasill, [main/1, interactive_mode/0, print_term/1]).
 
 
 
@@ -18,6 +19,13 @@
 :- use_module('tuning').
 
 
+
+% fasill_path/1
+% fasill_path(?Path)
+%
+% This predicate succeeds when +Path is the
+% installation path of FASILL.
+fasill_path('/usr/local/fasill/').
 
 % print_term/1
 % print_term(+Term)
@@ -69,13 +77,13 @@ print_term_list(X) :- ansi_format([bold,fg(yellow)], '|', []), print_term(X).
 
 
 
-% main/0
-% main
+% main/1
+% main(+Arguments)
 %
 % This predicate runs the FASILL interpreter.
-main :-
+main(Args) :-
     run_command(term(lattice,[term(library, [term(unit, [])])])),
-    current_prolog_flag(argv, Args),
+    %current_prolog_flag(argv, Args),
     ( member('-halt', Args) -> true ;
         tty_clear,
         writeln('FASILL (pre-alfa): http://dectau.uclm.es/fasill/'),
@@ -157,15 +165,15 @@ run_command(term(lattice,[term(Path, [])])) :- !,
       print_term(exception(Error)), nl, nl ).
 %% Load library lattice
 run_command(term(lattice,[term(library, [term(Lat, [])])])) :- !,
-    prolog_load_context(directory, Dir_),
-    atom_concat(Dir_, '/../lattices/', Dir),
+    fasill_path(Dir_),
+    atom_concat(Dir_, 'lattices/', Dir),
     atom_concat(Dir, Lat, Path_),
     atom_concat(Path_, '.lat.pl', Path),
     run_command(term(lattice,[term(Path, [])])).
 %% Show license
 run_command(term(license,[])) :- !,
-    prolog_load_context(directory, Dir),
-    atom_concat(Dir, '/../LICENSE', Path),
+    fasill_path(Dir),
+    atom_concat(Dir, 'LICENSE', Path),
     open(Path, read, Stream),
     stream_to_list(Stream, Chars),
     close(Stream),
@@ -176,7 +184,3 @@ run_command(term(Name,Args)) :-
     length(Args, Arity),
     existence_error(command, Name/Arity, top_level/0, Error),
     print_term(exception(Error)), nl, nl.
-
-
-
-?- main.
