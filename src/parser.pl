@@ -180,9 +180,9 @@ current_op(1300, xfx, '#<',   yes).
 current_op(1300, xfx, ':-',   no).
 current_op(1300, xfx, '<-',   no).
 current_op(1300, xfx, '->',   no).
-current_op(1300, xfx, '<',    yes).
-current_op(1300, fx, '<-',    no).
-current_op(1300, fx, ':-',    no).
+current_op(1300, xfx, '<-',   yes).
+current_op(1300, fx,  '<-',   no).
+current_op(1300, fx,  ':-',   no).
 current_op(1200, xfx, 'with', no).
 current_op(1100, xfy, '#|',   yes).
 current_op(1100, xfy, '|',    yes).
@@ -288,18 +288,18 @@ parse_rule(fasill_rule(head(Head), Body, [id(IdAtom),Info])) -->
        % rule
        T = term(with, [Head, TD]), Body = body(TD), Info = syntax(malp) ;
        T = term('<-', [Head, term(with, [BodyWith,TD])]), Body = body(term('&', [TD,BodyWith])), Info = syntax(malp) ;
-       T = term('<'(Implication), [Head, term(with, [BodyWith,TD])]), Body = body(term('&'(Implication), [TD,BodyWith])), Info = syntax(malp) ;
+       T = term('<-'(Implication), [Head, term(with, [BodyWith,TD])]), Body = body(term('&'(Implication), [TD,BodyWith])), Info = syntax(malp) ;
        T = term('<-', [Head,Body_]), Body = body(Body_), Info = syntax(fasill) ;
-       T = term('<'(_), [Head,Body_]), Body = body(Body_), Info = syntax(malp) ;
-       T = term('#<'(Implication), [Head, term(with, [BodyWith,TD])]), Body = body(term('#&'(Implication), [TD,BodyWith])), Info = syntax(smalp) ;
-       T = term('#<'(_), [Head,Body_]), Body = body(Body_), Info = syntax(smalp) ;
+       T = term('<-'(_), [Head,Body_]), Body = body(Body_), Info = syntax(malp) ;
+       T = term('#<-'(Implication), [Head, term(with, [BodyWith,TD])]), Body = body(term('#&'(Implication), [TD,BodyWith])), Info = syntax(smalp) ;
+       T = term('#<-'(_), [Head,Body_]), Body = body(Body_), Info = syntax(smalp) ;
        T = term(':-', [Head, Body_]), Body = body(Body_), Info = syntax(prolog) ;
        % directive
        T = term(':-', [Directive]), eval_directive(Directive), T = Head, Body = empty, Info = directive ;
        T = term('<-', [Directive]), eval_directive(Directive), T = Head, Body = empty, Info = directive ;
        % fact
        T = Head, Body = empty, Info = syntax(fasill)
-    )}, {auto_rule_id(Id), atom_number(IdAtom, Id)}.
+    )}, !, {auto_rule_id(Id), atom_number(IdAtom, Id)}.
 
 % parse_similarity/3
 % parse a fasill similarity scheme
@@ -365,6 +365,7 @@ parse_operator(Priority, Specifier, Op, no) -->
     token_atom(Op), {current_op(Priority, Specifier, Op, no) -> true ; (
         retract(current_line(_)), retract(current_column(_)),
         asserta(current_line(L)), asserta(current_column(C)), fail)},
+    ({Specifier \= fx, Specifier \= fy}; \+['(']),
     blanks, !.
 
 % next_priority/2
