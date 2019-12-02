@@ -3,7 +3,7 @@
   * FILENAME: parser.pl
   * DESCRIPTION: This module contains predicates for parsing FASILL programs.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 03.05.2019
+  * UPDATED: 02.12.2019
   * 
   **/
 
@@ -176,7 +176,7 @@ parse_testcases(Input, Testcases) :-
 % current_op/4
 % initial operator table
 :- dynamic current_op/4.
-current_op(1300, xfx, '#<',   yes).
+current_op(1300, xfx, '#<-',  yes).
 current_op(1300, xfx, ':-',   no).
 current_op(1300, xfx, '<-',   no).
 current_op(1300, xfx, '->',   no).
@@ -188,10 +188,10 @@ current_op(1100, xfy, '#|',   yes).
 current_op(1100, xfy, '|',    yes).
 current_op(1100, xfy, '|',    no).
 current_op(1100, xfy, ';',    no).
-current_op(1050, xfy, '#&',   yes).
-current_op(1050, xfy, '&',    yes).
-current_op(1050, xfy, '&',    no).
-current_op(1050, xfy, ',',    no).
+current_op(1000, xfy, '#&',   yes).
+current_op(1000, xfy, '&',    yes).
+current_op(1000, xfy, '&',    no).
+current_op(1000, xfy, ',',    no).
 current_op(700,  xfx, 'is',   no).
 current_op(700,  xfx, '=',    no).
 current_op(700,  xfx, '~',    no).
@@ -344,10 +344,10 @@ parse_testcases2([]) --> [].
 %
 % This predicate parses the testcase ?Testcase from
 % the input +Chars, leaving the characters ?Rest.
-parse_testcase(fasill_testcase(TD, Goal)) -->
+parse_testcase(Test) -->
     ( parse_expr(1300, Expr), (dot, ! ; {throw('point or operator expected')}),
-      {Expr = term('->', [TD, Goal]), !
-    ; fail} ).
+      {Expr = term('->', [TD, Goal]), Test = fasill_testcase(TD, Goal), !
+    ; Test = fasill_testcase_precondition(Expr)} ).
 
 % parse_operator/6
 % parse an operator T with Priority, Specifier and Name 
@@ -372,9 +372,9 @@ parse_operator(Priority, Specifier, Op, no) -->
 % give the next priority to derivate an expression
 next_priority(1300, 1200).
 next_priority(1200, 1100).
-next_priority(1100, 1050).
+next_priority(1100, 1000).
+next_priority(1000, 700).
 next_priority(999, 700).
-next_priority(1050, 700).
 next_priority(700, 500).
 next_priority(500, 400).
 next_priority(400, 200).

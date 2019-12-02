@@ -3,7 +3,7 @@
   * FILENAME: semantics.pl
   * DESCRIPTION: This module contains predicates implementing the semantics for FASILL.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 06.03.2019
+  * UPDATED: 04.05.2019
   * 
   **/
 
@@ -20,7 +20,7 @@
     derivation/4,
     get_variables/2,
     inference/4,
-    admissible_step/4,
+    operational_step/4,
     interpretive_step/4,
     failure_step/3,
     apply/3,
@@ -65,13 +65,13 @@ lambda_wmgu(X, var(Y), Lambda, State, State_) :- !,
 lambda_wmgu(num(X), num(X), _, State, State) :- !.
 %%% term with term
 lambda_wmgu(term(X,Xs), term(X,Ys), Lambda, State, State_) :- !,
-    length(Xs, Length),
-    length(Ys, Length),
+    length(Xs, Arity),
+    length(Ys, Arity),
     lambda_wmgu(Xs, Ys, Lambda, State, State_).
 lambda_wmgu(term(X,Xs), term(Y,Ys), Lambda, state(TD, Subs), State) :- !,
-    length(Xs, Length),
-    length(Ys, Length),
-    similarity_between(X, Y, Length, TDxy),
+    length(Xs, Arity),
+    length(Ys, Arity),
+    similarity_between(X, Y, Arity, TDxy),
     similarity_tnorm(Tnorm),
     lattice_call_connective('&'(Tnorm), [TD, TDxy], TD2),
     lattice_call_leq(Lambda, TD2),
@@ -259,20 +259,20 @@ derivation(From, State, State_, [X|Xs]) :-
 % initial state +State1 to the final step ?State2. ?Info
 % is an atom containg information about the rule used in
 % the derivation.
-inference(From, State, State_, Info) :- admissible_step(From, State, State_, Info).
+inference(From, State, State_, Info) :- operational_step(From, State, State_, Info).
 inference(From, state(Goal,Subs), State_, Info) :- interpretable(Goal), interpretive_step(From, state(Goal,Subs), State_, Info).
 
-% admissible_step/4
-% admissible_step(+From, +State1, ?State2, ?Info)
+% operational_step/4
+% operational_step(+From, +State1, ?State2, ?Info)
 %
 % This predicate performs an admissible step from the
 % state +State1 to the state ?State2. ?Info is an atom
 % containg information about the rule used in the derivation.
-admissible_step(From, State1, State2, Info) :-
+operational_step(From, State1, State2, Info) :-
     assertz(check_success),
     success_step(From, State1, State2, Info),
     retractall(check_success).
-admissible_step(_, State1, State2, Info) :-
+operational_step(_, State1, State2, Info) :-
     check_success,
     retractall(check_success),
     failure_step(State1, State2, Info).

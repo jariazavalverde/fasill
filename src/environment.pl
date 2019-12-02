@@ -3,7 +3,7 @@
   * FILENAME: environment.pl
   * DESCRIPTION: This module contains predicates for manipulating programs, lattices and similarity relations.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 03.05.2019
+  * UPDATED: 02.12.2019
   * 
   **/
 
@@ -62,6 +62,7 @@
 :- dynamic(
     fasill_rule/3,
     fasill_testcase/2,
+    fasill_testcase_precondition/1,
     fasill_predicate/1,
     fasill_lattice_tnorm/1,
     fasill_similarity_tnorm/1,
@@ -338,9 +339,9 @@ query_consult(Path, State) :-
 program_has_predicate(Name/Arity) :-
     (fasill_predicate(Name/Arity) ;
     lattice_call_bot(Bot),
-    similarity_between(Name, Other, Length, TD),
+    similarity_between(Name, Other, Arity, TD),
     TD \= Bot,
-    fasill_predicate(Other/Length)), !.
+    fasill_predicate(Other/Arity)), !.
 
 % sort_rules_by_id/0
 % sort_rules_by_id
@@ -544,19 +545,23 @@ lattice_call_connective('|', Args, Result) :- !,
     lattice_tconorm(Name),
     lattice_call_connective('|'(Name), Args, Result).
 lattice_call_connective(Op, Args, Result) :-
-    Op =.. [Type,Name],
+    Op =.. [Type,Name], !,
     (   Type = '&', Pre = 'and_' ;
         Type = '|', Pre = 'or_' ;
         Type = '@', Pre = 'agr_'
     ),
     atom_concat(Pre, Name, Name_),
+    lattice_call_connective2(Name_, Args, Result).
+lattice_call_connective(Op, Args, Result) :-
+    lattice_call_connective2(Op, Args, Result).
+lattice_call_connective2(Name, Args, Result) :-
     length(Args, Arity),
     Arity_ is Arity + 1,
-    (current_predicate(Name_/Arity_) -> true ;
-        existence_error(procedure, Name_/Arity_, lattice/0, Error), throw_exception(Error)),
+    (current_predicate(Name/Arity_) -> true ;
+        existence_error(procedure, Name/Arity_, lattice/0, Error), throw_exception(Error)),
     maplist(to_prolog, Args, Args_),
     append(Args_, [Prolog], ArgsCall),
-    Call =.. [Name_|ArgsCall],
+    Call =.. [Name|ArgsCall],
     call(environment:Call),
     from_prolog(Prolog, Result), !.
 
@@ -612,13 +617,13 @@ similarity_tconorm(Tconorm) :- fasill_similarity_tconorm(Tconorm), !.
 similarity_tconorm(Tconorm) :- lattice_tconorm(Tconorm), !.
 
 % similarity_between/4
-% similarity_between(?AtomA, ?AtomB, ?Length, ?TD)
+% similarity_between(?AtomA, ?AtomB, ?Arity, ?TD)
 %
-% This predicate succeeds when ?AtomA/?Length is similar
-% to ?AtomB/?Length with truth degree ?TD, using the current
+% This predicate succeeds when ?AtomA/?Arity is similar
+% to ?AtomB/?Arity with truth degree ?TD, using the current
 % similarity relation in the environment.
-similarity_between(AtomA, AtomB, Length, TD) :-
-    fasill_similarity(AtomA/Length, AtomB/Length, TD).
+similarity_between(AtomA, AtomB, Arity, TD) :-
+    fasill_similarity(AtomA/Arity, AtomB/Arity, TD).
 
 % similarity_retract/0
 % similarity_retract
@@ -651,12 +656,12 @@ similarity_consult(Path) :-
 % transitive closure of the similarity scheme asserted
 % into the current environment.
 similarity_closure :-
-    findall(Atom/Length, (
-        similarity_between(Atom, _, Length, _);
-        similarity_between(_, Atom, Length, _)
+    findall(Atom/Arity, (
+        similarity_between(Atom, _, Arity, _);
+        similarity_between(_, Atom, Arity, _)
     ), DomR),
     list_to_set(DomR, Dom),
-    findall(sim(Atom1,Atom2,Length,TD), similarity_between(Atom1,Atom2,Length,TD), Scheme),
+    findall(sim(Atom1,Atom2,Arity,TD), similarity_between(Atom1,Atom2,Arity,TD), Scheme),
     similarity_tnorm(Tnorm),
     lattice_call_bot(Bot),
     lattice_call_top(Top),
@@ -667,30 +672,30 @@ similarity_closure :-
     assertz(fasill_similarity_tnorm(Tnorm)).
 
 similarity_closure_reflexive(Dom, _, _, _, Top) :-
-    member(X/Length, Dom),
-    assertz(fasill_similarity(X/Length,X/Length,Top)).
+    member(X/Arity, Dom),
+    assertz(fasill_similarity(X/Arity,X/Arity,Top)).
 
 similarity_closure_symmetric(Dom, Scheme, _, Bot, _) :-
-    member(X/Length, Dom),
-    member(Y/Length, Dom),
-    \+(fasill_similarity(X/Length,Y/Length,_)),
-    (member(sim(X,Y,Length,TD), Scheme) -> true ; (
-        member(sim(Y,X,Length,TD), Scheme) -> true ; TD = Bot)
+    member(X/Arity, Dom),
+    member(Y/Arity, Dom),
+    \+(fasill_similarity(X/Arity,Y/Arity,_)),
+    (member(sim(X,Y,Arity,TD), Scheme) -> true ; (
+        member(sim(Y,X,Arity,TD), Scheme) -> true ; TD = Bot)
     ),
-    assertz(fasill_similarity(X/Length,Y/Length,TD)),
-    assertz(fasill_similarity(Y/Length,X/Length,TD)).
+    assertz(fasill_similarity(X/Arity,Y/Arity,TD)),
+    assertz(fasill_similarity(Y/Arity,X/Arity,TD)).
 
 similarity_closure_transitive(Dom, _, Tnorm, _, _) :-
-    member(Z/Length, Dom),
-    member(X/Length, Dom),
-    member(Y/Length, Dom),
-    once(fasill_similarity(X/Length,Y/Length,TDxy)),
-    once(fasill_similarity(X/Length,Z/Length,TDxz)),
-    once(fasill_similarity(Z/Length,Y/Length,TDzy)),
-    retract(fasill_similarity(X/Length,Y/Length,TDxy)),
+    member(Z/Arity, Dom),
+    member(X/Arity, Dom),
+    member(Y/Arity, Dom),
+    once(fasill_similarity(X/Arity,Y/Arity,TDxy)),
+    once(fasill_similarity(X/Arity,Z/Arity,TDxz)),
+    once(fasill_similarity(Z/Arity,Y/Arity,TDzy)),
+    retract(fasill_similarity(X/Arity,Y/Arity,TDxy)),
     lattice_call_connective('&'(Tnorm), [TDxz,TDzy], TDz),
     lattice_call_connective('|'(Tnorm), [TDxy,TDz], TD),
-    assertz(fasill_similarity(X/Length,Y/Length,TD)).
+    assertz(fasill_similarity(X/Arity,Y/Arity,TD)).
 
 
 
@@ -704,6 +709,7 @@ similarity_closure_transitive(Dom, _, Tnorm, _, _) :-
 % predicate cleans the previous test cases.
 testcases_consult(Path) :-
     retractall(fasill_testcase(_,_)),
+    retractall(fasill_testcase_precondition(_)),
     file_testcases(Path, Tests),
     ( member(Test, Tests),
       assertz(Test),
