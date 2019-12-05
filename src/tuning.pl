@@ -9,13 +9,14 @@
 
 
 
-  :- module(tuning, [
+:- module(tuning, [
     findall_symbolic_cons/1,
     tuning_thresholded/2
 ]).
 
 :- use_module('environment').
 :- use_module('semantics').
+:- use_module(library(union_find_assoc)).
 
 
 
@@ -74,7 +75,10 @@ findall_symbolic_cons(_, []).
 % for constants +Symbols. This predicate can be used for generating,
 % by reevaluation, all possible symbolic substitutions for the constants.
 symbolic_substitution([], []).
+symbolic_substitution([ground|T], T_) :-
+    symbolic_substitution(T, T_).
 symbolic_substitution([H|T], [H/H_|T_]) :-
+    H \== ground,
     symbolic_substitution(H, H_),
     symbolic_substitution(T, T_).
 symbolic_substitution(sym(td,_,0), val(td,Value,0)) :-
@@ -110,45 +114,61 @@ apply_symbolic_substitution([H|T], Subs, [H_|T_]) :-
     apply_symbolic_substitution(T, Subs, T_), !.
 apply_symbolic_substitution(X, _, X).
 
-% testcases_disjoint_sets/2
-% testcases_disjoint_sets(?TestSets, ?SymSets)
+% testcases_disjoint_sets/1
+% testcases_disjoint_sets(?Sets)
 %
 % This predicate succeeds when ?Sets is the list of disjoint
-% sets of test cases loaded into the current environment, containing
-% the symbolic constants ?SymSets.
-testcases_disjoint_sets(TestSets, SymSets) :-
-	findall(testcase(TD, SFCA), (
+% sets of test cases loaded into the current environment, in form
+% of pairs Symbols-SFCAs.
+testcases_disjoint_sets(Sets) :-
+	findall(S-testcase(TD, SFCA), (
         fasill_testcase(TD, Goal),
-        (query(Goal, state(SFCA, _)) -> true ; lattice_call_bot(SFCA))
+        (query(Goal, state(SFCA, _)) ->
+            findall_symbolic_cons(SFCA, Symbols),
+            (Symbols \== [] -> S = Symbols ; S = [ground] )
+        )
     ), Tests),
-    testcases_disjoint_sets(Tests, [], [], TestSets, SymSets).
+    %findall(precondition(X), fasill_testcase_precondition(X), Preconditions),
+    findall(Symbols, member(Symbols-_, Tests), ListSymbols),
+    append(ListSymbols, Symbols),
+    union_find_assoc(UF0, Symbols),
+    testcases_join_symbols(UF0, ListSymbols, UF1),
+    disjoint_sets_assoc(UF1, SymSets),
+    findall(Set-[], member(Set, SymSets), PSymSets),
+    zip_symbols_testcases(PSymSets, Tests, Sets).
 
-% testcases_disjoint_sets/5
-% testcases_disjoint_sets(+Testcases, +SetsIn, +SymbolsIn, ?SetsOut, ?SymbolsOut)
+% testcases_join_symbols/3
+% testcases_join_symbols(+UnionFindIn, +ListSymbols, ?UnionFindOut)
 %
-% This predicate succeeds when ?SetsOut is the list of disjoint sets
-% of test cases +Testcases, containing the symbolic constants ?SymbolsOut,
-% starting with the disjoint sets +SetsIn with symbols +SymbolsIn.
-testcases_disjoint_sets([], X, Y, X, Y).
-testcases_disjoint_sets([Test|Tests], Sets0, Symbols0, Sets2, Symbols2) :-
-    Test = testcase(TD, Goal),
-	findall_symbolic_cons(Goal, Sym),
-    testcases_add_disjoint_set(Test, Sym, Sets0, Symbols0, Sets1, Symbols1),
-    testcases_disjoint_sets(Tests, Sets1, Symbols1, Sets2, Symbols2).
+% This predicate succeeds when ?UnionFindOut is the resulting union-find structure
+% of join all the sets in the list of symbols +ListSymbols, starting with the 
+% union-find structure +UnionFindIn.
+testcases_join_symbols(UF, [], UF).
+testcases_join_symbols(UF0, [X|Xs], UF2) :-
+    union_all_assoc(UF0, X, UF1),
+    testcases_join_symbols(UF1, Xs, UF2).
 
-% testcases_add_disjoint_set/6
-% testcases_add_disjoint_set(+Testcase, +Symbols, +TestSetsIn, +SymSetsIn, ?TestSetsOut, ?SymSetsOut)
+% zip_symbols_testcases/3
+% zip_symbols_testcases(+ItemsBySymbolsIn, +ItemsBySymbols, ?ItemsBySymbolsOut)
 %
-% This predicate succeeds when ?TestSetsOut is the list of disjoint sets
-% +TestSetsIn after adding the new test case +Testcase with symbolic constants
-% +Symbols.
-testcases_add_disjoint_set(Test, Sym, [], [], [[Test]], [Sym]).
-testcases_add_disjoint_set(Test, Sym, [X|Xs], [Y|Ys], [[Test|X]|Xs], [Union|Ys]) :-
-	intersection(Sym, Y, Intersection),
-    Intersection \= [], !,
-    union(Sym, Y, Union).
-testcases_add_disjoint_set(Test, Sym, [X|Xs], [Y|Ys], [X|Zs], [Y|Ws]) :-
-	testcases_add_disjoint_set(Test, Sym, Xs, Ys, Zs, Ws).
+% This predicate adds the items of the list +ItemsBySymbols to the +ItemsBySymbolsIn
+% list, producing the ?ItemsBySymbolsOut list. Items are pairs of the form Symbols-Object,
+% and are classified by Symbols.
+zip_symbols_testcases(SymSets, [], SymSets).
+zip_symbols_testcases(SymSets0, [Test|Tests], SymSets2) :-
+    add_symbols_testcase(SymSets0, Test, SymSets1),
+    zip_symbols_testcases(SymSets1, Tests, SymSets2).
+
+% add_symbols_testcase/3
+% add_symbols_testcase(+ItemsBySymbolsIn, +ItemBySymbols, ?ItemsBySymbolsOut)
+%
+% This predicate adds the item +ItemBySymbols to the +ItemsBySymbolsIn list,
+% producing the ?ItemsBySymbolsOut list. Item is a pair of the form Symbols-Object,
+% and is classified by Symbols.
+add_symbols_testcase([Set-Tests|Sets], Symbols-Test, [Set-[Test|Tests]|Sets]) :-
+    subset(Symbols, Set), !.
+add_symbols_testcase([Set|Sets0], Test, [Set|Sets1]) :-
+    add_symbols_testcase(Sets0, Test, Sets1).
 
 
 
@@ -161,43 +181,43 @@ testcases_add_disjoint_set(Test, Sym, [X|Xs], [Y|Ys], [X|Zs], [Y|Ws]) :-
 % symbolic substitution for the set of test cases loaded
 % into the current environment, with deviation ?Deviation.
 tuning_thresholded(Best, Deviation) :-
-	testcases_disjoint_sets(Tests, Symbols),
-    tuning_thresholded(Tests, Symbols, Bests, Deviations),
+	testcases_disjoint_sets(Tests),
+    tuning_thresholded(Tests, Bests, Deviations),
     append(Bests, Best),
     sum_list(Deviations, Deviation).
 
 
-% tuning_thresholded/4
-% tuning_thresholded(+TestSets, +SymSets, ?Substitutions, ?Deviations)
+% tuning_thresholded/3
+% tuning_thresholded(+TestSets, ?Substitutions, ?Deviations)
 %
 % This predicate succeeds when ?Substitutions is the list of best
-% symbolic substitutions for the sets of tests cases +TestSets that
-% contain the symbolic constants +SymSets, with deviations ?Deviations.
-tuning_thresholded([], [], [], []).
-tuning_thresholded([Test|Tests], [Symbol|Symbols], [Best|Bests], [Deviation|Deviations]) :-
+% symbolic substitutions for the sets of tests cases +TestSets, with
+% deviations ?Deviations.
+tuning_thresholded([], [], []).
+tuning_thresholded([Symbols-Test|Tests], [Best|Bests], [Deviation|Deviations]) :-
     retractall(tuning_best_substitution(_,_)),
-    ( symbolic_substitution(Symbol, Subs),
-	  tuning_thresholded(Test, Subs, 0.0),
+    ( symbolic_substitution(Symbols, Subs),
+	  tuning_thresholded_do(Test, Subs, 0.0),
       fail ; true ),
     tuning_best_substitution(Best, Deviation),
-    tuning_thresholded(Tests, Symbols, Bests, Deviations).
+    tuning_thresholded(Tests, Bests, Deviations).
 
 
-% tuning_thresholded/3
-% tuning_thresholded(+Tests, +Substitution, ?Error)
+% tuning_thresholded_do/3
+% tuning_thresholded_do(+Tests, +Substitution, ?Error)
 %
 % This predicate succeeds when ?Substitution is the best
 % symbolic substitution for the set of test cases loaded
 % into the current environment, with deviation ?Deviation.
 % +Tests is the set of test cases with goal partially executed.
-tuning_thresholded([], Subs, Error) :- !,
+tuning_thresholded_do([], Subs, Error) :- !,
     (tuning_best_substitution(_, Best) -> Best > Error ; true),
 	retractall(tuning_best_substitution(_,_)),
 	asserta(tuning_best_substitution(Subs, Error)).
-tuning_thresholded([testcase(TD,SFCA)|Tests], Subs, Error) :-
+tuning_thresholded_do([testcase(TD,SFCA)|Tests], Subs, Error) :-
     (tuning_best_substitution(_, Best) -> Best > Error ; true),
     apply_symbolic_substitution(SFCA, Subs, FCA),
     query(FCA, state(TD_, _)),
 	lattice_call_distance(TD, TD_, num(Distance)),
 	Error_ is Error + Distance,
-    tuning_thresholded(Tests, Subs, Error_).
+    tuning_thresholded_do(Tests, Subs, Error_).
