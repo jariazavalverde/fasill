@@ -3,7 +3,7 @@
   * FILENAME: environment.pl
   * DESCRIPTION: This module contains predicates for manipulating programs, lattices and similarity relations.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 02.12.2019
+  * UPDATED: 05.12.2019
   * 
   **/
 
@@ -52,7 +52,9 @@
     similarity_tnorm/1,
     similarity_between/4,
     similarity_consult/1,
-    testcases_consult/1
+    testcases_consult/1,
+    fasill_testcase/2,
+    fasill_testcase_precondition/1
 ]).
 
 :- use_module(parser).

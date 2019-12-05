@@ -114,28 +114,41 @@ apply_symbolic_substitution([H|T], Subs, [H_|T_]) :-
     apply_symbolic_substitution(T, Subs, T_), !.
 apply_symbolic_substitution(X, _, X).
 
+tuning_check_preconditions([], _).
+tuning_check_preconditions([precondition(GoalS)|Preconditions], Subs) :-
+    apply_symbolic_substitution(GoalS, Subs, Goal),
+    query(Goal, state(FCA, _)),
+    lattice_call_bot(Bot),
+    \+lattice_call_leq(FCA, Bot),
+    tuning_check_preconditions(Preconditions, Subs).
+
 % testcases_disjoint_sets/1
 % testcases_disjoint_sets(?Sets)
 %
 % This predicate succeeds when ?Sets is the list of disjoint
 % sets of test cases loaded into the current environment, in form
 % of pairs Symbols-SFCAs.
-testcases_disjoint_sets(Sets) :-
+testcases_disjoint_sets(Sets, SetsCond) :-
 	findall(S-testcase(TD, SFCA), (
-        fasill_testcase(TD, Goal),
+        environment:fasill_testcase(TD, Goal),
         (query(Goal, state(SFCA, _)) ->
             findall_symbolic_cons(SFCA, Symbols),
             (Symbols \== [] -> S = Symbols ; S = [ground] )
         )
     ), Tests),
-    %findall(precondition(X), fasill_testcase_precondition(X), Preconditions),
-    findall(Symbols, member(Symbols-_, Tests), ListSymbols),
-    append(ListSymbols, Symbols),
+    findall(S-precondition(X), (environment:fasill_testcase_precondition(X), findall_symbolic_cons(X, S)), Preconditions),
+    findall(Symbols, member(Symbols-_, Tests), ListSymbolsTests),
+    findall(Symbols, member(Symbols-_, Preconditions), ListSymbolsCond),
+    append(ListSymbolsTests, Symbols0),
+    append(ListSymbolsCond, Symbols1),
+    append(Symbols0, Symbols1, Symbols),
     union_find_assoc(UF0, Symbols),
-    testcases_join_symbols(UF0, ListSymbols, UF1),
-    disjoint_sets_assoc(UF1, SymSets),
-    findall(Set-[], member(Set, SymSets), PSymSets),
-    zip_symbols_testcases(PSymSets, Tests, Sets).
+    testcases_join_symbols(UF0, ListSymbolsTests, UF1),
+    testcases_join_symbols(UF1, ListSymbolsCond, UF2),
+    disjoint_sets_assoc(UF2, SymSets),
+    findall(Set-[], member(Set, SymSets), Sets0),
+    zip_symbols_testcases(Sets0, Tests, Sets),
+    zip_symbols_testcases(Sets0, Preconditions, SetsCond).
 
 % testcases_join_symbols/3
 % testcases_join_symbols(+UnionFindIn, +ListSymbols, ?UnionFindOut)
@@ -181,26 +194,27 @@ add_symbols_testcase([Set|Sets0], Test, [Set|Sets1]) :-
 % symbolic substitution for the set of test cases loaded
 % into the current environment, with deviation ?Deviation.
 tuning_thresholded(Best, Deviation) :-
-	testcases_disjoint_sets(Tests),
-    tuning_thresholded(Tests, Bests, Deviations),
+	testcases_disjoint_sets(Tests, Preconditions),
+    tuning_thresholded(Tests, Preconditions, Bests, Deviations),
     append(Bests, Best),
     sum_list(Deviations, Deviation).
 
 
-% tuning_thresholded/3
-% tuning_thresholded(+TestSets, ?Substitutions, ?Deviations)
+% tuning_thresholded/4
+% tuning_thresholded(+TestSets, +PreconditionSets, ?Substitutions, ?Deviations)
 %
 % This predicate succeeds when ?Substitutions is the list of best
 % symbolic substitutions for the sets of tests cases +TestSets, with
 % deviations ?Deviations.
-tuning_thresholded([], [], []).
-tuning_thresholded([Symbols-Test|Tests], [Best|Bests], [Deviation|Deviations]) :-
+tuning_thresholded([], [], [], []).
+tuning_thresholded([Symbols-Test|Tests], [Symbols-Precondition|Preconditions], [Best|Bests], [Deviation|Deviations]) :-
     retractall(tuning_best_substitution(_,_)),
     ( symbolic_substitution(Symbols, Subs),
+      tuning_check_preconditions(Precondition, Subs),
 	  tuning_thresholded_do(Test, Subs, 0.0),
       fail ; true ),
     tuning_best_substitution(Best, Deviation),
-    tuning_thresholded(Tests, Bests, Deviations).
+    tuning_thresholded(Tests, Preconditions, Bests, Deviations).
 
 
 % tuning_thresholded_do/3
