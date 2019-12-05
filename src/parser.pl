@@ -3,7 +3,7 @@
   * FILENAME: parser.pl
   * DESCRIPTION: This module contains predicates for parsing FASILL programs.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 02.12.2019
+  * UPDATED: 05.12.2019
   * 
   **/
 
@@ -560,3 +560,11 @@ blanks --> [].
 blank --> [' '], {auto_column}.
 blank --> ['\n'], {auto_line}.
 blank --> ['\t'], {auto_column}.
+blank --> ['%'], singleline_comment, ['\n'], {auto_line}.
+blank --> ['/','*'], multiline_comment, ['*','/'].
+singleline_comment --> [X], {X \= '\n'}, !, singleline_comment.
+singleline_comment --> [].
+multiline_comment --> ['\n'], !, {auto_line}, multiline_comment.
+multiline_comment --> [X], {X \= '*'}, !, multiline_comment.
+multiline_comment --> ['*',X], {X \= '/'}, !, multiline_comment.
+multiline_comment --> [].
