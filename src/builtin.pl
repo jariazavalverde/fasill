@@ -297,7 +297,7 @@ eval_builtin_predicate(findall/4, state(_, Subs), selected(ExprVar, Var, Term), 
 %%% True if the weak unification succeeds.
 eval_builtin_predicate('~'/2, state(_, Subs), selected(ExprVar, TD, Term), state(ExprSubs, Subs_)) :-
     Term = term('~', [X,Y]),
-    unify(X, Y, state(TD, SubsUnification)),
+    unify(X, Y, _, state(TD, SubsUnification)),
     apply(ExprVar, SubsUnification, ExprSubs),
     compose(Subs, SubsUnification, Subs_).
 
@@ -309,7 +309,8 @@ eval_builtin_predicate('~'/2, state(_, Subs), selected(ExprVar, TD, Term), state
 %%% True if the unification succeeds.
 eval_builtin_predicate('='/2, state(_, Subs), selected(ExprVar, top, Term), state(ExprSubs, Subs_)) :-
     Term = term('=', [X,Y]),
-    mgu(X, Y, SubsUnification),
+    current_fasill_flag(occurs_check, OccursCheck),
+    mgu(X, Y, OccursCheck, SubsUnification),
     apply(ExprVar, SubsUnification, ExprSubs),
     compose(Subs, SubsUnification, Subs_).
 
@@ -321,7 +322,7 @@ eval_builtin_predicate('='/2, state(_, Subs), selected(ExprVar, top, Term), stat
 eval_builtin_predicate('\\~'/2, state(_, Subs), selected(ExprVar, top, Term), state(ExprVar, Subs)) :-
     Term = term('\\~', [X,Y]),
     lattice_call_bot(Bot),
-    (unify(X, Y, state(TD,_)) -> TD == Bot ; true).
+    (unify(X, Y, _, state(TD,_)) -> TD == Bot ; true).
 
 %%% '\='/2
 %%% '\='(@term, @term)
@@ -330,7 +331,8 @@ eval_builtin_predicate('\\~'/2, state(_, Subs), selected(ExprVar, top, Term), st
 %%% X \= Y is true if and only if X and Y are not unifiable.
 eval_builtin_predicate('\\='/2, state(_, Subs), selected(ExprVar, top, Term), state(ExprVar, Subs)) :-
     Term = term('\\=', [X,Y]),
-    \+mgu(X, Y, _).
+    current_fasill_flag(occurs_check, OccursCheck),
+    \+mgu(X, Y, OccursCheck, _).
 
 
 
