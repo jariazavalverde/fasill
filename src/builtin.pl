@@ -3,7 +3,7 @@
   * FILENAME: builtin.pl
   * DESCRIPTION: This module contains the definition of the FASILL built-in predicates.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 27.03.2019
+  * UPDATED: 29.01.2020
   * 
   **/
 
@@ -50,6 +50,8 @@ is_builtin_predicate(Name/Arity) :-
         '~'/2,
         '\\='/2,
         '\\~'/2,
+        unify_with_occurs_check/2,
+        weakly_unify_with_occurs_check/2,
         % term comparison
         '=='/2,
         '@<'/2,
@@ -333,6 +335,30 @@ eval_builtin_predicate('\\='/2, state(_, Subs), selected(ExprVar, top, Term), st
     Term = term('\\=', [X,Y]),
     current_fasill_flag(occurs_check, OccursCheck),
     \+mgu(X, Y, OccursCheck, _).
+
+%%% weakly_unify_with_occurs_check/2
+%%% weakly_unify_with_occurs_check(@term, @term)
+%%%
+%%% Weak unification with occurs check.
+%%% weakly_unify_with_occurs_check(X, Y) is true if and only if X and Y are weakly unifiable.
+%%% True if the weak unification succeeds.
+eval_builtin_predicate(weakly_unify_with_occurs_check/2, state(_, Subs), selected(ExprVar, TD, Term), state(ExprSubs, Subs_)) :-
+    Term = term(weakly_unify_with_occurs_check, [X,Y]),
+    unify(X, Y, term(true,[]), state(TD, SubsUnification)),
+    apply(ExprVar, SubsUnification, ExprSubs),
+    compose(Subs, SubsUnification, Subs_).
+
+%%% unify_with_occurs_check/2
+%%% unify_with_occurs_check(@term, @term)
+%%%
+%%% Unification with occurs check.
+%%% unify_with_occurs_check(X, Y) is true if and only if X and Y are unifiable.
+%%% True if the unification succeeds.
+eval_builtin_predicate(unify_with_occurs_check/2, state(_, Subs), selected(ExprVar, top, Term), state(ExprSubs, Subs_)) :-
+    Term = term(unify_with_occurs_check, [X,Y]),
+    mgu(X, Y, term(true,[]), SubsUnification),
+    apply(ExprVar, SubsUnification, ExprSubs),
+    compose(Subs, SubsUnification, Subs_).
 
 
 
