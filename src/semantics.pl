@@ -389,11 +389,9 @@ rename(X, Y) :-
     rename(X, Y, Subs, _).
 rename(var(X), var(Y), Subs, Subs) :-
     get_assoc(X, Subs, Y), !.
-rename(var(X), var(Y), Subs0, Subs1) :- 
+rename(var(X), var('$'(Id)), Subs0, Subs1) :- 
     !, auto_fresh_variable_id(Id),
-    atom_number(Atom, Id),
-    atom_concat('V', Atom, Y),
-    put_assoc(X, Subs0, Y, Subs1).
+    put_assoc(X, Subs0, '$'(Id), Subs1).
 rename(term(Name, Xs), term(Name, Ys), Subs0, Subs1) :-
     !, rename(Xs, Ys, Subs0, Subs1).
 rename([], [], Subs, Subs) :- !.

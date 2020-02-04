@@ -255,6 +255,7 @@ fasill_show(X) :- is_assoc(X), !, assoc_to_list(X, Subs), fasill_show(Subs).
 fasill_show(top) :- write(top).
 fasill_show(bot) :- write(bot).
 fasill_show(num(X)) :- write(X).
+fasill_show(var('$'(X))) :- !, write('V'), write(X).
 fasill_show(var(X)) :- write(X).
 fasill_show(X-Y) :- write(X), write('/'), fasill_show(Y).
 fasill_show(X/Y) :- write(X), write('/'), fasill_show(Y).

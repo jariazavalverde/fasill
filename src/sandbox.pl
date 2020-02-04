@@ -53,6 +53,7 @@ sandbox_write(sym(Type1,Cons,Arity)/val(Type2,Name,Arity)) :- !,
 sandbox_write(top) :- write(top).
 sandbox_write(bot) :- write(bot).
 sandbox_write(num(X)) :- write(X).
+sandbox_write(var('$'(X))) :- !, write('V'), write(X).
 sandbox_write(var(X)) :- write(X).
 sandbox_write(X/Y) :- write(X), write('/'), sandbox_write(Y).
 sandbox_write(X-Y) :- write(X), write('/'), sandbox_write(Y).
