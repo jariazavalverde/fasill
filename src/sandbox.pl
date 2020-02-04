@@ -3,7 +3,7 @@
   * FILENAME: sandbox.pl
   * DESCRIPTION: This module contains predicates for the web interface.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 03.05.2019
+  * UPDATED: 04.02.2020
   * 
   **/
 
@@ -19,6 +19,7 @@
     sandbox_extend/4
 ]).
 
+:- use_module(library(assoc)).
 :- use_module('environment').
 :- use_module('parser').
 :- use_module('unfolding').
@@ -29,6 +30,7 @@
 
 
 sandbox_write([]).
+sandbox_write(X) :- is_assoc(X), !, assoc_to_list(X, Subs), sandbox_write(Subs).
 sandbox_write(level(0)).
 sandbox_write(level(N)) :- N > 0, write('  '), M is N-1, sandbox_write(level(M)).
 sandbox_write(trace(Level, Info, State)) :- sandbox_write(level(Level)), write(Info), write(' '), sandbox_write(State).
@@ -53,6 +55,7 @@ sandbox_write(bot) :- write(bot).
 sandbox_write(num(X)) :- write(X).
 sandbox_write(var(X)) :- write(X).
 sandbox_write(X/Y) :- write(X), write('/'), sandbox_write(Y).
+sandbox_write(X-Y) :- write(X), write('/'), sandbox_write(Y).
 sandbox_write(term('#'(Name),[])) :- !, write('#'), write(Name).
 sandbox_write(term('#@'(Name),Args)) :- !, write('#@'), write(Name), write('('), sandbox_write(Args), write(')').
 sandbox_write(term('#&'(Name),[X,Y])) :- !, write('('), sandbox_write(X), write(' #&'), write(Name), write(' '), sandbox_write(Y), write(')'). 

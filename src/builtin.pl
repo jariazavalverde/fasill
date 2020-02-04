@@ -3,7 +3,7 @@
   * FILENAME: builtin.pl
   * DESCRIPTION: This module contains the definition of the FASILL built-in predicates.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 29.01.2020
+  * UPDATED: 04.02.2020
   * 
   **/
 
@@ -300,7 +300,7 @@ eval_builtin_predicate(findall/4, state(_, Subs), selected(ExprVar, Var, Term), 
 eval_builtin_predicate('~'/2, state(_, Subs), selected(ExprVar, TD, Term), state(ExprSubs, Subs_)) :-
     Term = term('~', [X,Y]),
     unify(X, Y, _, state(TD, SubsUnification)),
-    apply(ExprVar, SubsUnification, ExprSubs),
+    apply(SubsUnification, ExprVar, ExprSubs),
     compose(Subs, SubsUnification, Subs_).
 
 %%% '='/2
@@ -311,9 +311,9 @@ eval_builtin_predicate('~'/2, state(_, Subs), selected(ExprVar, TD, Term), state
 %%% True if the unification succeeds.
 eval_builtin_predicate('='/2, state(_, Subs), selected(ExprVar, top, Term), state(ExprSubs, Subs_)) :-
     Term = term('=', [X,Y]),
-    current_fasill_flag(occurs_check, OccursCheck),
+    current_fasill_flag(occurs_check, term(OccursCheck, [])),
     mgu(X, Y, OccursCheck, SubsUnification),
-    apply(ExprVar, SubsUnification, ExprSubs),
+    apply(SubsUnification, ExprVar, ExprSubs),
     compose(Subs, SubsUnification, Subs_).
 
 %%% '\~'/2
@@ -333,7 +333,7 @@ eval_builtin_predicate('\\~'/2, state(_, Subs), selected(ExprVar, top, Term), st
 %%% X \= Y is true if and only if X and Y are not unifiable.
 eval_builtin_predicate('\\='/2, state(_, Subs), selected(ExprVar, top, Term), state(ExprVar, Subs)) :-
     Term = term('\\=', [X,Y]),
-    current_fasill_flag(occurs_check, OccursCheck),
+    current_fasill_flag(occurs_check, term(OccursCheck, [])),
     \+mgu(X, Y, OccursCheck, _).
 
 %%% weakly_unify_with_occurs_check/2
@@ -344,8 +344,8 @@ eval_builtin_predicate('\\='/2, state(_, Subs), selected(ExprVar, top, Term), st
 %%% True if the weak unification succeeds.
 eval_builtin_predicate(weakly_unify_with_occurs_check/2, state(_, Subs), selected(ExprVar, TD, Term), state(ExprSubs, Subs_)) :-
     Term = term(weakly_unify_with_occurs_check, [X,Y]),
-    unify(X, Y, term(true,[]), state(TD, SubsUnification)),
-    apply(ExprVar, SubsUnification, ExprSubs),
+    unify(X, Y, true, state(TD, SubsUnification)),
+    apply(SubsUnification, ExprVar, ExprSubs),
     compose(Subs, SubsUnification, Subs_).
 
 %%% unify_with_occurs_check/2
@@ -356,8 +356,8 @@ eval_builtin_predicate(weakly_unify_with_occurs_check/2, state(_, Subs), selecte
 %%% True if the unification succeeds.
 eval_builtin_predicate(unify_with_occurs_check/2, state(_, Subs), selected(ExprVar, top, Term), state(ExprSubs, Subs_)) :-
     Term = term(unify_with_occurs_check, [X,Y]),
-    mgu(X, Y, term(true,[]), SubsUnification),
-    apply(ExprVar, SubsUnification, ExprSubs),
+    mgu(X, Y, true, SubsUnification),
+    apply(SubsUnification, ExprVar, ExprSubs),
     compose(Subs, SubsUnification, Subs_).
 
 

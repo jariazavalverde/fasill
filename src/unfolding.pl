@@ -3,7 +3,7 @@
   * FILENAME: unfolding.pl
   * DESCRIPTION: This module contains predicates for unfolding FASILL programs.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 05.03.2019
+  * UPDATED: 04.02.2020
   * 
   **/
 
@@ -49,7 +49,7 @@ unfold(R1, R2) :-
     R1 = fasill_rule(head(Head), body(Body), [id(Id)|_]),
     get_variables(Body, Vars),
     inference(unfolding/0, state(Body, Vars), state(Expr, Subs), _),
-    apply(Head, Subs, Head_),
+    apply(Subs, Head, Head_),
     ( unfolding_id(R),
       atom_number(Atom, R),
       atom_concat(Id, '-', Id_),

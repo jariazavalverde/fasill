@@ -3,7 +3,7 @@
   * FILENAME: environment.pl
   * DESCRIPTION: This module contains predicates for manipulating programs, lattices and similarity relations.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 05.12.2019
+  * UPDATED: 04.02.2020
   * 
   **/
 
@@ -57,6 +57,7 @@
     fasill_testcase_precondition/1
 ]).
 
+:- use_module(library(assoc)).
 :- use_module(parser).
 :- use_module(exceptions).
 :- use_module(semantics).
@@ -250,10 +251,12 @@ fasill_connective(term(Type,Arg)) :-
 fasill_show(Term, Output) :- with_output_to(atom(Output), fasill_show(Term)).
 
 fasill_show([]) :- !.
+fasill_show(X) :- is_assoc(X), !, assoc_to_list(X, Subs), fasill_show(Subs).
 fasill_show(top) :- write(top).
 fasill_show(bot) :- write(bot).
 fasill_show(num(X)) :- write(X).
 fasill_show(var(X)) :- write(X).
+fasill_show(X-Y) :- write(X), write('/'), fasill_show(Y).
 fasill_show(X/Y) :- write(X), write('/'), fasill_show(Y).
 fasill_show(term('#'(Name),[])) :- !, write('#'), write(Name).
 fasill_show(term('#@'(Name),Args)) :- !, write('#@'), write(Name), write('('), fasill_show(Args), write(')').

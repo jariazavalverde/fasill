@@ -3,7 +3,7 @@
   * FILENAME: semantics.pl
   * DESCRIPTION: This module contains predicates implementing the semantics for FASILL.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 28.01.2020
+  * UPDATED: 04.02.2020
   * 
   **/
 
@@ -32,6 +32,7 @@
     trace_level/1
 ]).
 
+:- use_module(library(assoc)).
 :- use_module('environment').
 :- use_module('exceptions').
 :- use_module('builtin').
@@ -48,19 +49,20 @@
 % +ExpressionB with level +Threshold.
 lambda_wmgu(ExprA, ExprB, Lambda, OccursCheck, State) :-
     lattice_call_top(Top),
-    lambda_wmgu(ExprA, ExprB, Lambda, OccursCheck, state(Top,[]), State).
+    empty_assoc(Subs),
+    lambda_wmgu(ExprA, ExprB, Lambda, OccursCheck, state(Top,Subs), State).
 %%% anonymous variable
 lambda_wmgu(var('_'), _, _, _, State, State) :- !.
 lambda_wmgu(_, var('_'), _, _, State, State) :- !.
 %%% var with expression
 lambda_wmgu(var(X), Y, Lambda, OccursCheck, state(TD,Subs), State_) :-
-    member(X/Z, Subs), !,
+    get_assoc(X, Subs, Z), !,
     lambda_wmgu(Z, Y, Lambda, OccursCheck, state(TD,Subs), State_).
-lambda_wmgu(var(X), Y, _, term(true, []), state(TD,Subs), state(TD,[X/Y|Subs_])) :- !,
-    occurs_check(X, Y),
-    compose(Subs, [X/Y], Subs_).
-lambda_wmgu(var(X), Y, _, term(false, []), state(TD,Subs), state(TD,[X/Y|Subs_])) :- !,
-    compose(Subs, [X/Y], Subs_).
+lambda_wmgu(var(X), Y, _, OccursCheck, state(TD,Subs0), state(TD,Subs3)) :- !,
+    (OccursCheck == true -> occurs_check(X, Y) ; true),
+    list_to_assoc([X-Y], Subs1),
+    compose(Subs0, Subs1, Subs2),
+    put_assoc(X, Subs2, Y, Subs3).
 %%% expression with var
 lambda_wmgu(X, var(Y), Lambda, OccursCheck, State, State_) :- !,
     lambda_wmgu(var(Y), X, Lambda, OccursCheck, State, State_).
@@ -86,8 +88,8 @@ lambda_wmgu([], [], _, _, State, State) :- !.
 lambda_wmgu([X|Xs], [Y|Ys], Lambda, OccursCheck, State, State_) :- !,
     lambda_wmgu(X, Y, Lambda, OccursCheck, State, StateXY),
     StateXY = state(_, Subs),
-    apply(Xs, Subs, Xs_),
-    apply(Ys, Subs, Ys_),
+    apply(Subs, Xs, Xs_),
+    apply(Subs, Ys, Ys_),
     lambda_wmgu(Xs_, Ys_, Lambda, OccursCheck, StateXY, State_).
 
 % wmgu/4
@@ -104,37 +106,38 @@ wmgu(ExprA, ExprB, OccursCheck, State) :-
 %
 % This predicate returns the most general unifier (mgu)
 % ?MGU of the expressions +ExpressionA and +ExpressionB.
-mgu(ExprA, ExprB, OccursCheck, Subs) :-
-    mgu(ExprA, ExprB, OccursCheck, [], Subs).
+mgu(ExprA, ExprB, OccursCheck, Subs1) :-
+    empty_assoc(Subs0),
+    mgu(ExprA, ExprB, OccursCheck, Subs0, Subs1).
 %%% anonymous variable
 mgu(var('_'), _, _, Subs, Subs) :- !.
 mgu(_, var('_'), _, Subs, Subs) :- !.
 %%% var with expression
-mgu(var(X), Y, OccursCheck, Subs, Subs_) :-
-    member(X/Z, Subs), !,
-    mgu(Z, Y, OccursCheck, Subs, Subs_).
-mgu(var(X), Y, term(true, []), Subs, [X/Y|Subs_]) :- !,
-    occurs_check(X, Y),
-    compose(Subs,[X/Y],Subs_).
-mgu(var(X), Y, term(false, []), Subs, [X/Y|Subs_]) :- !,
-    compose(Subs,[X/Y],Subs_).
+mgu(var(X), Y, OccursCheck, Subs0, Subs1) :-
+    get_assoc(X, Subs0, Z), !,
+    mgu(Z, Y, OccursCheck, Subs0, Subs1).
+mgu(var(X), Y, OccursCheck, Subs0, Subs3) :- !,
+    (OccursCheck == true -> occurs_check(X, Y) ; true),
+    list_to_assoc([X-Y], Subs1),
+    compose(Subs0, Subs1, Subs2),
+    put_assoc(X, Subs2, Y, Subs3).
 %%% expression with var
-mgu(X, var(Y), OccursCheck, Subs, Subs_) :- !,
-    mgu(var(Y), X, OccursCheck, Subs, Subs_).
+mgu(X, var(Y), OccursCheck, Subs0, Subs1) :- !,
+    mgu(var(Y), X, OccursCheck, Subs0, Subs1).
 %%% num with num
 mgu(num(X), num(X), _, Subs, Subs) :- !.
 %%% term with term
-mgu(term(X,Xs), term(X,Ys), OccursCheck, Subs, Subs_) :- !,
+mgu(term(X,Xs), term(X,Ys), OccursCheck, Subs0, Subs1) :- !,
     length(Xs, Length),
     length(Ys, Length),
-    mgu(Xs, Ys, OccursCheck, Subs, Subs_).
+    mgu(Xs, Ys, OccursCheck, Subs0, Subs1).
 %%% arguments
 mgu([], [], _, Subs, Subs) :- !.
-mgu([X|Xs], [Y|Ys], OccursCheck, Subs1, Subs3) :- !,
-    mgu(X, Y, OccursCheck, Subs1, Subs2),
-    apply(Xs, Subs2, Xs_),
-    apply(Ys, Subs2, Ys_),
-    mgu(Xs_, Ys_, OccursCheck, Subs2, Subs3).
+mgu([X|Xs], [Y|Ys], OccursCheck, Subs0, Subs2) :- !,
+    mgu(X, Y, OccursCheck, Subs0, Subs1),
+    apply(Subs1, Xs, Xs_),
+    apply(Subs1, Ys, Ys_),
+    mgu(Xs_, Ys_, OccursCheck, Subs1, Subs2).
 
 % occurs_check/2
 % occurs_check(+Variable, +Expression)
@@ -154,7 +157,7 @@ occurs_check(_, _).
 unify(Term1, Term2, OccursCheck, Subs) :-
     current_fasill_flag(weak_unification, term(true,[])), !,
     current_fasill_flag(lambda_unification, Lambda_),
-    (var(OccursCheck) -> current_fasill_flag(occurs_check, OccursCheck) ; true),
+    (var(OccursCheck) -> current_fasill_flag(occurs_check, term(OccursCheck, [])) ; true),
     (Lambda_ == bot ->
         lattice_call_bot(Lambda) ;
         (Lambda_ == top ->
@@ -164,7 +167,7 @@ unify(Term1, Term2, OccursCheck, Subs) :-
     ),
     lambda_wmgu(Term1, Term2, Lambda, OccursCheck, Subs).
 unify(Term1, Term2, OccursCheck, state(Top, Subs)) :-
-    (var(OccursCheck) -> current_fasill_flag(occurs_check, OccursCheck) ; true),
+    (var(OccursCheck) -> current_fasill_flag(occurs_check, term(OccursCheck, [])) ; true),
     mgu(Term1, Term2, OccursCheck, Subs),
     lattice_call_top(Top).
 
@@ -241,8 +244,8 @@ query(Goal, Answer) :-
 % This predicate succeeds when ?Variables is the initial
 % substitution for the term +Term, where each variable in
 % +Term is replaced by itself (X/X).
-get_variables(X, Z) :- get_variables2(X, Y), list_to_set(Y, Z).
-get_variables2(var(X), [X/var(X)]) :- !.
+get_variables(X, Z) :- get_variables2(X, Y), list_to_set(Y, S), list_to_assoc(S, Z).
+get_variables2(var(X), [X-var(X)]) :- !.
 get_variables2(term(_,Args), Vars) :- !, get_variables2(Args, Vars).
 get_variables2([H|T], Vars) :- !,
     get_variables2(H, Vh),
@@ -278,8 +281,11 @@ derivation(From, State, State_, [X|Xs]) :-
 % initial state +State1 to the final step ?State2. ?Info
 % is an atom containg information about the rule used in
 % the derivation.
-inference(From, State, State_, Info) :- operational_step(From, State, State_, Info).
-inference(From, state(Goal,Subs), State_, Info) :- interpretable(Goal), interpretive_step(From, state(Goal,Subs), State_, Info).
+inference(From, State, State_, Info) :-
+    operational_step(From, State, State_, Info).
+inference(From, state(Goal,Subs), State_, Info) :-
+    interpretable(Goal),
+    interpretive_step(From, state(Goal,Subs), State_, Info).
 
 % operational_step/4
 % operational_step(+From, +State1, ?State2, ?Info)
@@ -326,7 +332,7 @@ success_step(From, state(Goal,Subs), state(Goal_,Subs_), Info) :-
                 BodyR = body(Body_),
                 (TD == Top -> Var = Body_ ; Var = term('&'(Tnorm), [TD,Body_]))
             )),
-            apply(ExprVar, SubsExpr, Goal_),
+            apply(SubsExpr, ExprVar, Goal_),
             compose(Subs, SubsExpr, Subs_),
             Info = Name2/Arity
         ) ; (
@@ -378,22 +384,26 @@ interpret(term(Op, Args), Result) :- lattice_call_connective(Op, Args, Result).
 % This predicate renames the expression +Expression, replacing
 % the variables of the expression by fresh variables. ?Renamed
 % is the expression +Expression with fresh variables.
-rename(X, Y) :- rename(X, Y, [], _).
-rename(var(X), var(Y), Subs, Subs) :- member(X/Y, Subs), !.
-rename(var(X), var(Y), Subs, [X/Y|Subs]) :- 
+rename(X, Y) :-
+    empty_assoc(Subs),
+    rename(X, Y, Subs, _).
+rename(var(X), var(Y), Subs, Subs) :-
+    get_assoc(X, Subs, Y), !.
+rename(var(X), var(Y), Subs0, Subs1) :- 
     !, auto_fresh_variable_id(Id),
     atom_number(Atom, Id),
-    atom_concat('V', Atom, Y).
-rename(term(Name, Xs), term(Name, Ys), Subs, Subs_) :-
-    !, rename(Xs, Ys, Subs, Subs_).
+    atom_concat('V', Atom, Y),
+    put_assoc(X, Subs0, Y, Subs1).
+rename(term(Name, Xs), term(Name, Ys), Subs0, Subs1) :-
+    !, rename(Xs, Ys, Subs0, Subs1).
 rename([], [], Subs, Subs) :- !.
-rename([X|Xs], [Y|Ys], Subs, Subs3) :-
-    !, rename(X, Y, Subs, Subs2),
+rename([X|Xs], [Y|Ys], Subs0, Subs3) :-
+    !, rename(X, Y, Subs0, Subs2),
     rename(Xs, Ys, Subs2, Subs3).
-rename(X, Y, Subs, Subs_) :-
+rename(X, Y, Subs0, Subs1) :-
     compound(X), !,
     X =.. [Name|Args],
-    rename(Args, Args_, Subs, Subs_),
+    rename(Args, Args_, Subs0, Subs1),
     Y =.. [Name|Args_].
 rename(X, X, Subs, Subs).
 
@@ -402,19 +412,18 @@ rename(X, X, Subs, Subs).
 %
 % This predicate composes both substitutions, +Substitution1
 % and +Substitution2 in ?SubstitutionOut.
-compose([], _, []).
-compose([X/Y|T], Subs, [X/Z|S]) :- apply(Y, Subs, Z), compose(T, Subs, S).
+compose(Subs0, Subs1, Subs2) :- map_assoc(apply(Subs1), Subs0, Subs2).
 
 % apply/3
-% apply(+ExpressionIn, +Substitution, ?ExpressionOut)
+% apply(+Substitution, +ExpressionIn, ?ExpressionOut)
 %
 % This predicate applies the substitution +Substitution to
 % the expression +ExpressionIn. ?ExpressionOut is the resulting
 % expression.
-apply(term(T,Args), Subs, term(T,Args_)) :- !, apply(Args, Subs, Args_).
-apply(var(X), Subs, Y) :- !, (member(X/Y, Subs) -> true ; Y = var(X)).
-apply([X|Xs], Subs, [Y|Ys]) :- !, apply(X, Subs, Y), apply(Xs, Subs, Ys).
-apply(X, _, X).
+apply(Subs, term(T,Args), term(T,Args_)) :- !, apply(Subs, Args, Args_).
+apply(Subs, var(X), Y) :- !, (get_assoc(X, Subs, Y) -> true ; Y = var(X)).
+apply(Subs, [X|Xs], [Y|Ys]) :- !, apply(Subs, X, Y), apply(Subs, Xs, Ys).
+apply(_, X, X).
 
 % arithmetic_evaluation/3
 % arithmetic_evaluation(+Indicator, +Expression, ?Result)
