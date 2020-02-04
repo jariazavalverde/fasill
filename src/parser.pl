@@ -3,7 +3,7 @@
   * FILENAME: parser.pl
   * DESCRIPTION: This module contains predicates for parsing FASILL programs.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 05.12.2019
+  * UPDATED: 04.02.2020
   * 
   **/
 
@@ -417,7 +417,7 @@ parse_expr_zero(T) --> parse_list(T), blanks, !.
 parse_expr_zero(T) --> parse_brace(T), blanks, !.
 parse_expr_zero(T) --> parse_con(T), blanks, !.
 parse_expr_zero(T) --> parse_term(T), blanks, !.
-parse_expr_zero(_) --> [X], {atom_concat('invalid input ', X, Msg), throw(Msg)}.
+%parse_expr_zero(_) --> [X], {atom_concat('invalid input ', X, Msg), throw(Msg)}.
 
 % parse_term/3
 % parse a (possible compound) term
