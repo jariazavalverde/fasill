@@ -9,31 +9,64 @@
 
 :- use_module(library(random)).
 :- use_module('../../src/semantics').
+:- use_module('../../src/environment').
 
 
 
 % TESTS
 
+% test_mgu/5
+% test_mgu(+Symbols, +Repeat, ?Min, ?Aver, ?Max)
+%
+% This predicate...
 test_mgu(Symbols, Repeat, min(time(MinT), inferences(MinI)),
 average(time(AverT), inferences(AverI)), max(time(MaxT), inferences(MaxI))) :-
-    test_mgu(Symbols, Repeat, Times, Inferences),
+    test_mgu(Symbols, Repeat, [], [], Times, Inferences),
     max_list(Times, MaxT), max_list(Inferences, MaxI),
     min_list(Times, MinT), min_list(Inferences, MinI),
     sum_list(Times, TotalT), sum_list(Inferences, TotalI),
     AverT is TotalT/Repeat, AverI is TotalI/Repeat.
 
-test_mgu(_, 0, [], []) :- !.
-test_mgu(Symbols, N, [T|Ts], [I|Is]) :-
+test_mgu(_, 0, Ts, Is, Ts, Is) :- !.
+test_mgu(Symbols, N, Ts, Is, Times, Inferences) :- 
     succ(M, N),
     arbitrary_fasill_term(Symbols, TermA),
     modify_fasill_term(TermA, TermB),
     statistics(runtime, [_,_]),
     statistics(inferences, I0),
-    mgu(TermA, TermB, term(false, []), _),
+    mgu(TermA, TermB, false, _),
     statistics(inferences, If),
     statistics(runtime, [_,T]),
     I is If-I0,
-    test_mgu(Symbols, M, Ts, Is).
+    (T >= 0 -> N_ = M, Ts_ = [T|Ts], Is_ = [I|Is] ; N_ = N, Ts_ = Ts, Is_ = Is),
+    test_wmgu(Symbols, N_, Ts_, Is_, Times, Inferences).
+
+% test_wmgu/5
+% test_wmgu(+Symbols, +Repeat, ?Min, ?Aver, ?Max)
+%
+% This predicate...
+test_wmgu(Symbols, Repeat, min(time(MinT), inferences(MinI)),
+average(time(AverT), inferences(AverI)), max(time(MaxT), inferences(MaxI))) :-
+    lattice_consult('../../lattices/unit.lat.pl'),
+    test_wmgu(Symbols, Repeat, [], [], Times, Inferences),
+    max_list(Times, MaxT), max_list(Inferences, MaxI),
+    min_list(Times, MinT), min_list(Inferences, MinI),
+    sum_list(Times, TotalT), sum_list(Inferences, TotalI),
+    AverT is TotalT/Repeat, AverI is TotalI/Repeat.
+
+test_wmgu(_, 0, Ts, Is, Ts, Is) :- !.
+test_wmgu(Symbols, N, Ts, Is, Times, Inferences) :-
+    succ(M, N),
+    arbitrary_fasill_term(Symbols, TermA),
+    weakly_modify_fasill_term(TermA, TermB),
+    statistics(runtime, [_,_]),
+    statistics(inferences, I0),
+    wmgu(TermA, TermB, false, _),
+    statistics(inferences, If),
+    statistics(runtime, [_,T]),
+    I is If-I0,
+    (T >= 0 -> N_ = M, Ts_ = [T|Ts], Is_ = [I|Is] ; N_ = N, Ts_ = Ts, Is_ = Is),
+    test_wmgu(Symbols, N_, Ts_, Is_, Times, Inferences).
 
 
 
@@ -46,8 +79,7 @@ current_variable_id(0).
 % arbitrary_fasill_atom(?Atom)
 %
 % This predicate returns an arbitrary FASILL atom ?Atom (from a to z).
-arbitrary_fasill_atom(term(X, [])) :-
-    random_member(X, [a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z]).
+arbitrary_fasill_atom(term(f, [])).
 
 % arbitrary_fasill_var/1
 % arbitrary_fasill_var(?Var)
@@ -98,3 +130,15 @@ arbitrary_fasill_term(Max, Left, N, [Term|Terms]) :-
 % This predicate succeeds when ?TermIn is a term that subsumes to ?TermOut.
 modify_fasill_term(var(_), T) :- arbitrary_fasill_term(1, T).
 modify_fasill_term(term(X, Xs), term(X, Ys)) :- maplist(modify_fasill_term, Xs, Ys).
+
+% weakly_modify_fasill_term/2
+% weakly_modify_fasill_term(+TermIn, ?TermOut)
+%
+% This predicate succeeds when ?TermIn is a term that subsumes to ?TermOut.
+weakly_modify_fasill_term(var(_), T) :- arbitrary_fasill_term(1, T).
+weakly_modify_fasill_term(term(X, Xs), term(Y, Ys)) :-
+    atom_concat(X, '_', Y),
+    maplist(weakly_modify_fasill_term, Xs, Ys),
+    length(Xs, Arity),
+    ( environment:fasill_similarity(X/Arity, Y/Arity, _) -> true;
+        assertz(environment:fasill_similarity(X/Arity, Y/Arity, num(0.5))) ).

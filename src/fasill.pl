@@ -10,6 +10,7 @@
 
 
 
+:- use_module(library(assoc)).
 :- use_module('parser').
 :- use_module('builtin').
 :- use_module('semantics').
@@ -35,8 +36,10 @@ fasill_path('/usr/local/fasill/').
 print_term([]) :- !.
 print_term(top) :- write(top).
 print_term(bot) :- write(bot).
+print_term(X) :- is_assoc(X), !, assoc_to_list(X, Subs), print_term(Subs).
 print_term(num(X)) :- ansi_format([bold,fg(cyan)], X, []).
 print_term(var(X)) :- ansi_format([bold,fg(green)], X, []).
+print_term(X-Y) :- print_term(X/Y).
 print_term(X/Y) :- ansi_format([bold,fg(green)], X, []), ansi_format([bold,fg(yellow)], '/', []), print_term(Y).
 print_term(term('#'(Name),[])) :- !, write('#'), write(Name).
 print_term(term('#@'(Name),Args)) :- !, write('#@'), write(Name), write('('), print_term(Args), write(')').
