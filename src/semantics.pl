@@ -194,11 +194,12 @@ is_fuzzy_computed_answer(X) :-
 % +Expression, where ?ExprVar is the expression +Expression
 % with the variable ?Var instead of the atom ?Atom.
 select_atom(term(Term, Args), term(Term, Args_), Var, Atom) :-
-    (Term =.. [Op,_] ; Term =.. [Op]), member(Op, ['@','&','|','#@','#&','#|']), !,
+    functor(Term, Op, _),
+    member(Op, ['@','&','|','#@','#&','#|']), !,
     select_atom(Args, Args_, Var, Atom).
 select_atom(term(Term, Args), Var, Var, term(Term, Args)) :-
-    Term =.. ['#',_] -> fail ;
-    \+lattice_call_member(term(Term, Args)).
+    \+functor(Term, '#', 1),
+    \+lattice_call_member(term(Term, Args)), !.
 select_atom([Term|Args], [Term_|Args], Var, Atom) :- select_atom(Term, Term_, Var, Atom), !.
 select_atom([Term|Args], [Term|Args_], Var, Atom) :- select_atom(Args, Args_, Var, Atom).
 
@@ -212,8 +213,8 @@ select_atom([Term|Args], [Term|Args_], Var, Atom) :- select_atom(Args, Args_, Va
 select_expression(top, Var, Var, top) :- !.
 select_expression(bot, Var, Var, bot) :- !.
 select_expression(term(Term, Args), Var, Var, term(Term, Args)) :-
-    ( (Term =.. [Op,_] ; Term =.. [Op]), member(Op, ['@','&','|']) ;
-      member(Term, ['@','&','|']) ),
+    functor(Term, Op, _),
+    once(member(Op, ['@','&','|'])),
     maplist(lattice_call_member, Args), !.
 select_expression(term(Term, Args), term(Term, Args_), Var, Expr) :- select_expression(Args, Args_, Var, Expr).
 select_expression([Term|Args], [Term_|Args], Var, Atom) :- select_expression(Term, Term_, Var, Atom), !.
@@ -313,23 +314,25 @@ operational_step(_, State1, State2, Info) :-
 % from the state +State1 to the state ?State2. ?Info is
 % an atom containg information about the rule used in
 % the derivation.
-success_step(From, state(Goal,Subs), state(Goal_,Subs_), Info) :-
+success_step(From, state(Goal,Subs), state(Goal_,Subs_), Name2/Arity) :-
     select_atom(Goal, ExprVar, Var, Expr),
     Expr = term(Name, Args),
     length(Args, Arity),
+    (Name = Name2 ; 
+        (current_fasill_flag(weak_unification, term(true, [])) -> 
+            lattice_call_bot(Bot),
+            similarity_between(Name, Name2, Arity, Sim),
+            Name \= Name2, Sim \== Bot)
+    ),
     % Builtin predicate
-    (is_builtin_predicate(Name/Arity) -> (
-        eval_builtin_predicate(Name/Arity, state(Goal,Subs), selected(ExprVar, Var, Expr), state(Goal_,Subs_)),
-        Info = Name/Arity
+    (is_builtin_predicate(Name2/Arity) -> (
+        eval_builtin_predicate(Name2/Arity, state(Goal,Subs), selected(ExprVar, Var, Expr), state(Goal_,Subs_))
     ) ; (
         % User-defined predicate
-        (program_has_predicate(Name/Arity) -> (
+        (program_has_predicate(Name2/Arity) -> (
             lattice_tnorm(Tnorm),
-            lattice_call_bot(Bot),
             lattice_call_top(Top),
-            (Name = Name2 ; similarity_between(Name, Name2, Arity, Sim), Name \= Name2, Sim \== Bot),
-            program_clause(Name2/Arity, Rule),
-            Rule = fasill_rule(head(Head),Body,_),
+            program_clause(Name2/Arity, fasill_rule(head(Head), Body, _)),
             rename([Head,Body], [HeadR,BodyR]),
             unify(Expr, HeadR, _, state(TD, SubsExpr)),
             (BodyR = empty -> Var = TD ; (
@@ -337,12 +340,10 @@ success_step(From, state(Goal,Subs), state(Goal_,Subs_), Info) :-
                 (TD == Top -> Var = Body_ ; Var = term('&'(Tnorm), [TD,Body_]))
             )),
             apply(SubsExpr, ExprVar, Goal_),
-            compose(Subs, SubsExpr, Subs_),
-            Info = Name2/Arity
+            compose(Subs, SubsExpr, Subs_)
         ) ; (
             % Undefined predicate
             existence_error(procedure, Name/Arity, From, Error),
-            Info = Name/Arity,
             retractall(check_success),
             throw_exception(Error)
         ))

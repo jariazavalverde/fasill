@@ -70,7 +70,9 @@
     fasill_lattice_tnorm/1,
     fasill_similarity_tnorm/1,
     fasill_similarity_tconorm/1,
-    fasill_similarity/3
+    fasill_similarity/3,
+    current_lattice_top/1,
+    current_lattice_bot/1
 ).
 
 
@@ -457,10 +459,14 @@ lattice_tconorm(Tconorm) :-
 % This predicate succeeds when -Bot is the
 % bottom member of the lattice loaded into
 % the environment.
+:- dynamic(current_lattice_bot/1).
+lattice_call_bot(Bot) :-
+    current_lattice_bot(Bot), !.
 lattice_call_bot(Bot) :-
     current_predicate(bot/1), !,
     bot(Prolog),
-    from_prolog(Prolog, Bot).
+    from_prolog(Prolog, Bot),
+    asserta(current_lattice_bot(Bot)).
 lattice_call_bot(_) :-
     existence_error(procedure, bot/1, lattice/0, Error),
     throw_exception(Error).
@@ -471,10 +477,14 @@ lattice_call_bot(_) :-
 % This predicate succeeds when -Bot is the
 % bottom member of the lattice loaded into
 % the environment.
+:- dynamic(current_lattice_top/1).
+lattice_call_top(Top) :-
+    current_lattice_top(Top), !.
 lattice_call_top(Top) :-
     current_predicate(top/1), !,
     top(Prolog),
-    from_prolog(Prolog, Top).
+    from_prolog(Prolog, Top),
+    asserta(current_lattice_top(Top)).
 lattice_call_top(_) :-
     existence_error(procedure, top/1, lattice/0, Error),
     throw_exception(Error).
@@ -597,6 +607,8 @@ lattice_consult(Path) :-
     abolish(leq/2),
     abolish(tnorm/1),
     abolish(tconorm/1),
+    retractall(current_lattice_top(_)),
+    retractall(current_lattice_bot(_)),
     ( current_predicate(X/3),
       ( atom_concat(and_, _, X) ;
         atom_concat(agr_, _, X) ;

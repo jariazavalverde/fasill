@@ -17,7 +17,7 @@ test_queens(X, Runtime, Inferences) :-
     program_consult('../../sample/program/queens.fpl'),
     statistics(runtime, [_,_]),
     statistics(inferences, I0),
-    once(query(term('queens', [num(X)]), State)),
+    once(query(term('queens', [num(X)]), _)),
     statistics(inferences, If),
     statistics(runtime, [_,Runtime]),
     Inferences is If-I0.
