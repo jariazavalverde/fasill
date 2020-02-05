@@ -180,7 +180,12 @@ unify(Term1, Term2, OccursCheck, state(Top, Subs)) :-
 %
 % This predicate succeeds when +Expression is
 % a (symbolic) fuzzy computed answer.
-is_fuzzy_computed_answer(X) :- interpretable(X), \+select_expression(X, _, _, _).
+is_fuzzy_computed_answer(X) :-
+    current_fasill_flag(symbolic, term(false, [])), !,
+    lattice_call_member(X).
+is_fuzzy_computed_answer(X) :-
+    interpretable(X),
+    \+select_expression(X, _, _, _).
 
 % select_atom/4
 % select_atom(+Expression, ?ExprVar, ?Var, ?Atom)
@@ -262,11 +267,10 @@ get_variables2(_,[]).
 % the information of each step.
 derivation(_, exception(Error), exception(Error), []) :- !.
 derivation(_, state(Goal,Subs), State, []) :-
-    catch(
-        (is_fuzzy_computed_answer(Goal), State = state(Goal, Subs)),
-        Error,
-        State = exception(Error)
-    ), !.
+    is_fuzzy_computed_answer(Goal), !,
+    lattice_call_bot(Bot),
+    (Bot == Goal -> current_fasill_flag(failure_steps, term(true, [])) ; true),
+    State = state(Goal, Subs).
 derivation(From, State, State_, [X|Xs]) :-
     (trace_level(Level) -> Level_ is Level+1 ; Level_ = false),
     catch(inference(From, State, State1, X), Error, (State1 = exception(Error), !)),
