@@ -1,0 +1,23 @@
+:- set_fasill_flag(failure_steps, false).
+:- set_fasill_flag(weak_unification, false).
+:- set_fasill_flag(symbolic, false).
+
+queens(N) <-
+	(queens(N, Xs) &bool false) ; true.
+queens(N, Qs) <-
+	gen_list(N, Qs) &bool
+	place_queens(N, Qs, Ups, Downs).
+gen_list(0, []).
+gen_list(N, [Q|L]) <-
+	N > 0 &bool
+	N1 is N-1 &bool
+	gen_list(N1, L).
+place_queens(0, Qs, Ups, Downs).
+place_queens(I, Qs, Ups, [D|Downs]) <-
+	I > 0 &bool
+	I1 is I-1 &bool
+	place_queens(I1, Qs, [U|Ups], Downs) &bool
+	place_queen(I, Qs, Ups, Downs).
+place_queen(Q, [Q|Qs] , [Q|Ups] , [Q|Downs]).
+place_queen(Q, [Q1|Qs], [U|Ups] , [D|Downs]) <-
+	place_queen(Q, Qs, Ups, Downs).
