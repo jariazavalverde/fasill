@@ -3,7 +3,7 @@
   * FILENAME: test/experiments/unification.pl
   * DESCRIPTION: This file performs statistics of the different unification algorithms.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 03.02.2020
+  * UPDATED: 05.02.2020
   * 
   **/
 
@@ -18,7 +18,10 @@
 % test_mgu/5
 % test_mgu(+Symbols, +Repeat, ?Min, ?Aver, ?Max)
 %
-% This predicate...
+% This predicate performs a test of the most general unifier algorithm
+% +Repeat times, with arbitrary terms of +Symbols symbols, returning
+% the minimum ?Min, average ?Aver and maximum ?Max runtime and number
+% of inferences.
 test_mgu(Symbols, Repeat, min(time(MinT), inferences(MinI)),
 average(time(AverT), inferences(AverI)), max(time(MaxT), inferences(MaxI))) :-
     test_mgu(Symbols, Repeat, [], [], Times, Inferences),
@@ -44,7 +47,10 @@ test_mgu(Symbols, N, Ts, Is, Times, Inferences) :-
 % test_wmgu/5
 % test_wmgu(+Symbols, +Repeat, ?Min, ?Aver, ?Max)
 %
-% This predicate...
+% This predicate performs a test of the weak most general unifier algorithm
+% +Repeat times, with arbitrary terms of +Symbols symbols, returning
+% the minimum ?Min, average ?Aver and maximum ?Max runtime and number
+% of inferences.
 test_wmgu(Symbols, Repeat, min(time(MinT), inferences(MinI)),
 average(time(AverT), inferences(AverI)), max(time(MaxT), inferences(MaxI))) :-
     lattice_consult('../../lattices/unit.lat.pl'),
