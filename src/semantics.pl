@@ -3,7 +3,7 @@
   * FILENAME: semantics.pl
   * DESCRIPTION: This module contains predicates implementing the semantics for FASILL.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 04.02.2020
+  * UPDATED: 11.02.2020
   * 
   **/
 
@@ -392,6 +392,7 @@ interpret(term(Op, Args), Result) :- lattice_call_connective(Op, Args, Result).
 rename(X, Y) :-
     empty_assoc(Subs),
     rename(X, Y, Subs, _).
+rename(var('_'), var('_'), Subs, Subs) :- !.
 rename(var(X), var(Y), Subs, Subs) :-
     get_assoc(X, Subs, Y), !.
 rename(var(X), var('$'(Id)), Subs0, Subs1) :- 

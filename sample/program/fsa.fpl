@@ -1,0 +1,78 @@
+:- set_fasill_flag(failure_steps, false).
+
+'{}'(X > Y) <- @gt(X, Y).
+
+'http://www.lattice.org#AND_LUK'(X,Y,Z):- truth_degree(&luk(X,Y), Z).
+'http://www.lattice.org#AND_GOD'(X,Y,Z):-truth_degree(&god(X,Y), Z).
+'http://www.lattice.org#AND_PROD'(X,Y,Z):-truth_degree(&prod(X,Y), Z).
+
+'http://www.lattice.org#OR_LUK'(X,Y,Z):-truth_degree(|luk(X,Y), Z).
+'http://www.lattice.org#OR_GOD'(X,Y,Z):-truth_degree(|god(X,Y), Z).
+'http://www.lattice.org#OR_PROD'(X,Y,Z):-truth_degree(|prod(X,Y), Z).
+
+'http://www.lattice.org#MEAN'(X,Y,Z) :- truth_degree(@mean(X,Y), Z).
+'http://www.lattice.org#WMEAN'(W,X,Y,Z) :- truth_degree(@wmean(W,X,Y), Z).
+'http://www.lattice.org#WSUM'(U,X,V,Y,Z):-truth_degree(@wsum(U,X,V,Y), Z).
+'http://www.lattice.org#WMAX'(U,X,V,Y,Z):-truth_degree(@wmax(U,X,V,Y), Z).
+'http://www.lattice.org#WMIN'(U,X,V,Y,Z):-truth_degree(@wmin(U,X,V,Y), Z).
+'http://www.lattice.org#VERY'(X,Z):-truth_degree(@very(X), Z).
+'http://www.lattice.org#MORE_OR_LESS'(X,Z):-truth_degree(@more_or_less(X), Z).
+'http://www.lattice.org#CLOSE_TO'(X,L,A,Z):-truth_degree(@close_to(X,L,A), Z).
+'http://www.lattice.org#AT_LEAST'(X,L,A,Z):-truth_degree(@at_least(X,L,A), Z).
+'http://www.lattice.org#AT_MOST'(X,L,A,Z):-truth_degree(@at_most(X,L,A), Z).
+
+test :- p(MOVIE,RANK) &god bot ; top.
+
+p(MOVIE,RANK):-
+	rdf(MOVIE,'http://www.fuzzy.org#type',X0),
+	rdf(X0,'http://www.fuzzy.org#onProperty','http://www.movies.org#genre'),
+	rdf(X0,'http://www.w3.org/1999/02/22-rdf-syntax-ns#type','http://www.movies.org#Thriller'),
+	rdf(X0,'http://www.fuzzy.org#truth',C),
+	rdf(MOVIE,'http://www.fuzzy.org#type',X1),
+	rdf(X1,'http://www.fuzzy.org#onProperty','http://www.movies.org#quality'),
+	rdf(X1,'http://www.w3.org/1999/02/22-rdf-syntax-ns#type','http://www.movies.org#Good'),
+	rdf(X1,'http://www.fuzzy.org#truth',R),
+	0.5^^'http://www.w3.org/2001/XMLSchema#decimal'=A0_1,
+	R=A1_1,
+	C=A2_1,
+	VAR1=RANK,
+	'http://www.lattice.org#WMEAN'(A0_1,A1_1,A2_1,VAR1),
+	RANK=A6,
+	0.3^^'http://www.w3.org/2001/XMLSchema#decimal'=B6,
+	{ A6>B6 }.
+
+
+rdf('http://www.movies.org#Oceans_eleven','http://www.fuzzy.org#type','http://www.movies.org#ocean_thriller').
+rdf('http://www.movies.org#ocean_thriller','http://www.w3.org/1999/02/22-rdf-syntax-ns#type','http://www.w3.org/2002/07/owl#NamedIndividual').
+rdf('http://www.movies.org#ocean_thriller','http://www.fuzzy.org#onProperty','http://www.movies.org#genre').
+rdf('http://www.movies.org#ocean_thriller','http://www.w3.org/1999/02/22-rdf-syntax-ns#type','http://www.movies.org#Thriller').
+rdf('http://www.movies.org#ocean_thriller','http://www.fuzzy.org#truth','^^'(0.7, 'http://www.w3.org/2001/XMLSchema#decimal')).
+rdf('http://www.movies.org#ocean_good','http://www.w3.org/1999/02/22-rdf-syntax-ns#type','http://www.w3.org/2002/07/owl#NamedIndividual').
+rdf('http://www.movies.org#ocean_good','http://www.fuzzy.org#onProperty','http://www.movies.org#quality').
+rdf('http://www.movies.org#ocean_good','http://www.w3.org/1999/02/22-rdf-syntax-ns#type','http://www.movies.org#Good').
+rdf('http://www.movies.org#ocean_good','http://www.fuzzy.org#truth','^^'(0.4, 'http://www.w3.org/2001/XMLSchema#decimal')).
+rdf('http://www.movies.org#Oceans_eleven','http://www.fuzzy.org#type','http://www.movies.org#ocean_good').
+
+rdf('http://www.movies.org','http://www.w3.org/1999/02/22-rdf-syntax-ns#type','http://www.w3.org/2002/07/owl#Ontology').
+rdf('http://www.fuzzy.org#item','http://www.w3.org/1999/02/22-rdf-syntax-ns#type','http://www.w3.org/2002/07/owl#ObjectProperty').
+rdf('http://www.fuzzy.org#item','http://www.w3.org/2000/01/rdf-schema#domain','http://www.movies.org#Fuzzy').
+rdf('http://www.fuzzy.org#item','http://www.w3.org/2000/01/rdf-schema#range','http://www.w3.org/2002/07/owl#Thing').
+rdf('http://www.fuzzy.org#type','http://www.w3.org/1999/02/22-rdf-syntax-ns#type','http://www.w3.org/2002/07/owl#ObjectProperty').
+rdf('http://www.fuzzy.org#type','http://www.w3.org/2000/01/rdf-schema#range','http://www.movies.org#Fuzzy').
+rdf('http://www.fuzzy.org#type','http://www.w3.org/2000/01/rdf-schema#domain','http://www.movies.org#Movie').
+rdf('http://www.fuzzy.org#truth','http://www.w3.org/1999/02/22-rdf-syntax-ns#type','http://www.w3.org/2002/07/owl#DatatypeProperty').
+rdf('http://www.fuzzy.org#truth','http://www.w3.org/2000/01/rdf-schema#domain','http://www.movies.org#Fuzzy').
+rdf('http://www.fuzzy.org#truth','http://www.w3.org/2000/01/rdf-schema#range','http://www.w3.org/2001/XMLSchema#decimal').
+rdf('http://www.movies.org#name','http://www.w3.org/1999/02/22-rdf-syntax-ns#type','http://www.w3.org/2002/07/owl#DatatypeProperty').
+rdf('http://www.movies.org#name','http://www.w3.org/2000/01/rdf-schema#domain','http://www.w3.org/2002/07/owl#Thing').
+rdf('http://www.movies.org#Good','http://www.w3.org/1999/02/22-rdf-syntax-ns#type','http://www.w3.org/2002/07/owl#Class').
+rdf('http://www.movies.org#Good','http://www.w3.org/2000/01/rdf-schema#subClassOf','http://www.movies.org#Score').
+rdf('http://www.movies.org#Movie','http://www.w3.org/1999/02/22-rdf-syntax-ns#type','http://www.w3.org/2002/07/owl#Class').
+rdf('http://www.movies.org#Movie_Team','http://www.w3.org/1999/02/22-rdf-syntax-ns#type','http://www.w3.org/2002/07/owl#Class').
+rdf('http://www.movies.org#Score','http://www.w3.org/1999/02/22-rdf-syntax-ns#type','http://www.w3.org/2002/07/owl#Class').
+rdf('http://www.movies.org#Thriller','http://www.w3.org/1999/02/22-rdf-syntax-ns#type','http://www.w3.org/2002/07/owl#Class').
+rdf('http://www.movies.org#Thriller','http://www.w3.org/2000/01/rdf-schema#subClassOf','http://www.movies.org#Movie').
+rdf('http://www.movies.org#Oceans_eleven','http://www.w3.org/1999/02/22-rdf-syntax-ns#type','http://www.w3.org/2002/07/owl#NamedIndividual').
+rdf('http://www.movies.org#Oceans_eleven','http://www.w3.org/1999/02/22-rdf-syntax-ns#type','http://www.movies.org#Movie').
+rdf('http://www.movies.org#Oceans_eleven','http://www.movies.org#date','^^'(2001, 'http://www.w3.org/2001/XMLSchema#integer')).
+rdf('http://www.movies.org#Oceans_eleven','http://www.movies.org#name','^^'('Ocean''s Eleven', 'http://www.w3.org/2001/XMLSchema#string')).

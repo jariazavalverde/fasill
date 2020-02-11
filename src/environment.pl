@@ -642,6 +642,9 @@ similarity_tconorm(Tconorm) :- lattice_tconorm(Tconorm), !.
 % similarity relation in the environment.
 similarity_between(AtomA, AtomB, Arity, TD) :-
     fasill_similarity(AtomA/Arity, AtomB/Arity, TD).
+similarity_between(AtomA, AtomB, Arity, Bot) :-
+    \+fasill_similarity(AtomA/Arity, AtomB/Arity, _),
+    lattice_call_bot(Bot).
 
 % similarity_retract/0
 % similarity_retract
@@ -693,27 +696,25 @@ similarity_closure_reflexive(Dom, _, _, _, Top) :-
     member(X/Arity, Dom),
     assertz(fasill_similarity(X/Arity,X/Arity,Top)).
 
-similarity_closure_symmetric(Dom, Scheme, _, Bot, _) :-
+similarity_closure_symmetric(Dom, Scheme, _, _, _) :-
     member(X/Arity, Dom),
     member(Y/Arity, Dom),
     \+(fasill_similarity(X/Arity,Y/Arity,_)),
-    (member(sim(X,Y,Arity,TD), Scheme) -> true ; (
-        member(sim(Y,X,Arity,TD), Scheme) -> true ; TD = Bot)
-    ),
+    once(member(sim(X,Y,Arity,TD), Scheme) ; member(sim(Y,X,Arity,TD), Scheme)),
     assertz(fasill_similarity(X/Arity,Y/Arity,TD)),
     assertz(fasill_similarity(Y/Arity,X/Arity,TD)).
 
-similarity_closure_transitive(Dom, _, Tnorm, _, _) :-
-    member(Z/Arity, Dom),
-    member(X/Arity, Dom),
+similarity_closure_transitive(Dom, _, Tnorm, Bot, _) :-
     member(Y/Arity, Dom),
+    member(X/Arity, Dom), X \= Y,
+    member(Z/Arity, Dom), Z \= Y, X \= Z,
+    once(fasill_similarity(X/Arity,Z/Arity,TDxz) ; TDxz = Bot),
     once(fasill_similarity(X/Arity,Y/Arity,TDxy)),
-    once(fasill_similarity(X/Arity,Z/Arity,TDxz)),
-    once(fasill_similarity(Z/Arity,Y/Arity,TDzy)),
-    retract(fasill_similarity(X/Arity,Y/Arity,TDxy)),
-    lattice_call_connective('&'(Tnorm), [TDxz,TDzy], TDz),
-    lattice_call_connective('|'(Tnorm), [TDxy,TDz], TD),
-    assertz(fasill_similarity(X/Arity,Y/Arity,TD)).
+    once(fasill_similarity(Y/Arity,Z/Arity,TDyz)),
+    lattice_call_connective('&'(Tnorm), [TDxy,TDyz], TDy),
+    lattice_call_connective('|'(Tnorm), [TDxz,TDy], TD),
+    retractall(fasill_similarity(X/Arity,Z/Arity,_)),
+    assertz(fasill_similarity(X/Arity,Z/Arity,TD)).
 
 
 
