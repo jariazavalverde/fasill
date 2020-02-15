@@ -277,7 +277,7 @@ derivation(From, State, State_, [X|Xs]) :-
     catch(inference(From, State, State1, X), Error, (State1 = exception(Error), !)),
     (current_fasill_flag(trace, term(true,[])), State1 \= exception(_) -> assertz(trace_derivation(trace(Level_, X, State1))) ; true),
     ( Level_\= false -> retractall(trace_level(_)), assertz(trace_level(Level_)) ; true),
-    derivation(X, State1, State_, Xs).
+    derivation(From, State1, State_, Xs).
 
 % inference/4
 % inference(+From, +State1, ?State2, ?Info)

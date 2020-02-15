@@ -3,7 +3,7 @@
   * FILENAME: sandbox.pl
   * DESCRIPTION: This module contains predicates for the web interface.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 04.02.2020
+  * UPDATED: 15.02.2020
   * 
   **/
 
@@ -20,6 +20,7 @@
 ]).
 
 :- use_module(library(assoc)).
+:- use_module('exceptions').
 :- use_module('environment').
 :- use_module('parser').
 :- use_module('unfolding').
@@ -105,7 +106,9 @@ sandbox_run(Program, Lattice, Sim, Goal, Limit, Options) :-
         true),
     lattice_consult(Lattice),
     catch(program_consult(Program), Error1, (write('uncaught exception in program: '), sandbox_write(Error1), nl)),
+    clear_warnings,
     catch(similarity_consult(Sim), Error2, (write('uncaught exception in similarities: '), sandbox_write(Error2), nl)),
+    (environment:fasill_warning(Warning), write('warning in similarities: '), sandbox_write(Warning), nl, fail ; true),
     statistics(runtime,[_,_]),
     ( catch(query_consult(Goal, State), Error3, (write('uncaught exception in goal: '), sandbox_write(Error3), nl)),
       sandbox_write(State), nl, fail ; true ),

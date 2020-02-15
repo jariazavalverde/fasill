@@ -3,7 +3,7 @@
   * FILENAME: exceptions.pl
   * DESCRIPTION: This module contains predicates for manipulating errors.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 02.05.2018
+  * UPDATED: 15.05.2018
   * 
   **/
 
@@ -11,6 +11,8 @@
 
 :- module(exceptions, [
     throw_exception/1,
+    throw_warning/1,
+    clear_warnings/0,
     instantiation_error/2,
     type_error/4,
     evaluation_error/3,
@@ -30,6 +32,18 @@
 %
 % This predicate throws the exception +Exception.
 throw_exception(Exception) :- retractall(semantics:check_success), throw(Exception).
+
+% clear_warnings/0
+% clear_warnings
+%
+% This predicate clears all the current warning.
+clear_warnings :- retractall(environment:fasill_warning(_)).
+
+% throw_warning/1
+% throw_warning(+Warning)
+%
+% This predicate throws the warning +Warning.
+throw_warning(Warning) :- assertz(environment:fasill_warning(Warning)).
 
 
 

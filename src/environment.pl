@@ -3,7 +3,7 @@
   * FILENAME: environment.pl
   * DESCRIPTION: This module contains predicates for manipulating programs, lattices and similarity relations.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 04.02.2020
+  * UPDATED: 15.02.2020
   * 
   **/
 
@@ -71,6 +71,7 @@
     fasill_similarity_tnorm/1,
     fasill_similarity_tconorm/1,
     fasill_similarity/3,
+    fasill_warning/1,
     current_lattice_top/1,
     current_lattice_bot/1
 ).
@@ -687,10 +688,21 @@ similarity_closure :-
     lattice_call_bot(Bot),
     lattice_call_top(Top),
     similarity_retract,
+    (similarity_closure_check_equations(Dom, Scheme), false ; true),
     (similarity_closure_reflexive(Dom, Scheme, Tnorm, Bot, Top), false ; true),
     (similarity_closure_symmetric(Dom, Scheme, Tnorm, Bot, Top), false ; true),
     (similarity_closure_transitive(Dom, Scheme, Tnorm, Bot, Top), false ; true),
     assertz(fasill_similarity_tnorm(Tnorm)).
+
+similarity_closure_check_equations(Dom, Scheme) :-
+    member(X/Arity, Dom),
+    member(Y/Arity, Dom),
+    X @< Y,
+    findall(TD, (member(sim(X,Y,Arity,TD), Scheme) ; member(sim(Y,X,Arity,TD), Scheme)), L),
+    list_to_set(L, Set),
+    length(Set, Length),
+    from_prolog_list(Set, FSet),
+    (Length > 1 -> throw_warning(term(warning, [term(conflicting_equations, [term('/', [term(X, []), num(Arity)]), term('/', [term(Y, []), num(Arity)]), FSet])]))).
 
 similarity_closure_reflexive(Dom, _, _, _, Top) :-
     member(X/Arity, Dom),
