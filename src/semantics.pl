@@ -3,7 +3,7 @@
   * FILENAME: semantics.pl
   * DESCRIPTION: This module contains predicates implementing the semantics for FASILL.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 11.02.2020
+  * UPDATED: 18.02.2020
   * 
   **/
 
@@ -76,10 +76,13 @@ lambda_wmgu(term(X,Xs), term(X,Ys), Lambda, OccursCheck, State, State_) :- !,
 lambda_wmgu(term(X,Xs), term(Y,Ys), Lambda, OccursCheck, state(TD, Subs), State) :- !,
     length(Xs, Arity),
     length(Ys, Arity),
-    similarity_between(X, Y, Arity, TDxy),
+    similarity_between(X, Y, Arity, TDxy, S),
     similarity_tnorm(Tnorm),
-    lattice_call_connective('&'(Tnorm), [TD, TDxy], TD2),
-    lattice_call_leq(Lambda, TD2),
+    (S == no ->
+        lattice_call_connective('&'(Tnorm), [TD, TDxy], TD2),
+        lattice_call_leq(Lambda, TD2)
+        ; TD2 = term('&'(Tnorm), [TD, TDxy])
+    ),
     lattice_call_bot(Bot),
     TD2 \== Bot,
     lambda_wmgu(Xs, Ys, Lambda, OccursCheck, state(TD2, Subs), State).
@@ -321,7 +324,7 @@ success_step(From, state(Goal,Subs), state(Goal_,Subs_), Name2/Arity) :-
     (Name = Name2 ; 
         (current_fasill_flag(weak_unification, term(true, [])) -> 
             lattice_call_bot(Bot),
-            similarity_between(Name, Name2, Arity, Sim),
+            similarity_between(Name, Name2, Arity, Sim, _),
             Name \= Name2, Sim \== Bot)
     ),
     % Builtin predicate

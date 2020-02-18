@@ -3,7 +3,7 @@
   * FILENAME: parser.pl
   * DESCRIPTION: This module contains predicates for parsing FASILL programs.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 04.02.2020
+  * UPDATED: 18.02.2020
   * 
   **/
 
@@ -318,7 +318,7 @@ parse_similarity_equation(Eq) -->
     blanks, (token_atom(Norm), ! ; {throw('atom expected')}),
     blanks, (dot, ! ; {throw('point or operator expected')}),
     {atom_concat('fasill_similarity_', Type, Pred), Eq =.. [Pred, Norm]}, !.
-parse_similarity_equation(fasill_similarity(P/N, Q/N, TD)) -->
+parse_similarity_equation(fasill_similarity(P/N, Q/N, TD, Sym)) -->
     token_atom(P), blanks,
     (['/'], {auto_column}, !, blanks, (token_number(N), ! ; {throw('arity expected after /')}) ; {N = 0}), blanks,
     (['~'], {auto_column}, ! ; {throw('~ expected')}), blanks,
@@ -327,7 +327,7 @@ parse_similarity_equation(fasill_similarity(P/N, Q/N, TD)) -->
     {N = M -> true ; throw('arities should be equal')},
     {(integer(N), N >= 0) -> true ; throw('arities should be non-negative integers')},
     (['='], {auto_column}, ! ; {throw('equal expected')}), blanks,
-    parse_expr(1300, TD), blanks,
+    parse_expr(1300, TD), {TD = term('#'(_), []) -> Sym = yes ; Sym = no}, blanks,
     (dot, ! ; {throw('point or operator expected')}).
 
 % parse_testcases/3
