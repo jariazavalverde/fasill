@@ -77,11 +77,17 @@ lambda_wmgu(term(X,Xs), term(Y,Ys), Lambda, OccursCheck, state(TD, Subs), State)
     length(Xs, Arity),
     length(Ys, Arity),
     similarity_between(X, Y, Arity, TDxy, S),
-    similarity_tnorm(Tnorm),
-    (S == no ->
-        lattice_call_connective('&'(Tnorm), [TD, TDxy], TD2),
-        lattice_call_leq(Lambda, TD2)
-        ; TD2 = term('&'(Tnorm), [TD, TDxy])
+    lattice_call_top(Top),
+    (TD == Top -> TD2 = TDxy; 
+        (TDxy == Top -> TD2 = TD; 
+            (similarity_tnorm(Tnorm),
+                ((S == no, Tnorm = '&'(_)) ->
+                    lattice_call_connective(Tnorm, [TD, TDxy], TD2),
+                    lattice_call_leq(Lambda, TD2)
+                    ; TD2 = term(Tnorm, [TD, TDxy])
+                )
+            )
+        )
     ),
     lattice_call_bot(Bot),
     TD2 \== Bot,

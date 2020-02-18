@@ -311,13 +311,14 @@ parse_similarity([]) --> [].
 parse_similarity_equation(Eq) -->
     ['~'], !, {auto_column}, blanks,
     (
-        [t,n,o,r,m], {Type = tnorm, auto_column(5)}, ! ;
-        [t,c,o,n,o,r,m], {Type = tconorm, auto_column(7)}, ! ;
+        [t,n,o,r,m], {Type = tnorm, Label = '&', auto_column(5)}, ! ;
+        [t,c,o,n,o,r,m], {Type = tconorm, Label = '|', auto_column(7)}, ! ;
         {throw('tnorm or tconorm expected')}),
     blanks, (['='], {auto_column}, ! ; {throw('equal expected')}),
+    blanks, (['#'], !, {auto_column(1), atom_concat('#', Label, Label2)} ; {Label = Label2}),
     blanks, (token_atom(Norm), ! ; {throw('atom expected')}),
     blanks, (dot, ! ; {throw('point or operator expected')}),
-    {atom_concat('fasill_similarity_', Type, Pred), Eq =.. [Pred, Norm]}, !.
+    {atom_concat('fasill_similarity_', Type, Pred), Con =.. [Label2, Norm], Eq =.. [Pred, Con]}, !.
 parse_similarity_equation(fasill_similarity(P/N, Q/N, TD, Sym)) -->
     token_atom(P), blanks,
     (['/'], {auto_column}, !, blanks, (token_number(N), ! ; {throw('arity expected after /')}) ; {N = 0}), blanks,

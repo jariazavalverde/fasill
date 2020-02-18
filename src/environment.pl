@@ -631,9 +631,7 @@ lattice_consult(Path) :-
 % This predicate succeeds when ?Tnorm is the current
 % t-norm asserted in the environment.
 similarity_tnorm(Tnorm) :- fasill_similarity_tnorm(Tnorm), !.
-similarity_tnorm(Tnorm) :- lattice_tnorm(Tnorm), !.
 similarity_tconorm(Tconorm) :- fasill_similarity_tconorm(Tconorm), !.
-similarity_tconorm(Tconorm) :- lattice_tconorm(Tconorm), !.
 
 % similarity_between/5
 % similarity_between(?AtomA, ?AtomB, ?Arity, ?TD, ?Sym)
@@ -725,17 +723,17 @@ similarity_closure_transitive(Dom, _, Tnorm, Bot, Top) :-
     once(fasill_similarity(Y/Arity,Z/Arity,TDyz,Syz)),
     (TDxy == Top -> TDy = TDyz, Sy = Syz ;
         (TDyz == Top -> TDy = TDxy, Sy = Sxy ;
-            ((Sxy == no, Syz == no) ->
-                (lattice_call_connective('&'(Tnorm), [TDxy,TDyz], TDy), Sy = no) ;
-                (TDy = term('&'(Tnorm), [TDxy, TDyz]), Sy = yes)
+            ((Sxy == no, Syz == no, Tnorm = '&'(_)) ->
+                (lattice_call_connective(Tnorm, [TDxy,TDyz], TDy), Sy = no) ;
+                (TDy = term(Tnorm, [TDxy, TDyz]), Sy = yes)
             )
         )
     ),
     (TDxz == Bot -> TD = TDy, S = Sy ;
         (TDy == Bot -> TD = TDxz, S = Sxz ;
-            ((Sxz == no, Sy == no) ->
-                (lattice_call_connective('|'(Tnorm), [TDxz,TDy], TD), S = no) ;
-                (TD = term('|'(Tnorm), [TDxz, TDy]), S = yes)
+            ((Sxz == no, Sy == no, Tnorm = '&'(_)) ->
+                (Tnorm = '&'(Norm), lattice_call_connective('|'(Norm), [TDxz,TDy], TD), S = no) ;
+                (Tnorm = '#&'(Norm), TD = term('#|'(Norm), [TDxz, TDy]), S = yes)
             )
         )
     ),
