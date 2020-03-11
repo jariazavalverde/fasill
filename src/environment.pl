@@ -3,7 +3,7 @@
   * FILENAME: environment.pl
   * DESCRIPTION: This module contains predicates for manipulating programs, lattices and similarity relations.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 18.02.2020
+  * UPDATED: 11.03.2020
   * 
   **/
 
@@ -257,6 +257,7 @@ fasill_show([]) :- !.
 fasill_show(X) :- is_assoc(X), !, assoc_to_list(X, Subs), fasill_show(Subs).
 fasill_show(top) :- write(top).
 fasill_show(bot) :- write(bot).
+fasill_show(sup(X, Y)) :- write('sup('), fasill_show(X), write(', '), fasill_show(Y), write(')').
 fasill_show(num(X)) :- write(X).
 fasill_show(var('$'(X))) :- !, write('V'), write(X).
 fasill_show(var(X)) :- write(X).
@@ -531,6 +532,22 @@ lattice_call_leq(_, _) :-
     existence_error(procedure, leq/2, lattice/0, Error),
     throw_exception(Error).
 
+% lattice_call_supremum/3
+% lattice_call_supremum(+Member1, +Member2, -Supremum)
+%
+% This predicate succeeds when +Member1 and +Member2 are
+% members of the lattice loaded into the environment, and
+% -Supremum is the supremum of both.
+lattice_call_supremum(Member1, Member2, Supremum) :-
+    current_predicate(supremum/3), !,
+    to_prolog(Member1, Prolog1),
+    to_prolog(Member2, Prolog2),
+    supremum(Prolog1, Prolog2, Prolog3),
+    from_prolog(Prolog3, Supremum).
+lattice_call_supremum(_, _, _) :-
+    existence_error(procedure, supremum/3, lattice/0, Error),
+    throw_exception(Error).
+
 % lattice_call_distance/3
 % lattice_call_distance(+Member1, +Member2, -Distance)
 %
@@ -732,8 +749,8 @@ similarity_closure_transitive(Dom, _, Tnorm, Bot, Top) :-
     (TDxz == Bot -> TD = TDy, S = Sy ;
         (TDy == Bot -> TD = TDxz, S = Sxz ;
             ((Sxz == no, Sy == no, Tnorm = '&'(_)) ->
-                (Tnorm = '&'(Norm), lattice_call_connective('|'(Norm), [TDxz,TDy], TD), S = no) ;
-                (Tnorm = '#&'(Norm), TD = term('#|'(Norm), [TDxz, TDy]), S = yes)
+                (lattice_call_supremum(TDxz, TDy, TD), S = no) ;
+                (TD = sup(TDxz, TDy), S = yes)
             )
         )
     ),

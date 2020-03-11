@@ -3,7 +3,7 @@
   * FILENAME: fasill.pl
   * DESCRIPTION: This file initialize the FASILL environment.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 02.05.2018
+  * UPDATED: 11.03.2020
   * 
   **/
 :- module(fasill, [main/1, initialize/1, interactive_mode/0, print_term/1]).
@@ -36,6 +36,7 @@ fasill_path('/usr/local/fasill/').
 print_term([]) :- !.
 print_term(top) :- write(top).
 print_term(bot) :- write(bot).
+print_term(sup(X, Y)) :- write('sup('), print_term(X), write(', '), print_term(Y), write(')').
 print_term(X) :- is_assoc(X), !, assoc_to_list(X, Subs), print_term(Subs).
 print_term(num(X)) :- ansi_format([bold,fg(cyan)], X, []).
 print_term(var(X)) :- ansi_format([bold,fg(green)], X, []).

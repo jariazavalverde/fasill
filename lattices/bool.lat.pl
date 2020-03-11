@@ -14,6 +14,7 @@ leq(_, true).
 % Supremum and infimum
 bot(false).
 top(true).
+supremum(X, Y, Z) :- or_bool(X, Y, Z).
 
 % Binary operations
 and_bool(true, true, true).

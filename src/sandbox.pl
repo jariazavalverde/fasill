@@ -3,7 +3,7 @@
   * FILENAME: sandbox.pl
   * DESCRIPTION: This module contains predicates for the web interface.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 15.02.2020
+  * UPDATED: 11.03.2020
   * 
   **/
 
@@ -53,6 +53,7 @@ sandbox_write(sym(Type1,Cons,Arity)/val(Type2,Name,Arity)) :- !,
     (Type1 = td -> sandbox_write(Name) ; write(Name)).
 sandbox_write(top) :- write(top).
 sandbox_write(bot) :- write(bot).
+sandbox_write(sup(X, Y)) :- write('sup('), sandbox_write(X), write(', '), sandbox_write(Y), write(')').
 sandbox_write(num(X)) :- write(X).
 sandbox_write(var('$'(X))) :- !, write('V'), write(X).
 sandbox_write(var(X)) :- write(X).

@@ -3,7 +3,7 @@
   * FILENAME: semantics.pl
   * DESCRIPTION: This module contains predicates implementing the semantics for FASILL.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 18.02.2020
+  * UPDATED: 11.03.2020
   * 
   **/
 
@@ -226,6 +226,10 @@ select_expression(term(Term, Args), Var, Var, term(Term, Args)) :-
     once(member(Op, ['@','&','|'])),
     maplist(lattice_call_member, Args), !.
 select_expression(term(Term, Args), term(Term, Args_), Var, Expr) :- select_expression(Args, Args_, Var, Expr).
+select_expression(sup(X, Y), Var, Var, sup(X, Y)) :-
+    lattice_call_member(X),
+    lattice_call_member(Y), !.
+select_expression(sup(X, Y), ExprVar, Var, Atom) :- select_expression([X,Y], ExprVar, Var, Atom), !.
 select_expression([Term|Args], [Term_|Args], Var, Atom) :- select_expression(Term, Term_, Var, Atom), !.
 select_expression([Term|Args], [Term|Args_], Var, Atom) :- select_expression(Args, Args_, Var, Atom).
 
@@ -390,6 +394,7 @@ interpretive_step(From, state(Goal,Subs), state(Goal_,Subs), 'IS') :-
 % in the expression. ?Result is the resulting expression.
 interpret(bot, Bot) :- !, lattice_call_bot(Bot).
 interpret(top, Top) :- !, lattice_call_top(Top).
+interpret(sup(X, Y), Z) :- !, lattice_call_supremum(X, Y, Z).
 interpret(term(Op, Args), Result) :- lattice_call_connective(Op, Args, Result).
 
 % rename/2

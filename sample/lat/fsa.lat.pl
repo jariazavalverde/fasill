@@ -25,6 +25,7 @@ leq(X^^T,Y^^T) :- X =< Y.
 % Supremum and infimum
 bot(0.0^^'http://www.w3.org/2001/XMLSchema#decimal').
 top(1.0^^'http://www.w3.org/2001/XMLSchema#decimal').
+supremum(X^^T, Y^^T, Z^^T) :- Z is max(X, Y).
 
 % Conjuctions
 and_prod(X^^T,Y^^T,Z^^T) :- Z is X*Y.

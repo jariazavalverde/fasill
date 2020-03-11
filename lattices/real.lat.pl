@@ -15,6 +15,8 @@ leq(X, Y) :- X =< Y.
 % Supremum and infimum
 bot(-inf).
 top(+inf).
+supremum(X, Y, Y) :- leq(X, Y), !.
+supremum(X, _, X).
 
 % Binary operations
 or_add(_, +inf, +inf).

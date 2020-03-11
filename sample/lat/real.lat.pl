@@ -11,6 +11,7 @@ leq(X,Y) :- X =< Y.
 % Supremum and infimum
 bot(0.0).
 top(1.0).
+supremum(X, Y, Z) :- Z is max(X, Y).
 
 % Binary operations
 and_prod(X,Y,Z) :- Z is X*Y.

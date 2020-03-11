@@ -3,7 +3,7 @@
   * FILENAME: tuning.pl
   * DESCRIPTION: This module contains predicates for tuning symbolic FASILL programs.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 02.12.2019
+  * UPDATED: 11.03.2020
   * 
   **/
 
@@ -58,6 +58,10 @@ findall_symbolic_cons([H|T], Sym) :- !,
     findall_symbolic_cons(H, SymH),
     findall_symbolic_cons(T, SymT),
     append(SymH, SymT, Sym).
+findall_symbolic_cons(sup(X, Y), Sym) :- !,
+    findall_symbolic_cons(X, SymX),
+    findall_symbolic_cons(Y, SymY),
+    append(SymX, SymY, Sym).
 findall_symbolic_cons(term('#'(Name),[]), [sym(td, Name, 0)]) :- !.
 findall_symbolic_cons(term(Term, Args), [sym(Type, Name, Arity)|Sym]) :-
     Term =.. [Op,Name],
@@ -109,6 +113,9 @@ apply_symbolic_substitution(term(Term,Args), Subs, term(Term2,Args_)) :-
     apply_symbolic_substitution(Args, Subs, Args_), !.
 apply_symbolic_substitution(term(Name,Args), Subs, term(Name,Args_)) :-
     apply_symbolic_substitution(Args, Subs, Args_), !.
+apply_symbolic_substitution(sup(X, Y), Subs, sup(X_, Y_)) :-
+    apply_symbolic_substitution(X, Subs, X_),
+    apply_symbolic_substitution(Y, Subs, Y_), !.
 apply_symbolic_substitution([H|T], Subs, [H_|T_]) :-
     apply_symbolic_substitution(H, Subs, H_),
     apply_symbolic_substitution(T, Subs, T_), !.
