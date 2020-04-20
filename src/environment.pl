@@ -3,7 +3,7 @@
   * FILENAME: environment.pl
   * DESCRIPTION: This module contains predicates for manipulating programs, lattices and similarity relations.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 11.03.2020
+  * UPDATED: 01.04.2020
   * 
   **/
 
@@ -648,7 +648,9 @@ lattice_consult(Path) :-
 % This predicate succeeds when ?Tnorm is the current
 % t-norm asserted in the environment.
 similarity_tnorm(Tnorm) :- fasill_similarity_tnorm(Tnorm), !.
+similarity_tnorm('&'(Tnorm)) :- lattice_tnorm(Tnorm).
 similarity_tconorm(Tconorm) :- fasill_similarity_tconorm(Tconorm), !.
+similarity_tconorm('|'(Tconorm)) :- lattice_tconorm(Tconorm).
 
 % similarity_between/5
 % similarity_between(?AtomA, ?AtomB, ?Arity, ?TD, ?Sym)

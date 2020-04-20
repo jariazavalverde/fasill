@@ -143,7 +143,9 @@ testcases_disjoint_sets(Sets, SetsCond) :-
             (Symbols \== [] -> S = Symbols ; S = [ground] )
         )
     ), Tests),
-    findall(S-precondition(X), (environment:fasill_testcase_precondition(X), findall_symbolic_cons(X, S)), Preconditions),
+    findall(S-precondition(X), (environment:fasill_testcase_precondition(X), findall_symbolic_cons(X, S)), PreconditionsUser),
+    findall(S-precondition(TD), (environment:similarity_between(_, _, _, TD, yes), findall_symbolic_cons(TD, S)), PreconditionsSym),
+    append(PreconditionsUser, PreconditionsSym, Preconditions),
     findall(Symbols, member(Symbols-_, Tests), ListSymbolsTests),
     findall(Symbols, member(Symbols-_, Preconditions), ListSymbolsCond),
     append(ListSymbolsTests, Symbols0),

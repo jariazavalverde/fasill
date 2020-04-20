@@ -495,7 +495,7 @@ token_number(N) --> ['0','o'], {auto_column(2)}, octals(O),
 token_number(N) --> numbers(X), {X \= []}, token_number2(Y), !, {append(X,Y,Z)}, {atom_chars(T,Z), atom_number(T,N)}.
 token_number2(N) --> ['.'], {auto_column}, numbers(X), {X \= []}, !, token_number3(Y), {append(['.'|X],Y,N)}.
 token_number2(X) --> token_number3(X).
-token_number3([e,'-'|X]) --> [e,'-'], {auto_column(2)}, !,
+token_number3([e,S|X]) --> [e,S], {member(S, ['-','+']), auto_column(2)}, !,
     (numbers(X), {X \= []}, ! ; {throw('invalid number')}), !.
 token_number3([e|X]) --> [e], {auto_column},
     (numbers(X), {X \= []}, ! ; {throw('invalid number')}), !.
