@@ -3,7 +3,7 @@
   * FILENAME: parser.pl
   * DESCRIPTION: This module contains predicates for parsing FASILL programs.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 18.02.2020
+  * UPDATED: 21.04.2020
   * 
   **/
 
@@ -13,12 +13,12 @@
     stream_to_list/2,
     escape_atom/2,
     file_program/2,
-    file_similarity/2,
     file_query/2,
+    file_similarity/2,
     file_testcases/2,
     parse_program/2,
-    parse_similarity/2,
     parse_query/2,
+    parse_similarity/2,
     parse_testcases/2
 ]).
 
@@ -50,10 +50,11 @@ stream_to_list(Stream, [Char|Input]) :-
 escape_atom(Atom, Atom) :-
     atom_chars(Atom, Chars),
     Chars \= [],
-    token_minus_identifier(_, Chars, []), !.
+    string_lower_identifier(_, pos(1,0), _, Chars, []), !.
 escape_atom(Atom, Escape) :-
-    atom_concat('''', Atom, Atom1),
-    atom_concat(Atom1, '''', Escape).
+    atom_concat('\'', Atom, Atom1),
+    atom_concat(Atom1, '\'', Escape).
+
 
 
 % FILE OPERATIONS
@@ -69,6 +70,17 @@ file_program(Path, Program) :-
     close(Stream),
     parse_program(Input, Program).
 
+% file_query/2
+% file_query(+Path, ?Goal)
+%
+% This predicate succeeds when file +Path exists and
+% it can be parsed as a FASILL goal ?Goal.
+file_query(Path, Query) :-
+    open(Path, read, Stream),
+    stream_to_list(Stream, Input),
+    close(Stream),
+    parse_query(Input, Query).
+
 % file_similarity/2
 % file_similarity(+Path, ?Similarity)
 %
@@ -80,17 +92,6 @@ file_similarity(Path, Similarity) :-
     stream_to_list(Stream, Input),
     close(Stream),
     parse_similarity(Input, Similarity).
-
-% file_query/2
-% file_query(+Path, ?Goal)
-%
-% This predicate succeeds when file +Path exists and
-% it can be parsed as a FASILL goal ?Goal.
-file_query(Path, Query) :-
-    open(Path, read, Stream),
-    stream_to_list(Stream, Input),
-    close(Stream),
-    parse_query(Input, Query).
 
 % file_testcases/2
 % file_testcases(+Path, ?Testcases)
@@ -105,7 +106,7 @@ file_testcases(Path, Testcases) :-
 
 
 
-% CHARS OPERATIONS
+% PARSE OPERATIONS
 
 % parse_program/2
 % parse_program(+Chars, ?Program)
@@ -113,47 +114,29 @@ file_testcases(Path, Testcases) :-
 % This predicate parses a FASILL program ?Program
 % from a list of characters +Chars.
 parse_program(Input, Program) :-
-    reset_line,
-    reset_column,
-    catch(
-        once(parse_program(Program, Input, [])),
-        Exception,
-        (current_line(L), current_column(C), syntax_error(L, C, Exception, Error), throw_exception(Error))
-    ).
-
-% parse_similarity/2
-% parse_similarity(+Chars, ?Similarity)
-%
-% This predicate parses a FASILL similarity scheme
-% ?Similarity from a list of characters +Chars.
-parse_similarity(Input, Program) :-
-    reset_line,
-    reset_column,
-    catch(
-        once(parse_similarity(Program, Input, [])),
-        Exception,
-        (current_line(L), current_column(C), syntax_error(L, C, Exception, Error), throw_exception(Error))
-    ).
+    once(tokenizer(Tokens, pos(1,0), _, Input, [])),
+    once(grammar_program(Program, _, Tokens, Rest)),
+    (Rest == [token(_, _, _, pos(L,C), _)|_] -> syntax_error(L, C, 'unexpected token', Error), throw_exception(Error) ; true).
 
 % parse_query/2
-% parse_query(+Chars, ?Program)
+% parse_query(+Chars, ?Goal)
 %
 % This predicate parses a FASILL goal ?Goal
 % from a list of characters +Chars.
-parse_query(Input, Goal) :-
-    parse_query(Input, Goal, 1, 1).
-parse_query(Input, Goal2, Line, Column) :-
-    retract(current_line(_)),
-    retract(current_column(_)),
-    asserta(current_line(Line)),
-    asserta(current_column(Column)),
-    catch(
-        once((blanks(Input, Input2), parse_expr(1300, Goal, Input2, R1), (dot(R1, R2), ! ; throw('point or operator expected')))),
-        Exception,
-        (current_line(L), current_column(C), syntax_error(L, C, Exception, Error), throw_exception(Error))
-    ),
-    current_line(L), current_column(C),
-    (R2 = [] -> Goal2 = Goal ; (Goal2 = Goal ; parse_query(R2, Goal2, L, C))).
+parse_query(Input, Program) :-
+    once(tokenizer(Tokens, pos(1,0), _, Input, [])),
+    once(grammar_query(Program, _, Tokens, Rest)),
+    (Rest == [token(_, _, _, pos(L,C), _)|_] -> syntax_error(L, C, 'unexpected token', Error), throw_exception(Error) ; true).
+
+% parse_similarity/2
+% parse_similarity(+Chars, ?Program)
+%
+% This predicate parses a FASILL similarity scheeme ?Scheme
+% from a list of characters +Chars.
+parse_similarity(Input, Scheme) :-
+    once(tokenizer(Tokens, pos(1,0), _, Input, [])),
+    once(grammar_similarity(Scheme, _, Tokens, Rest)),
+    (Rest == [token(_, _, _, pos(L,C), _)|_] -> syntax_error(L, C, 'unexpected token', Error), throw_exception(Error) ; true).
 
 % parse_testcases/2
 % parse_testcases(+Chars, ?Testcases)
@@ -161,20 +144,16 @@ parse_query(Input, Goal2, Line, Column) :-
 % This predicate parses a set of testcases ?Testcases
 % from a list of characters +Chars.
 parse_testcases(Input, Testcases) :-
-    reset_line,
-    reset_column,
-    catch(
-        once(parse_testcases(Testcases, Input, [])),
-        Exception,
-        (current_line(L), current_column(C), syntax_error(L, C, Exception, Error), throw_exception(Error))
-    ).
+    once(tokenizer(Tokens, pos(1,0), _, Input, [])),
+    once(grammar_testcases(Testcases, _, Tokens, Rest)),
+    (Rest == [token(_, _, _, pos(L,C), _)|_] -> syntax_error(L, C, 'unexpected token', Error), throw_exception(Error) ; true).
 
 
 
 % INITIAL OPERATOR TABLE
 
 % current_op/4
-% initial operator table
+% Initial operator table.
 :- dynamic current_op/4.
 current_op(1300, xfx, '#<-',  yes).
 current_op(1300, xfx, ':-',   no).
@@ -224,21 +203,21 @@ current_op(200,  fy,  '+',    no).
 current_op(200,  fy,  '-',    no).
 current_op(200,  fx,  ':',    no).
 
+% next_priority/2
+% Gives the next priority to derivate an expression.
+next_priority(1300, 1200).
+next_priority(1200, 1100).
+next_priority(1100, 1000).
+next_priority(1000, 700).
+next_priority(999, 700).
+next_priority(700, 500).
+next_priority(500, 400).
+next_priority(400, 200).
+next_priority(200, 0).
+
 
 
 % GRAMMAR
-
-% current_line/1
-% store the current line to be analyzed
-:- dynamic current_line/1.
-?- retractall(current_line(_)).
-current_line(1).
-
-% current_column/1
-% store the current column to be analyzed
-:- dynamic current_column/1.
-?- retractall(current_column(_)).
-current_column(1).
 
 % current_rule_id/1
 % store the current identifier to be used in a rule
@@ -246,44 +225,29 @@ current_column(1).
 ?- retractall(current_rule_id(_)).
 current_rule_id(1).
 
-% auto_line/0
-% update the current line
-auto_line :- current_line(M), retract(current_line(_)), succ(M, N), assertz(current_line(N)), reset_column.
-
-% auto_column/0
-% update the current column
-auto_column :- current_column(M), retract(current_column(_)), succ(M, N), assertz(current_column(N)).
-
-% auto_column/1
-% update the current column
-auto_column(X) :- current_column(M), retract(current_column(_)), N is M+X, assertz(current_column(N)).
+% reset_rule_id/0
+% reset the current rule identifier to the first
+reset_rule_id :- retract(current_rule_id(_)), assertz(current_rule_id(1)).
 
 % auto_rule_id/1
 % update the current rule identifier and return it
 auto_rule_id(Id) :- current_rule_id(Id), retract(current_rule_id(_)), succ(Id, N), assertz(current_rule_id(N)).
 
-% reset_line/0
-% reset the current line to be analyzed to the first
-reset_line :- retract(current_line(_)), assertz(current_line(1)).
+% grammar_program/4
+% Parses a fuzzy logic program.
+grammar_program([H|T], P) --> grammar_rule(H, _), !, grammar_program(T, P).
+grammar_program([], _) --> [].
 
-% reset_column/0
-% reset the current column to be analyzed to the first
-reset_column :- retract(current_column(_)), assertz(current_column(1)).
+% grammar_query/4
+% Parses a fuzzy logic goal.
+grammar_query(T, P) -->
+    (grammar_expression(1300, T, pos(L,C)), ! ; {syntax_error(1, 0, 'expression expected', Error), throw_exception(Error)}),
+    (grammar_dot(P), ! ; {syntax_error(L, C, 'point or operator expected', Error), throw_exception(Error)}).
 
-% reset_rule_id/0
-% reset the current rule identifier to the first
-reset_rule_id :- retract(current_rule_id(_)), assertz(current_rule_id(1)).
-
-% parse_program/3
-% parse a fuzzy logic program
-parse_program(Program) --> blanks, parse_program2(Program).
-parse_program2([H|T]) --> blanks, parse_rule(H), !, parse_program2(T).
-parse_program2([]) --> [].
-
-% parse_rule/3
-% parse a malp or fasill rule
-parse_rule(fasill_rule(head(Head), Body, [id(IdAtom),Info])) -->
-    parse_expr(1300, T), (dot, ! ; {throw('point or operator expected')}),
+% parse_rule/4
+% Parses a MALP or FASILL rule.
+grammar_rule(fasill_rule(head(Head), Body, [id(IdAtom),Info]), P) -->
+    grammar_expression(1300, T, pos(L,C)), (grammar_dot(P), ! ; {syntax_error(L, C, 'point or operator expected', Error), throw_exception(Error)}),
     {(
        % rule
        T = term(with, [Head, TD]), Body = body(TD), Info = syntax(malp) ;
@@ -301,271 +265,397 @@ parse_rule(fasill_rule(head(Head), Body, [id(IdAtom),Info])) -->
        T = Head, Body = empty, Info = syntax(fasill)
     )}, !, {auto_rule_id(Id), atom_number(IdAtom, Id)}.
 
-% parse_similarity/3
-% parse a fasill similarity scheme
-parse_similarity([H|T]) --> blanks, parse_similarity_equation(H), !, parse_similarity(T).
-parse_similarity([]) --> [].
+% grammar_similarity/4
+% Parses a FASILL similarity scheme.
+grammar_similarity([H|T], P) --> grammar_similarity_equation(H, _), !, grammar_similarity(T, P).
+grammar_similarity([], _) --> [].
 
-% parse_similarity_equation/3
-% parse a fasill similarity equation
-parse_similarity_equation(Eq) -->
-    ['~'], !, {auto_column}, blanks,
+% grammar_similarity_equation/4
+% Parses a FASILL similarity equation.
+%%% tnorm/tconorm
+grammar_similarity_equation(Eq, P) -->
+    [token(atom, '~', ['~'], pos(L0,C0), _)], !,
     (
-        [t,n,o,r,m], {Type = tnorm, Label = '&', auto_column(5)}, ! ;
-        [t,c,o,n,o,r,m], {Type = tconorm, Label = '|', auto_column(7)}, ! ;
-        {throw('tnorm or tconorm expected')}),
-    blanks, (['='], {auto_column}, ! ; {throw('equal expected')}),
-    blanks, (['#'], !, {auto_column(1), atom_concat('#', Label, Label2)} ; {Label = Label2}),
-    blanks, (token_atom(Norm), ! ; {throw('atom expected')}),
-    blanks, (dot, ! ; {throw('point or operator expected')}),
+        [token(atom, 'tnorm', [t,n,o,r,m], pos(L1,C1), _)], {Type = tnorm, Label = '&'}, ! ;
+        [token(atom, 'tconorm', [t,c,o,n,o,r,m], pos(L1,C1), _)], {Type = tconorm, Label = '|'}, ! ;
+        {syntax_error(L0, C0, 'tnorm or tconorm expected', Error), throw_exception(Error)}),
+    ([token(atom, '=', ['='], pos(L3,C3), _)], ! ; {syntax_error(L1, C1, 'equal symbol expected', Error), throw_exception(Error)}),
+    ([token(atom, '#', ['#'], pos(L4,C4), _)], {atom_concat('#', Label, Label2)}, ! ; {Label = Label2, L4 = L3, C4 = C3}),
+    ([token(atom, Norm, _, pos(L5,C5), _)], ! ; {syntax_error(L4, C4, 'atom expected', Error), throw_exception(Error)}),
+    (grammar_dot(P), ! ; {syntax_error(L5, C5, 'point or operator expected', Error), throw_exception(Error)}),
     {atom_concat('fasill_similarity_', Type, Pred), Con =.. [Label2, Norm], Eq =.. [Pred, Con]}, !.
-parse_similarity_equation(fasill_similarity(P/N, Q/N, TD, Sym)) -->
-    token_atom(P), blanks,
-    (['/'], {auto_column}, !, blanks, (token_number(N), ! ; {throw('arity expected after /')}) ; {N = 0}), blanks,
-    (['~'], {auto_column}, ! ; {throw('~ expected')}), blanks,
-    (token_atom(Q), ! ; {throw('atom expected')}), blanks,
-    (['/'], {auto_column}, !, blanks, (token_number(M), ! ; {throw('arity expected after /')}) ; {M = 0}), blanks,
-    {N = M -> true ; throw('arities should be equal')},
-    {(integer(N), N >= 0) -> true ; throw('arities should be non-negative integers')},
-    (['='], {auto_column}, ! ; {throw('equal expected')}), blanks,
-    parse_expr(1300, TD), {TD = term('#'(_), []) -> Sym = yes ; Sym = no}, blanks,
-    (dot, ! ; {throw('point or operator expected')}).
+%%% similarity equation
+grammar_similarity_equation(fasill_similarity(Q/N, R/M, TD, Sym), P) -->
+    [token(atom, Q, _, pos(L0,C0), _)],
+    ([token(atom, '/', ['/'], pos(L1,C1), _)] ->
+        ([token(number, N, _, pos(L2,C2), _)], ! ; {syntax_error(L1, C1, 'arity expected after / symbol', Error), throw_exception(Error)});
+        {N = 0, L2 = L0, C2 = C0}
+    ),
+    ([token(atom, '~', ['~'], pos(L3,C3), _)], ! ; {syntax_error(L2, C2, '~ symbol expected', Error), throw_exception(Error)}),
+    ([token(atom, R, _, pos(L4,C4), _)], ! ; {syntax_error(L3, C3, 'atom expected', Error), throw_exception(Error)}),
+    ([token(atom, '/', ['/'], pos(L5,C5), _)] ->
+        ([token(number, M, _, pos(L6,C6), _)], ! ; {syntax_error(L5, C5, 'arity expected after / symbol', Error), throw_exception(Error)});
+        {M = 0, L6 = L4, C6 = C4}
+    ),
+    {(integer(N), N >= 0) -> true ; syntax_error(L1, C1, 'arity must be a non-negative integer', Error), throw_exception(Error)},
+    {(integer(M), M >= 0) -> true ; syntax_error(L5, C5, 'arity must be a non-negative integer', Error), throw_exception(Error)},
+    ([token(atom, '=', ['='], pos(L7,C7), _)], ! ; {syntax_error(L6, C6, 'equal symbol expected', Error), throw_exception(Error)}),
+    (grammar_expression(1300, TD, pos(L8,C8)), {TD = term('#'(_), []) -> Sym = yes ; Sym = no}, ! ; {syntax_error(L7, C7, 'point or operator expected', Error), throw_exception(Error)}),
+    (grammar_dot(P), ! ; {syntax_error(L8, C8, 'point or operator expected', Error), throw_exception(Error)}).
 
-% parse_testcases/3
-% parse_testcases(?Testcase, +Chars, ?Rest)
-%
-% This predicate parses the set of testcases ?Testcases
-% from the input +Chars, leaving the characters ?Rest.
-parse_testcases(T) --> blanks, parse_testcases2(T).
-parse_testcases2([H|T]) --> parse_testcase(H), !, parse_testcases2(T).
-parse_testcases2([]) --> [].
+% grammar_testcases/4
+% Parses a FASILL set of testcases.
+grammar_testcases([H|T], P) --> grammar_testcase(H, _), !, grammar_testcases(T, P).
+grammar_testcases([], _) --> [].
 
-% parse_testcase/3
-% parse_testcase(?Testcase, +Chars, ?Rest)
-%
-% This predicate parses the testcase ?Testcase from
-% the input +Chars, leaving the characters ?Rest.
-parse_testcase(Test) -->
-    ( parse_expr(1300, Expr), (dot, ! ; {throw('point or operator expected')}),
-      {Expr = term('->', [TD, Goal]), Test = fasill_testcase(TD, Goal), !
-    ; Test = fasill_testcase_precondition(Expr)} ).
+% grammar_testcase/4
+% Parses a FASILL testcase.
+grammar_testcase(Test, P) -->
+    grammar_expression(1300, T, pos(L,C)),
+    (grammar_dot(P), ! ; {syntax_error(L, C, 'point or operator expected', Error), throw_exception(Error)}),
+    ({T = term('->', [TD, Goal]) -> Test = fasill_testcase(TD, Goal) ; Test = fasill_testcase_precondition(T)}).
 
-% parse_operator/6
-% parse an operator T with Priority, Specifier and Name 
-parse_operator(Priority, Specifier, T, yes) -->
-    {current_line(L), current_column(C)},
-    token_atom(Op), ((
-        {current_op(Priority, Specifier, Op, yes)},
-        token_minus_identifier(Identifier)
-    ) -> {T =.. [Op, Identifier]} ; {
-        retract(current_line(_)), retract(current_column(_)),
-        asserta(current_line(L)), asserta(current_column(C)), fail
-    }), blanks, !.
-parse_operator(Priority, Specifier, Op, no) -->
-    {current_line(L), current_column(C)},
-    token_atom(Op), {current_op(Priority, Specifier, Op, no) -> true ; (
-        retract(current_line(_)), retract(current_column(_)),
-        asserta(current_line(L)), asserta(current_column(C)), fail)},
-    ({Specifier \= fx, Specifier \= fy}; \+['(']),
-    blanks, !.
+% grammar_operator/7
+% Parses an operator T with Priority, Specifier and Name.
+%%% labeled
+grammar_operator(Priority, Specifier, Op, yes, P) -->
+    [token(atom, T, [C1|_], _, false), token(atom, Label, [C2|_], P, _)],
+    {C1 \= '\'', C2 \= '\'', Op =.. [T,Label],
+    current_op(Priority, Specifier, T, yes)}.
+%%% unlabeled
+grammar_operator(Priority, Specifier, T, no, P) -->
+    [token(atom, T, [C|_], P, _)],
+    {C \= '\'', current_op(Priority, Specifier, T, no)}.
 
-% next_priority/2
-% give the next priority to derivate an expression
-next_priority(1300, 1200).
-next_priority(1200, 1100).
-next_priority(1100, 1000).
-next_priority(1000, 700).
-next_priority(999, 700).
-next_priority(700, 500).
-next_priority(500, 400).
-next_priority(400, 200).
-next_priority(200, 0).
-
-% parse_expr/4
-% parse an expression with level between 0 and 1300
+% grammar_expression/5
+% Parses an expression with level between 0 and 1300.
 %%% level 0
-parse_expr(0, X) --> parse_expr_zero(X).
+grammar_expression(0, X, P) --> grammar_expression_zero(X, P).
 %%% level n, n > 0
 %%%%%% fx, fy
-parse_expr(Priority, Q) -->
+grammar_expression(Priority, Q, P) -->
     {Priority > 0, member(F, [fx, fy])},
-    parse_operator(Priority, F, Op, _),
+    grammar_operator(Priority, F, Op, _, pos(L,C)),
     ({F = fy} -> {Next = Priority} ; {next_priority(Priority, Next)}),
-    (parse_expr(Next, T), ! ; {throw('expression expected')}),
-    {(Op = '-', T = num(X)) -> (Y is X*(-1), Q = num(Y)) ; (Q = term(Op, [T]))}.
+    (grammar_expression(Next, T, P), ! ; {syntax_error(L, C, 'expression expected', Error), throw_exception(Error)}),
+    {(Op = '-', T = num(X)) -> (Y is -X, Q = num(Y)) ; (Q = term(Op, [T]))}.
 %%%%%% xfx, xfy, yfx
-parse_expr(Priority, T) -->
+grammar_expression(Priority, T, P1) -->
     {Priority > 0, next_priority(Priority, Next)},
-    parse_expr(Next, Left),
-    (   {member(Specifier, [xfx, yfx, xfy])}, parse_operator(Priority, Specifier, Op, _),
-        {(Specifier = xfx, PriorityRight = Next ; Specifier = yfx, PriorityRight = Next ; Specifier = xfy, PriorityRight = Priority)},
-        (parse_expr(PriorityRight, Right), ! ; {throw('expression expected')}),
-        ({Specifier = yfx} -> parse_expr2(Priority, term(Op, [Left,Right]), T) ; {T = term(Op, [Left,Right])}), !
-    ; {T = Left} ).
+    grammar_expression(Next, Left, Pe),
+    (   {member((Specifier,PriorityRight), [(xfx,Next), (yfx,Next), (xfy,Priority)])},
+        grammar_operator(Priority, Specifier, Op, _, pos(L,C)),
+        (grammar_expression(PriorityRight, Right, P0), ! ; {syntax_error(L, C, 'expression expected', Error), throw_exception(Error)}),
+        ({Specifier = yfx} -> grammar_expression2(Priority, term(Op, [Left,Right]), T, P0, P1) ; {T = term(Op, [Left,Right]), P1 = P0}), !
+    ; {T = Left, P1 = Pe} ).
 %%%%%% yfx
-parse_expr2(Priority, Left, T) -->
+grammar_expression2(Priority, Left, T, P0, P1) -->
     {Priority > 0, next_priority(Priority, Next)},
-    parse_operator(Priority, yfx, Op, _),
-    (parse_expr(Next, Right), ! ; {throw('expression expected')}),
-    parse_expr2(Priority, term(Op, [Left,Right]), T).
-parse_expr2(_, T, T) --> [].
+    grammar_operator(Priority, yfx, Op, _, pos(L,C)),
+    (grammar_expression(Next, Right, P0), ! ; {syntax_error(L, C, 'expression expected', Error), throw_exception(Error)}),
+    grammar_expression2(Priority, term(Op, [Left,Right]), T, P0, P1).
+grammar_expression2(_, T, T, P, P) --> [].
 
-parse_expr_zero(num(T)) --> token_number(T), blanks, !.
-parse_expr_zero(T) --> token_string(T), blanks, !.
-parse_expr_zero(var(T)) --> token_variable(T), blanks, !.
-parse_expr_zero(T) --> lparen, !, parse_expr(1300, T), (rparen, ! ; {throw('operator or right parenthesis expected')}), !.
-parse_expr_zero(T) --> parse_list(T), blanks, !.
-parse_expr_zero(T) --> parse_brace(T), blanks, !.
-parse_expr_zero(T) --> parse_con(T), blanks, !.
-parse_expr_zero(T) --> parse_term(T), blanks, !.
-%parse_expr_zero(_) --> [X], {atom_concat('invalid input ', X, Msg), throw(Msg)}.
+grammar_expression_zero(num(T), P) --> [token(number, T, _, P, _)], !.
+%grammar_expression_zero(T) --> token_string(T), !.
+grammar_expression_zero(var(T), P) --> [token(variable, T, _, P, _)], !.
+grammar_expression_zero(T, P) -->
+    [token(lparen, _, _, _, _)], !,
+    grammar_expression(1300, T, pos(L,C)),
+    ([token(rparen, _, _, P, _)], ! ; {syntax_error(L, C, 'operator or right parenthesis expected', Error), throw_exception(Error)}).
+grammar_expression_zero(T, P) --> grammar_list(T, P), !.
+grammar_expression_zero(T, P) --> grammar_brace(T, P), !.
+grammar_expression_zero(T, P) --> grammar_symbolic_constant(T, P), !.
+grammar_expression_zero(T, P) --> grammar_connective(T, P), !.
+grammar_expression_zero(T, P) --> grammar_term(T, P), !.
 
-% parse_term/3
-% parse a (possible compound) term
-parse_term(term(Name, Args)) --> token_atom(Name), parse_term2(Args).
-parse_term2([H|T]) --> lparen, !, (parse_expr(999, H), ! ; {throw('expression expected')}), parse_term3(T).
-parse_term2([]) --> blanks.
-parse_term3([H|T]) --> comma, !, (parse_expr(999, H), ! ; {throw('expression expected')}), parse_term3(T).
-parse_term3([]) --> (rparen, ! ; {throw('operator or right parenthesis expected')}), blanks.
+% grammar_symbolic_constant/4
+% Parses a symbolic constant.
+grammar_symbolic_constant(term('#'(Name), []), P) -->
+    [token(atom, '#', ['#'], _, false)],
+    [token(atom, Name, [C|_], P, _)], {C \= '\''}.
 
-% parse_con/3
-% parse a prefix connective
-parse_con(term(Con, [H|T])) --> ['#',X],
-    {member(X, ['@','&','|']), auto_column(2)},
-    token_atom(Name),
-    lparen, parse_expr(999, H), parse_term3(T),
-    {atom_concat('#', X, Y),
-    Con =.. [Y,Name]}.
-parse_con(term(Con, [H|T])) --> [X],
-    {member(X, ['@','&','|']), auto_column},
-    token_atom(Name),
-    lparen, parse_expr(999, H), parse_term3(T),
-    {Con =.. [X,Name]}.
+% grammar_term/4
+% Parses a (possible compound) term.
+grammar_term(term(Name, []), P) --> [token(atom, Name, _, P, _)], \+[token(lparen, _, _, _, _)], !.
+grammar_term(term(Name, []), P) --> [token(atom, Name, _, P, true)], !.
+grammar_term(term(Name, [X|Xs]), P1) -->
+    [token(atom, Name, _, _, false), token(lparen, _, _, pos(L,C), _)], !,
+    (grammar_expression(999, X, P0), ! ; {syntax_error(L, C, 'expression expected', Error), throw_exception(Error)}),
+    grammar_term_args(Xs, P0, P1).
+grammar_term_args([X|Xs], _, P1) -->
+    [token(atom, ',', [Char|_], pos(L,C), _)], {Char \= '\''}, !,
+    (grammar_expression(999, X, P0), ! ; {syntax_error(L, C, 'expression expected', Error), throw_exception(Error)}),
+    grammar_term_args(Xs, P0, P1).
+grammar_term_args([], pos(L,C), P1) -->
+    ([token(rparen, _, _, P1, _)], ! ; {syntax_error(L, C, 'operator or right parenthesis expected', Error), throw_exception(Error)}).
 
-% parse_list/3
-% parse a list
-parse_list(T) --> lbracket, parse_list2(T).
-parse_list2(term('.', [H,T])) --> parse_expr(999, H), !, parse_list3(T).
-parse_list2(term('[]', [])) --> (rbracket, ! ; {throw('operator or right bracket expected')}).
-parse_list3(term('.', [H,T])) --> comma, !, (parse_expr(999, H), ! ; {throw('expression expected')}), parse_list3(T).
-parse_list3(T) --> bar, !, (parse_expr(999, T), ! ; {throw('expression expected')}), (rbracket, ! ; {throw('operator or right bracket expected')}).
-parse_list3(term('[]', [])) --> (rbracket, ! ; {throw('operator or right bracket expected')}).
+% grammar_connective/4
+% Parses a prefix connective.
+grammar_connective(term(Con, [X|Xs]), P1) -->
+    [token(atom, Type, [C1|_], _, false)], {C1 \= '\''},
+    {member(Type, ['@','&','|','#@','#&','#|'])},
+    [token(atom, Name, [C2|_], _, false)], {C2 \= '\''},
+    [token(lparen, _, _, _, _)],
+    grammar_expression(999, X, P0),
+    grammar_term_args(Xs, P0, P1),
+    {Con =.. [Type,Name]}.
 
-% parse_brace/3
-% parse a brace
-parse_brace(term('{}', [T])) --> lbrace, parse_expr(999, T), !, (rbrace, ! ; {throw('operator or right brace expected')}).
-parse_brace(term('{}', [])) --> lbrace, (rbrace, ! ; {throw('expression or right brace expected')}).
+% grammar_list/4
+% Parses a (possible empty) list.
+grammar_list(T, P1) -->
+    [token(lbracket, _, _, P0, _)],
+    grammar_list_first(T, P0, P1).
+grammar_list_first(term('.', [X,Xs]), _, P1) -->
+    grammar_expression(999, X, P0), !,
+    grammar_list_args(Xs, P0, P1).
+grammar_list_first(term('[]', []), pos(L,C), P) -->
+    [token(rbracket, _, _, P, _)], ! ; {syntax_error(L, C, 'operator or right bracket expected', Error), throw_exception(Error)}.
+grammar_list_args(term('.', [X,Xs]), _, P1) -->
+    [token(atom, ',', [Char|_], pos(L,C), _)], {Char \= '\''}, !,
+    (grammar_expression(999, X, P0), ! ; {syntax_error(L, C, 'expression expected', Error), throw_exception(Error)}),
+    grammar_list_args(Xs, P0, P1).
+grammar_list_args(T, _, P) -->
+    [token(atom, '|', [Char|_], pos(L1,C1), _)], {Char \= '\''}, !,
+    (grammar_expression(999, T, pos(L2,C2)), ! ; {syntax_error(L1, C1, 'expression expected', Error), throw_exception(Error)}),
+    ([token(rbracket, _, _, P, _)], ! ; {syntax_error(L2, C2, 'operator or right bracket expected', Error), throw_exception(Error)}).
+grammar_list_args(term('[]', []), pos(L,C), P) -->
+    [token(rbracket, _, _, P, _)], ! ; {syntax_error(L, C, 'operator or right bracket expected', Error), throw_exception(Error)}.
+
+% grammar_brace/4
+% Parses a braced expression.
+grammar_brace(term('{}', [T]), P) -->
+    [token(lbrace, _, _, _, _)],
+    grammar_expression(1300, T, pos(L,C)), !,
+    ([token(rbrace, _, _, P, _)], ! ; {syntax_error(L, C, 'expression or right brace expected', Error), throw_exception(Error)}).
+grammar_brace(term('{}', []), P) -->
+    [token(lbrace, _, _, pos(L,C), _)],
+    ([token(rbrace, _, _, P, _)], ! ; {syntax_error(L, C, 'expression or right brace expected', Error), throw_exception(Error)}).
+
+% grammar_dot/3
+% Parses a dot.
+grammar_dot(P) --> [token(atom, '.', ['.'], P, _)].
+
+% grammar_comma/3
+% Parses a comma.
+grammar_comma(P) --> [token(atom, ',', [','], P, _)].
+
+
+
+% COMBINATORS
+
+% 0 or more times.
+many(R, [X|Xs], P0, P2) --> call(R, X, P0, P1), !, many(R, Xs, P1, P2).
+many(_, [], P, P) --> [].
+
+% 1 or more times.
+some(R, Xs, P0, P1) --> many(R, Xs, P0, P1), {Xs \= []}.
+
+
+
+% CHARS
+
+% Character.
+char_eq('\n', pos(L0,_), pos(L1,0)) --> ['\n'], !, {succ(L0, L1)}.
+char_eq(X, pos(L,C0), pos(L,C1)) --> [X], {succ(C0, C1)}.
+
+% Binary character.
+char_binary('0', pos(L,C0), pos(L,C1)) --> ['0'], {succ(C0, C1)}.
+char_binary('1', pos(L,C0), pos(L,C1)) --> ['1'], {succ(C0, C1)}.
+
+% Octal character.
+char_octal(X, pos(L,C0), pos(L,C1)) --> [X], {char_code(X, C), C >= 48, C =< 55, succ(C0, C1)}.
+
+% Hexadecimal character.
+char_hexadecimal(X, pos(L,C0), pos(L,C1)) --> [X],
+    {member(X, ['0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f','A','B','C','D','E','F']),
+    succ(C0, C1)}.
+
+% Numeral character.
+char_number(X, pos(L,C0), pos(L,C1)) --> [X], {char_code(X, C), C >= 48, C =< 57, succ(C0, C1)}.
+
+% Lowercase character.
+char_lower(X, pos(L,C0), pos(L,C1)) --> [X], {char_code(X,C), C >= 97, C =< 122, succ(C0, C1)}.
+
+% Uppercase character.
+char_upper(X, pos(L,C0), pos(L,C1)) --> [X], {char_code(X,C), C >= 65, C =< 90, succ(C0, C1)}.
+
+% Graphic character.
+char_graphic(X, P0, P1) --> char_eq(X, P0, P1), {member(X, ['.','|','=',';','#','$','&','@','*','+','-','/',':','<','>','?','^','~','\\'])}.
+
+% Identifier character.
+char_identifier(X, P0, P1) --> char_lower(X, P0, P1).
+char_identifier(X, P0, P1) --> char_upper(X, P0, P1).
+char_identifier(X, P0, P1) --> char_number(X, P0, P1).
+char_identifier('_', pos(L,C0), pos(L,C1)) --> ['_'], {succ(C0, C1)}.
+
+% Blank character.
+char_blank(pos(L,C0), pos(L,C1)) --> [' '], {succ(C0, C1)}.
+char_blank(pos(L0,_), pos(L1,0)) --> ['\n'], {succ(L0, L1)}.
+char_blank(pos(L,C0), pos(L,C1)) --> ['\t'], {succ(C0, C1)}.
+
+
+
+% STRINGS
+
+% String.
+string_eq([X|Xs], P0, P2) --> char_eq(X, P0, P1), string_eq(Xs, P1, P2).
+string_eq([], P, P) --> [].
+
+% Numeral string.
+string_number(Z, P0, P2) -->
+    some(char_number, X, P0, P1),
+    string_number_decimal(Y, P1, P2), !,
+    {append(X, Y, Z)}.
+string_number_decimal(N, pos(L,C0), P2) -->
+    ['.'], {succ(C0, C1)},
+    some(char_number, X, pos(L,C1), P1), !,
+    token_number_exponent(Y, P1, P2),
+    {append(['.'|X], Y, N)}.
+string_number_decimal(X, P0, P1) -->
+    token_number_exponent(X, P0, P1).
+token_number_exponent([e,S|X], pos(L,C0), P1) -->
+    [e,S], {member(S, ['-','+']), C1 is C0+2}, !,
+    some(char_number, X, pos(L,C1), P1).
+token_number_exponent([e|X], pos(L,C0), P1) -->
+    [e], {succ(C0, C1)},
+    some(char_number, X, pos(L,C1), P1).
+token_number_exponent([], P, P) --> [].
+
+% String lower identifier.
+string_lower_identifier([X|Xs], P0, P2) -->
+    char_lower(X, P0, P1),
+    many(char_identifier, Xs, P1, P2).
+
+% String upper identifier.
+string_lower_identifier([X|Xs], P0, P2) -->
+    char_upper(X, P0, P1),
+    many(char_identifier, Xs, P1, P2).
+
+% String single quoted.
+string_single_quoted(['\''|Xs], P0, P2) -->
+    string_eq(['\'','\''], P0, P1), !,
+    string_single_quoted(Xs, P1, P2).
+string_single_quoted(['\''|Xs], P0, P2) -->
+    string_eq(['\\','\''], P0, P1), !,
+    string_single_quoted(Xs, P1, P2).
+string_single_quoted([X|Xs], P0, P2) -->
+    char_eq(X, P0, P1), {X \= '\''}, !,
+    string_single_quoted(Xs, P1, P2).
+string_single_quoted([], P, P) --> [].
+
+% Blank strings.
+string_blank(P0, P3) -->
+    char_eq('%', P0, P1), !,
+    string_blank_line(P1, P2),
+    string_blank(P2, P3).
+string_blank(P0, P4) -->
+    string_eq(['/','*'], P0, P1), !,
+    string_blank_multiline(P1, P2),
+    string_eq(['*','/'], P2, P3),
+    string_blank(P3, P4).
+string_blank(P0, P2) -->
+    char_blank(P0, P1), !,
+    string_blank(P1, P2).
+string_blank(P, P) --> [].
+
+% Comment (line).
+string_blank_line(P0, P2) --> char_eq(X, P0, P1), {X \= '\n'}, !, string_blank_line(P1, P2).
+string_blank_line(P0, P1) --> char_eq('\n', P0, P1), !.
+string_blank_line(P, P) --> [].
+
+% Comment (multiline).
+string_blank_multiline(P0, P2) --> char_eq(X, P0, P1), {X \= '*'}, !, string_blank_multiline(P1, P2).
+string_blank_multiline(P0, P3) --> char_eq('*', P0, P1), char_eq(X, P1, P2), {X \= '/'}, !, string_blank_multiline(P2, P3).
+string_blank_multiline(P, P) --> [].
 
 
 
 % TOKENS
 
-% Identifiers
-token_identifier(T) --> identifier(L), {atom_chars(T,L)}.
-token_minus_identifier(T) --> minus(X), identifier(Xs), {atom_chars(T,[X|Xs])}.
+% Tokenize a sequence of characters.
+tokenizer(Ts, P0, P2) --> string_blank(P0, P1), many(token_blanks, Ts, P1, P2).
 
-identifier([H|T]) --> letter(H), !, identifier(T).
-identifier([]) --> [].
+% Tokens with blanks.
+token_blanks(Tb, P0, P2) -->
+    token(T, P0, P1),
+    string_blank(P1, P2),
+    {T =.. [token,A,B,C,D],
+    (P1 == P2 -> Tb =.. [token,A,B,C,D,false]; Tb =.. [token,A,B,C,D,true])}.
 
-minus(X) --> [X], {char_code(X,C), C >= 97, C =< 122, auto_column}.
-mayus(X) --> [X], {char_code(X,C), C >= 65, C =< 90, auto_column}.
-letter(X) --> minus(X).
-letter(X) --> mayus(X).
-letter(X) --> number(X).
-letter('_') --> ['_'], {auto_column}.
+% Tokens.
+token(T, P0, P1) --> token_variable(T, P0, P1), !.
+token(T, P0, P1) --> token_number(T, P0, P1), !.
+token(T, P0, P1) --> token_atom(T, P0, P1), !.
+token(T, P0, P1) --> token_symbol(T, P0, P1), !.
+token(X, pos(L,C), P1) -->
+    char_eq(X, pos(L,C), P1),
+    {atom_concat('unexpected input ', X, Msg),
+    syntax_error(L, C, Msg, Error),
+    throw_exception(Error)}.
 
-% Graphics
-token_graphics(T) --> graphic(H), graphics(G), {atom_chars(T,[H|G])}.
+% Variable.
+token_variable(token(variable, V, ['_'|Xs], P2), P0, P2) -->
+    char_eq('_', P0, P1),
+    many(char_identifier, Xs, P1, P2),
+    {atom_chars(V, ['_'|Xs])}.
+token_variable(token(variable, V, [X|Xs], P2), P0, P2) -->
+    char_upper(X, P0, P1),
+    many(char_identifier, Xs, P1, P2),
+    {atom_chars(V, [X|Xs])}.
 
-graphics([H|T]) --> graphic(H), !, graphics(T).
-graphics([]) --> [].
-graphic(X) --> [X], {member(X,['.','|',',','=',';','#','$','&','*','+','-','/',':','<','>','?','^','~','\\']), auto_column}.
+% Binary number.
+token_number(token(number, N, ['0','b'|H], P2), P0, P2) -->
+    string_eq(['0','b'], P0, P1),
+    some(char_binary, H, P1, P2),
+    {atom_chars(C, ['0','b'|H]), atom_number(C, N)}.
 
-% Variables
-token_variable(T) --> mayus(X), identifier(Xs), {atom_chars(T,[X|Xs])}.
-token_variable(T) --> ['_'], {auto_column}, identifier(Xs), {atom_chars(T,['_'|Xs])}.
+% Octal number.
+token_number(token(number, N, ['0','o'|H], P2), P0, P2) -->
+    string_eq(['0','o'], P0, P1),
+    some(char_octal, H, P1, P2),
+    {atom_chars(C, ['0','o'|H]), atom_number(C, N)}.
 
-% Numbers
-token_number(N) --> ['0','x'], {auto_column(2)}, hexadecimals(H),
-    {(H \= [], ! ; throw('invalid hexadecimal number')), atom_chars(C,['0','x'|H]), atom_number(C,N)}.
-token_number(N) --> ['0','b'], {auto_column(2)}, binaries(B),
-    {(B \= [], ! ; throw('invalid binary number')), atom_chars(C,['0','b'|B]), atom_number(C,N)}.
-token_number(N) --> ['0','o'], {auto_column(2)}, octals(O),
-    {(O \= [], ! ; throw('invalid octal number')), atom_chars(C,['0','o'|O]), atom_number(C,N)}.
-token_number(N) --> numbers(X), {X \= []}, token_number2(Y), !, {append(X,Y,Z)}, {atom_chars(T,Z), atom_number(T,N)}.
-token_number2(N) --> ['.'], {auto_column}, numbers(X), {X \= []}, !, token_number3(Y), {append(['.'|X],Y,N)}.
-token_number2(X) --> token_number3(X).
-token_number3([e,S|X]) --> [e,S], {member(S, ['-','+']), auto_column(2)}, !,
-    (numbers(X), {X \= []}, ! ; {throw('invalid number')}), !.
-token_number3([e|X]) --> [e], {auto_column},
-    (numbers(X), {X \= []}, ! ; {throw('invalid number')}), !.
-token_number3([]) --> [].
+% Hexadecimal number.
+token_number(token(number, N, ['0','x'|H], P2), P0, P2) -->
+    string_eq(['0','x'], P0, P1),
+    some(char_hexadecimal, H, P1, P2),
+    {atom_chars(C, ['0','x'|H]), atom_number(C, N)}.
 
-binary('0') --> ['0'], {auto_column}.
-binary('1') --> ['1'], {auto_column}.
-binaries([N|M]) --> binary(N), !, binaries(M).
-binaries([]) --> [].
+% Integer and decimal number.
+token_number(token(number, N, C, P1), P0, P1) --> 
+    string_number(S, P0, P1),
+    {atom_chars(C, S), atom_number(C, N)}.
 
-octal(X) --> [X], {char_code(X,C), C >= 48, C =< 55, auto_column}.
-octals([N|M]) --> octal(N), !, octals(M).
-octals([]) --> [].
+% Atom cut !.
+token_atom(token(atom, '!', ['!'], P1), P0, P1) -->
+    char_eq('!', P0, P1).
 
-hexadecimal(X) --> [X], {member(X,['0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f','A','B','C','D','E','F']), auto_column}.
-hexadecimals([N|M]) --> hexadecimal(N), !, hexadecimals(M).
-hexadecimals([]) --> [].
+% Atom comma ,.
+token_atom(token(atom, ',', [','], P1), P0, P1) -->
+    char_eq(',', P0, P1).
 
-number(X) --> [X], {char_code(X,C), C >= 48, C =< 57, auto_column}.
-numbers([N|M]) --> number(N), !, numbers(M).
-numbers([]) --> [].
+% Graphic atom.
+token_atom(token(atom, A, T, P1), P0, P1) -->
+    some(char_graphic, T, P0, P1),
+    {atom_chars(A, T)}.
 
-% Strings
-token_string(T) --> double_quote, double_quote_content(T), (double_quote, ! ; {throw('double quote expected')}), blanks.
-double_quote --> ['"'], {auto_column}.
-double_quote_content(term('.',[num(10),Xs])) --> ['\n'], !, {auto_line}, double_quote_content(Xs).
-double_quote_content(term('.',[num(C), Xs])) --> [X], {X \= '"'}, {auto_column, char_code(X, C)}, !, double_quote_content(Xs).
-double_quote_content(term('.',[num(34),Xs])) --> ['"','"'], !, {auto_column(2)}, double_quote_content(Xs).
-double_quote_content(term('.',[num(34),Xs])) --> ['\\','"'], !, {auto_column(2)}, double_quote_content(Xs).
-double_quote_content(term(',',[num(92),Xs])) --> ['\\','\\'], !, {auto_column(2)}, double_quote_content(Xs).
-double_quote_content(term('[]',[])) --> [].
+% Quoted atom.
+token_atom(token(atom, A, ['\''|Xs], P3), P0, P3) -->
+    char_eq('\'', P0, P1),
+    string_single_quoted(T, P1, P2),
+    char_eq('\'', P2, P3),
+    {append(T, '\'', Xs), atom_chars(A, T)}.
 
-% Atoms
-token_atom('!') --> ['!'], {auto_column}.
-token_atom('#'(T)) --> ['#'], {auto_column}, token_minus_identifier(T).
-token_atom(T) --> quoted(Xs), {atom_chars(T,Xs)}.
-token_atom(T) --> token_graphics(T).
-token_atom(T) --> token_minus_identifier(T).
+% Regular atom.
+token_atom(token(atom, A, T, P1), P0, P1) -->
+    string_lower_identifier(T, P0, P1),
+    {atom_chars(A, T)}.
 
-quoted(X) --> quote, quote_content(X), (quote, ! ; {throw('single quote expected')}), blanks.
-quote --> [''''], {auto_column}.
-quote_content(['\n'|Xs]) --> ['\n'], !, {auto_line}, quote_content(Xs).
-quote_content([X|Xs]) --> [X], {X \= ''''}, !, {auto_column}, quote_content(Xs).
-quote_content([''''|Xs]) --> ['''',''''], !, {auto_column(2)}, quote_content(Xs).
-quote_content([''''|Xs]) --> ['\\',''''], !, {auto_column(2)}, quote_content(Xs).
-quote_content(['\\'|Xs]) --> ['\\','\\'], !, {auto_column(2)}, quote_content(Xs).
-quote_content([]) --> [].
-
-% Proper symbols
-lbrace --> ['{'], {auto_column}, blanks.
-rbrace --> ['}'], {auto_column}, blanks.
-lparen --> ['('], {auto_column}, blanks.
-rparen --> [')'], {auto_column}, blanks.
-lbracket --> ['['], {auto_column}, blanks.
-rbracket --> [']'], {auto_column}, blanks.
-bar --> ['|'], {auto_column}, blanks.
-comma --> [','], {auto_column}, blanks.
-dot --> ['.'], {auto_column}, blanks.
-
-% Blanks
-blanks --> blank, !, blanks.
-blanks --> [].
-blank --> [' '], {auto_column}.
-blank --> ['\n'], {auto_line}.
-blank --> ['\t'], {auto_column}.
-blank --> ['%'], singleline_comment, ['\n'], {auto_line}.
-blank --> ['/','*'], multiline_comment, ['*','/'].
-singleline_comment --> [X], {X \= '\n'}, !, singleline_comment.
-singleline_comment --> [].
-multiline_comment --> ['\n'], !, {auto_line}, multiline_comment.
-multiline_comment --> [X], {X \= '*'}, !, multiline_comment.
-multiline_comment --> ['*',X], {X \= '/'}, !, multiline_comment.
-multiline_comment --> [].
+% Proper symbols.
+token_symbol(token(lbrace, '{', ['{'], P1), P0, P1) --> char_eq('{', P0, P1).
+token_symbol(token(rbrace, '}', ['}'], P1), P0, P1) --> char_eq('}', P0, P1).
+token_symbol(token(lparen, '(', ['('], P1), P0, P1) --> char_eq('(', P0, P1).
+token_symbol(token(rparen, ')', [')'], P1), P0, P1) --> char_eq(')', P0, P1).
+token_symbol(token(lbracket, '[', ['['], P1), P0, P1) --> char_eq('[', P0, P1).
+token_symbol(token(rbracket, ']', [']'], P1), P0, P1) --> char_eq(']', P0, P1).
