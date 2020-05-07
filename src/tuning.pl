@@ -3,7 +3,7 @@
   * FILENAME: tuning.pl
   * DESCRIPTION: This module contains predicates for tuning symbolic FASILL programs.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 11.03.2020
+  * UPDATED: 08.05.2020
   * 
   **/
 
@@ -85,8 +85,8 @@ symbolic_substitution([H|T], [H/H_|T_]) :-
     H \== ground,
     symbolic_substitution(H, H_),
     symbolic_substitution(T, T_).
-symbolic_substitution(sym(td,_,0), val(td,Value,0)) :-
-    lattice_call_members(Members),
+symbolic_substitution(sym(td,Sym,0), val(td,Value,0)) :-
+    lattice_call_members(Sym, Members),
     member(Value, Members).
 symbolic_substitution(sym(Type,_,Arity), val(Type,Name,Arity)) :-
     Arity > 0,

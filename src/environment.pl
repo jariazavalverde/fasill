@@ -3,7 +3,7 @@
   * FILENAME: environment.pl
   * DESCRIPTION: This module contains predicates for manipulating programs, lattices and similarity relations.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 01.04.2020
+  * UPDATED: 08.05.2020
   * 
   **/
 
@@ -44,6 +44,7 @@
     lattice_call_top/1,
     lattice_call_member/1,
     lattice_call_members/1,
+    lattice_call_members/2,
     lattice_call_leq/2,
     lattice_call_distance/3,
     lattice_call_connective/3,
@@ -516,6 +517,18 @@ lattice_call_members(Members) :-
 lattice_call_members(_) :-
     existence_error(procedure, members/1, lattice/0, Error),
     throw_exception(Error).
+
+% lattice_call_members/2
+% lattice_call_members(+Constant, -Members)
+%
+% This predicate succeeds when -Members is a list of
+% members for a symbolic constant Constant in the lattice
+% loaded into the environment.
+lattice_call_members(Constant, Members) :-
+    current_predicate(members/2),
+    members(Constant, Prolog),
+    maplist(from_prolog, Prolog, Members), !.
+lattice_call_members(_, Members) :- lattice_call_members(Members).
 
 % lattice_call_leq/2
 % lattice_call_leq(+Member1, +Member2)
