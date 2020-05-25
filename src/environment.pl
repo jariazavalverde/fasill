@@ -452,7 +452,7 @@ lattice_tconorm(Tconorm) :-
     current_predicate(Name/3),
     atom_concat(or_, Tconorm, Name), !.
 lattice_tconorm(Tconorm) :-
-    atom_concat(and_, Tconorm, Name),
+    atom_concat(or_, Tconorm, Name),
     existence_error(procedure, Name/3, lattice/0, Error),
     throw_exception(Error).
 
