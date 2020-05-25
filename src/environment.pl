@@ -708,11 +708,10 @@ similarity_consult(Path) :-
 % transitive closure of the similarity scheme asserted
 % into the current environment.
 similarity_closure :-
-    findall(Atom/Arity, (
-        similarity_between(Atom, _, Arity, _, _);
-        similarity_between(_, Atom, Arity, _, _)
-    ), DomR),
-    list_to_set(DomR, Dom),
+    setof(Atom/Arity, _Atom^_TD^_Sym^(
+        similarity_between(Atom, _Atom, Arity, _TD, _Sym);
+        similarity_between(_Atom, Atom, Arity, _TD, _Sym)
+    ), Dom),
     findall(sim(Atom1,Atom2,Arity,TD,Sym), similarity_between(Atom1,Atom2,Arity,TD,Sym), Scheme),
     similarity_tnorm(Tnorm),
     lattice_call_bot(Bot),
@@ -728,8 +727,10 @@ similarity_closure_check_equations(Dom, Scheme) :-
     member(X/Arity, Dom),
     member(Y/Arity, Dom),
     X @< Y,
-    findall(TD, (member(sim(X,Y,Arity,TD,_), Scheme) ; member(sim(Y,X,Arity,TD,_), Scheme)), L),
-    list_to_set(L, Set),
+    setof(TD, _Sym^(
+        member(sim(X,Y,Arity,TD,_Sym), Scheme);
+        member(sim(Y,X,Arity,TD,_Sym), Scheme)
+    ), Set),
     length(Set, Length),
     from_prolog_list(Set, FSet),
     (Length > 1 -> throw_warning(term(warning, [term(conflicting_equations, [term('/', [term(X, []), num(Arity)]), term('/', [term(Y, []), num(Arity)]), FSet])]))).
