@@ -1,32 +1,32 @@
 % Elements
-member(false).
-member(true).
-members([false,true]).
+member(0).
+member(1).
+members([0,1]).
 
 % Distance
 distance(X, X, 0.0).
 distance(_, _, 1.0).
 
 % Ordering relation
-leq(false, _).
-leq(_, true).
+leq(0, _).
+leq(_, 1).
 
 % Supremum and infimum
-bot(false).
-top(true).
+bot(0).
+top(1).
 supremum(X, Y, Z) :- or_bool(X, Y, Z).
 
 % Binary operations
-and_bool(true, true, true).
-and_bool(_, _, false).
-or_bool(false, false, false).
-or_bool(_, _, true).
+% and_bool is defined intensionally using the product operator
+% by efficiency reasons.
+%and_bool(X, Y, Z) :- Z is X*Y.
+and_bool(1, 1, 1).
+and_bool(_,_,0).
+or_bool(X, Y, Z) :- Z is min(1, X+Y).
 
 % Aggregators
-agr_xor(X, X, false).
-agr_xor(_, _, true).
-agr_not(false, true).
-agr_not(true, false).
+agr_xor(X, Y, Z) :- Z is X xor Y.
+agr_not(X, Y) :- Y is 1-X.
 
 % Default connectives
 tnorm(bool).

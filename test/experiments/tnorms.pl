@@ -53,7 +53,7 @@ test_tnorms(Gen, Tnorm, Size, N, Ts, Is, Times, Inferences) :-
 % GENERATION OF PROGRAMS
 
 random_unit(num(X)) :- random(X).
-random_bool(term(X, [])) :- random_member(X, [false, true]).
+random_bool(num(X)) :- random_member(X, [0, 1]).
 
 % arbitrary_program/4
 % arbitrary_program(+Generator, +Size, +Tnorm, ?Program)

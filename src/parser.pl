@@ -3,7 +3,7 @@
   * FILENAME: parser.pl
   * DESCRIPTION: This module contains predicates for parsing FASILL programs.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 08.05.2020
+  * UPDATED: 15.06.2020
   * 
   **/
 
@@ -215,6 +215,11 @@ next_priority(500, 400).
 next_priority(400, 200).
 next_priority(200, 0).
 
+% max_priority/1
+% Gives the higher priority to derivate an expression.
+max_priority(0) :- environment:current_fasill_flag(operators, term(false,[])), !.
+max_priority(1300).
+
 
 
 % GRAMMAR
@@ -241,13 +246,13 @@ grammar_program([], _) --> [].
 % grammar_query/4
 % Parses a fuzzy logic goal.
 grammar_query(T, P) -->
-    (grammar_expression(1300, T, pos(L,C)), ! ; {syntax_error(1, 0, 'expression expected', Error), throw_exception(Error)}),
+    ({max_priority(MP)}, grammar_expression(MP, T, pos(L,C)), ! ; {syntax_error(1, 0, 'expression expected', Error), throw_exception(Error)}),
     (grammar_dot(P), ! ; {syntax_error(L, C, 'point or operator expected', Error), throw_exception(Error)}).
 
 % parse_rule/4
 % Parses a MALP or FASILL rule.
 grammar_rule(fasill_rule(head(Head), Body, [id(IdAtom),Info]), P) -->
-    grammar_expression(1300, T, pos(L,C)), (grammar_dot(P), ! ; {syntax_error(L, C, 'point or operator expected', Error), throw_exception(Error)}),
+    {max_priority(MP)}, grammar_expression(MP, T, pos(L,C)), (grammar_dot(P), ! ; {syntax_error(L, C, 'point or operator expected', Error), throw_exception(Error)}),
     {(
        % rule
        T = term(with, [Head, TD]), Body = body(TD), Info = syntax(malp) ;
@@ -300,7 +305,7 @@ grammar_similarity_equation(fasill_similarity(Q/N, R/M, TD, Sym), P) -->
     {(integer(N), N >= 0) -> true ; syntax_error(L1, C1, 'arity must be a non-negative integer', Error), throw_exception(Error)},
     {(integer(M), M >= 0) -> true ; syntax_error(L5, C5, 'arity must be a non-negative integer', Error), throw_exception(Error)},
     ([token(atom, '=', ['='], pos(L7,C7), _)], ! ; {syntax_error(L6, C6, 'equal symbol expected', Error), throw_exception(Error)}),
-    (grammar_expression(1300, TD, pos(L8,C8)), {TD = term('#'(_), []) -> Sym = yes ; Sym = no}, ! ; {syntax_error(L7, C7, 'point or operator expected', Error), throw_exception(Error)}),
+    ({max_priority(MP)}, grammar_expression(MP, TD, pos(L8,C8)), {TD = term('#'(_), []) -> Sym = yes ; Sym = no}, ! ; {syntax_error(L7, C7, 'point or operator expected', Error), throw_exception(Error)}),
     (grammar_dot(P), ! ; {syntax_error(L8, C8, 'point or operator expected', Error), throw_exception(Error)}).
 
 % grammar_testcases/4
@@ -311,7 +316,7 @@ grammar_testcases([], _) --> [].
 % grammar_testcase/4
 % Parses a FASILL testcase.
 grammar_testcase(Test, P) -->
-    grammar_expression(1300, T, pos(L,C)),
+    {max_priority(MP)}, grammar_expression(MP, T, pos(L,C)),
     (grammar_dot(P), ! ; {syntax_error(L, C, 'point or operator expected', Error), throw_exception(Error)}),
     ({T = term('->', [TD, Goal]) -> Test = fasill_testcase(TD, Goal) ; Test = fasill_testcase_precondition(T)}).
 
@@ -361,7 +366,7 @@ grammar_expression_zero(num(T), P) --> [token(number, T, _, P, _)], !.
 grammar_expression_zero(var(T), P) --> [token(variable, T, _, P, _)], !.
 grammar_expression_zero(T, P) -->
     [token(lparen, _, _, _, _)], !,
-    grammar_expression(1300, T, pos(L,C)),
+    {max_priority(MP)}, grammar_expression(MP, T, pos(L,C)),
     ([token(rparen, _, _, P, _)], ! ; {syntax_error(L, C, 'operator or right parenthesis expected', Error), throw_exception(Error)}).
 grammar_expression_zero(T, P) --> grammar_list(T, P), !.
 grammar_expression_zero(T, P) --> grammar_brace(T, P), !.
@@ -426,7 +431,7 @@ grammar_list_args(term('[]', []), pos(L,C), P) -->
 % Parses a braced expression.
 grammar_brace(term('{}', [T]), P) -->
     [token(lbrace, _, _, _, _)],
-    grammar_expression(1300, T, pos(L,C)), !,
+    {max_priority(MP)}, grammar_expression(MP, T, pos(L,C)), !,
     ([token(rbrace, _, _, P, _)], ! ; {syntax_error(L, C, 'expression or right brace expected', Error), throw_exception(Error)}).
 grammar_brace(term('{}', []), P) -->
     [token(lbrace, _, _, pos(L,C), _)],
@@ -533,24 +538,24 @@ string_lower_identifier([X|Xs], P0, P2) -->
     many(char_identifier, Xs, P1, P2).
 
 % String single quoted.
-string_single_quoted(['\''|Xs], P0, P2) -->
-    string_eq(['\'','\''], P0, P1), !,
+string_single_quoted(['\''|Xs], pos(L,C), P2) -->
+    ['\'','\''], {C1 is C+2, P1 = pos(L,C1)},
     string_single_quoted(Xs, P1, P2).
-string_single_quoted(['\''|Xs], P0, P2) -->
-    string_eq(['\\','\''], P0, P1), !,
+string_single_quoted(['\''|Xs], pos(L,C), P2) -->
+    ['\\','\''], {C1 is C+2, P1 = pos(L,C1)},
     string_single_quoted(Xs, P1, P2).
-string_single_quoted([X|Xs], P0, P2) -->
-    char_eq(X, P0, P1), {X \= '\''}, !,
+string_single_quoted([X|Xs], pos(L,C), P2) -->
+    [X], {X \= '\'', (X == '\n' -> succ(L,L1), P1 = pos(L1,0) ; succ(C,C1), P1 = pos(L,C1))}, !,
     string_single_quoted(Xs, P1, P2).
 string_single_quoted([], P, P) --> [].
 
 % Blank strings.
-string_blank(P0, P3) -->
-    char_eq('%', P0, P1), !,
+string_blank(pos(L,C), P3) -->
+    ['%'], {succ(C,C1), P1 = pos(L,C1)},
     string_blank_line(P1, P2),
     string_blank(P2, P3).
-string_blank(P0, P4) -->
-    string_eq(['/','*'], P0, P1), !,
+string_blank(pos(L,C), P4) -->
+    ['/','%'], {C1 is C+2, P1 = pos(L,C1)},
     string_blank_multiline(P1, P2),
     string_eq(['*','/'], P2, P3),
     string_blank(P3, P4).
@@ -605,20 +610,20 @@ token_variable(token(variable, V, [X|Xs], P2), P0, P2) -->
     {atom_chars(V, [X|Xs])}.
 
 % Binary number.
-token_number(token(number, N, ['0','b'|H], P2), P0, P2) -->
-    string_eq(['0','b'], P0, P1),
+token_number(token(number, N, ['0','b'|H], P2), pos(L,C), P2) -->
+    ['0','b'], {C1 is C+2, P1 = pos(L,C1)},
     some(char_binary, H, P1, P2),
     {atom_chars(C, ['0','b'|H]), atom_number(C, N)}.
 
 % Octal number.
-token_number(token(number, N, ['0','o'|H], P2), P0, P2) -->
-    string_eq(['0','o'], P0, P1),
+token_number(token(number, N, ['0','o'|H], P2), pos(L,C), P2) -->
+    ['0','o'], {C1 is C+2, P1 = pos(L,C1)},
     some(char_octal, H, P1, P2),
     {atom_chars(C, ['0','o'|H]), atom_number(C, N)}.
 
 % Hexadecimal number.
-token_number(token(number, N, ['0','x'|H], P2), P0, P2) -->
-    string_eq(['0','x'], P0, P1),
+token_number(token(number, N, ['0','x'|H], P2), pos(L,C), P2) -->
+    ['0','x'], {C1 is C+2, P1 = pos(L,C1)},
     some(char_hexadecimal, H, P1, P2),
     {atom_chars(C, ['0','x'|H]), atom_number(C, N)}.
 
@@ -628,12 +633,12 @@ token_number(token(number, N, C, P1), P0, P1) -->
     {atom_chars(C, S), atom_number(C, N)}.
 
 % Atom cut !.
-token_atom(token(atom, '!', ['!'], P1), P0, P1) -->
-    char_eq('!', P0, P1).
+token_atom(token(atom, '!', ['!'], pos(L,C1)), pos(L,C), pos(L,C1)) -->
+    ['!'], {succ(C,C1)}.
 
 % Atom comma ,.
-token_atom(token(atom, ',', [','], P1), P0, P1) -->
-    char_eq(',', P0, P1).
+token_atom(token(atom, ',', [','], pos(L,C1)), pos(L,C), pos(L,C1)) -->
+    [','], {succ(C,C1)}.
 
 % Graphic atom.
 token_atom(token(atom, A, T, P1), P0, P1) -->
@@ -653,9 +658,9 @@ token_atom(token(atom, A, T, P1), P0, P1) -->
     {atom_chars(A, T)}.
 
 % Proper symbols.
-token_symbol(token(lbrace, '{', ['{'], P1), P0, P1) --> char_eq('{', P0, P1).
-token_symbol(token(rbrace, '}', ['}'], P1), P0, P1) --> char_eq('}', P0, P1).
-token_symbol(token(lparen, '(', ['('], P1), P0, P1) --> char_eq('(', P0, P1).
-token_symbol(token(rparen, ')', [')'], P1), P0, P1) --> char_eq(')', P0, P1).
-token_symbol(token(lbracket, '[', ['['], P1), P0, P1) --> char_eq('[', P0, P1).
-token_symbol(token(rbracket, ']', [']'], P1), P0, P1) --> char_eq(']', P0, P1).
+token_symbol(token(lbrace, '{', ['{'], pos(L,C1)), pos(L,C), pos(L,C1)) --> ['{'], {succ(C,C1)}.
+token_symbol(token(rbrace, '}', ['}'], pos(L,C1)), pos(L,C), pos(L,C1)) --> ['}'], {succ(C,C1)}.
+token_symbol(token(lparen, '(', ['('], pos(L,C1)), pos(L,C), pos(L,C1)) --> ['('], {succ(C,C1)}.
+token_symbol(token(rparen, ')', [')'], pos(L,C1)), pos(L,C), pos(L,C1)) --> [')'], {succ(C,C1)}.
+token_symbol(token(lbracket, '[', ['['], pos(L,C1)), pos(L,C), pos(L,C1)) --> ['['], {succ(C,C1)}.
+token_symbol(token(rbracket, ']', [']'], pos(L,C1)), pos(L,C), pos(L,C1)) --> [']'], {succ(C,C1)}.

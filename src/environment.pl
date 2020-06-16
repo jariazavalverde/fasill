@@ -3,7 +3,7 @@
   * FILENAME: environment.pl
   * DESCRIPTION: This module contains predicates for manipulating programs, lattices and similarity relations.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 08.05.2020
+  * UPDATED: 15.06.2020
   * 
   **/
 
@@ -97,6 +97,7 @@ fasill_flag(max_inferences, [term(false,[]), num(_)], term(false,[])).
 fasill_flag(symbolic, [term(false,[]), term(true,[])], term(true,[])).
 fasill_flag(failure_steps, [term(false,[]), term(true,[])], term(true,[])).
 fasill_flag(lambda_unification, [_], bot).
+fasill_flag(operators, [term(false,[]), term(true,[])], term(true,[])).
 
 % current_fasill_flag/2
 % current_fasill_flag(?Flag, ?Value)
@@ -126,7 +127,7 @@ is_fasill_flag_value(Flag, Value) :-
 %
 % This predicate succeeds when +Flag is a FASILL flag
 % and +Value is a possible value for the flag. This predicate
-% has the side effect of chaging the current value for the flag.
+% has the side effect of changing the current value for the flag.
 set_fasill_flag(Flag, Value) :-
     atomic(Flag), nonvar(Value),
     is_fasill_flag_value(Flag, Value),

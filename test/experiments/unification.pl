@@ -146,5 +146,5 @@ weakly_modify_fasill_term(term(X, Xs), term(Y, Ys)) :-
     atom_concat(X, '_', Y),
     maplist(weakly_modify_fasill_term, Xs, Ys),
     length(Xs, Arity),
-    ( environment:fasill_similarity(X/Arity, Y/Arity, _) -> true;
-        assertz(environment:fasill_similarity(X/Arity, Y/Arity, num(0.5))) ).
+    ( environment:fasill_similarity(X/Arity, Y/Arity, _, no) -> true;
+        assertz(environment:fasill_similarity(X/Arity, Y/Arity, num(0.5), no)) ).
