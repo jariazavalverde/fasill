@@ -162,6 +162,7 @@ sandbox_tune(Program, Lattice, Sim, Tests, Limit, Options) :-
     catch(program_consult(Program), Error1, (write('uncaught exception in program: '), sandbox_write(Error1), nl)),
     catch(testcases_consult(Tests), Error2, (write('uncaught exception in testcases: '), sandbox_write(Error2), nl)),
     catch(similarity_consult(Sim), Error3, (write('uncaught exception in similarities: '), sandbox_write(Error3), nl)),
+    (member(prolog(PathPl), Options) -> program_import_prolog(PathPl); true),
     statistics(runtime,[_,_]),
     tuning_thresholded(Subs, Deviation),
     statistics(runtime,[_,T1]),

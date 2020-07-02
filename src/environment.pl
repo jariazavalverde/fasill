@@ -33,6 +33,7 @@
     program_clause/2,
     program_rule_id/2,
     program_consult/1,
+    program_import_prolog/1,
     program_has_predicate/1,
     query_consult/2,
     sort_rules_by_id/0,
@@ -330,8 +331,40 @@ program_consult(Path) :-
         assertz(Rule),
         Rule = fasill_rule(head(term(Name,Args)),_,_),
         length(Args,Arity),
-        (fasill_predicate(Name/Arity) -> true ; assertz(fasill_predicate(Name/Arity))),
+        (catch(fasill_predicate(Name/Arity), _, fail) -> true ; assertz(fasill_predicate(Name/Arity))),
         fail ; true).
+
+% program_import_prolog/1
+% program_import_prolog(+Path)
+%
+% This predicate loads the Prolog program from
+% the file +Path into the environment. This
+% predicate doesn't cleans the previous rules.
+:- dynamic(last_prolog_id/1).
+last_prolog_id(0).
+program_import_prolog(Path) :-
+    open(Path, read, Stream),
+    program_import_prolog_(Stream).
+program_import_prolog_(Stream) :-
+    read(Stream, PrologTerm),
+    PrologTerm \= end_of_file,
+    from_prolog(PrologTerm, FasillTerm),
+    (FasillTerm = term(':-', [Head,Body_]) -> Body = body(Body_) ; Head = FasillTerm, Body = empty),
+    last_prolog_id(N),
+    succ(N, M),
+    retractall(last_prolog_id(_)),
+    asserta(last_prolog_id(M)),
+    atom_number(A, N),
+    atom_concat('Pr', A, Id),
+    Rule = fasill_rule(head(Head), Body, [id(Id), syntax(prolog)]),
+    Head = term(Name, Args),
+    assertz(Rule),
+    length(Args, Arity),
+    (catch(fasill_predicate(Name/Arity), _, fail) -> true ; assertz(fasill_predicate(Name/Arity))),
+    program_import_prolog_(Stream).
+program_import_prolog_(Stream) :-
+    close(Stream).
+
 
 % query_consult/2
 % program_consult(+Path, ?State)
