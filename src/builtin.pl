@@ -443,12 +443,17 @@ eval_builtin_predicate('@>='/2, state(_, Subs), selected(ExprVar, top, Term), st
 %%% name of Term as head and the arguments of that functor as tail.
 eval_builtin_predicate('=..'/2, state(_, Subs), selected(ExprVar, Expr, Atom), state(ExprVar, Subs)) :-
     Atom = term('=..', [Term, List]),
-    to_prolog(Term, X),
-    to_prolog(List, Y),
-    X =.. Y,
-    from_prolog(X, Term_),
-    from_prolog(Y, List_),
-    Expr = term('&', [term('~',[Term,Term_]), term('~',[List,List_])]).
+    (fasill_var(Term), fasill_var(List) -> instantiation_error('=..'/2, Error), throw_exception(Error) ; (
+        (\+fasill_list(List) -> type_error(list, List, '=..'/2, Error), throw_exception(Error) ; (
+            (\+fasill_var(List), \+fasill_list(List) -> type_error(list, List, '=..'/2, Error), throw_exception(Error) ; (
+                (\+fasill_var(Term), \+fasill_term(Term) -> type_error(atom, Term, '=..'/2, Error), throw_exception(Error) ; (
+                    (\+fasill_var(Term) -> Term = term(Name,Args), from_prolog_list(Args,Args_), List_ = term('.',[term(Name,[]),Args_]), Expr = term('~',[List,List_]) ; (
+                        (List = term('[]',[]) -> Term_ = List ; List = term('.',[term(Name,[]), Args]), to_prolog_list(Args,Args_), Term_ = term(Name, Args_), Expr = term('~',[Term,Term_]))
+                    ))
+                ))
+            ))
+        ))
+    )).
 
 
 

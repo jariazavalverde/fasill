@@ -11,6 +11,7 @@
 
 :- module(environment, [
     to_prolog/2,
+    to_prolog_list/2,
     from_prolog/2,
     from_prolog_list/2,
     current_fasill_flag/2,
@@ -173,12 +174,20 @@ from_prolog(X, term(H,Args)) :-
     X =.. [H|T],
     maplist(from_prolog, T, Args).
 
+% to_prolog_list/2
+% to_prolog_list(+FASILL, ?Prolog)
+%
+% This predicate takes the FASILL list +FASILL
+% and returns the list ?Prolog in Prolog notation.
+to_prolog_list(term('[]', []), []).
+to_prolog_list(term('.',[H,S]), [H|T]) :- to_prolog_list(S, T).
+
 % from_prolog_list/2
 % from_prolog_list(+Prolog, ?FASILL)
 %
 % This predicate takes the Prolog list +Prolog
 % and returns the list ?FASILL in FASILL notation.
-from_prolog_list([], term([], [])).
+from_prolog_list([], term('[]', [])).
 from_prolog_list([H|T], term('.',[H,S])) :- from_prolog_list(T, S).
 
 % fasill_number/1
@@ -236,7 +245,7 @@ fasill_callable(X) :- lattice_call_member(X).
 % fasill_list(+Term)
 %
 % This predicate succeeds when +Term is a list or variable.
-fasill_list(term([],[])) :- !.
+fasill_list(term('[]',[])) :- !.
 fasill_list(var(_)) :- !.
 fasill_list(term('.',[_,T])) :- fasill_list(T).
 
