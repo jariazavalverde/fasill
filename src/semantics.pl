@@ -204,7 +204,7 @@ is_fuzzy_computed_answer(X) :-
 % with the variable ?Var instead of the atom ?Atom.
 select_atom(term(Term, Args), term(Term, Args_), Var, Atom) :-
     functor(Term, Op, _),
-    member(Op, ['@','&','|','#@','#&','#|']), !,
+    member(Op, ['@','&','|','#@','#&','#|','#?']), !,
     select_atom(Args, Args_, Var, Atom).
 select_atom(term(Term, Args), Var, Var, term(Term, Args)) :-
     \+functor(Term, '#', 1),

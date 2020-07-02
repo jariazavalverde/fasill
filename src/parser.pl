@@ -202,6 +202,8 @@ current_op(200,  xfy, '^^',   no).
 current_op(200,  fy,  '+',    no).
 current_op(200,  fy,  '-',    no).
 current_op(200,  fx,  ':',    no).
+current_op(0,    f,   '#?',   yes).
+current_op(0,    f,   '#@',   yes).
 
 % next_priority/2
 % Gives the next priority to derivate an expression.
@@ -372,6 +374,7 @@ grammar_expression_zero(T, P) --> grammar_list(T, P), !.
 grammar_expression_zero(T, P) --> grammar_brace(T, P), !.
 grammar_expression_zero(T, P) --> grammar_symbolic_constant(T, P), !.
 grammar_expression_zero(T, P) --> grammar_connective(T, P), !.
+grammar_expression_zero(term(Op, []), P) --> grammar_operator(_, _, Op, _, P), !.
 grammar_expression_zero(T, P) --> grammar_term(T, P), !.
 
 % grammar_symbolic_constant/4

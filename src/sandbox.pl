@@ -61,6 +61,8 @@ sandbox_write(var(X)) :- write(X).
 sandbox_write(X/Y) :- write(X), write('/'), sandbox_write(Y).
 sandbox_write(X-Y) :- write(X), write('/'), sandbox_write(Y).
 sandbox_write(term('#'(Name),[])) :- !, write('#'), write(Name).
+sandbox_write(term(T,[])) :- T =.. [A,B], !, write(A), write(B).
+sandbox_write(term('#?'(Name),Args)) :- !, write('#?'), write(Name), write('('), sandbox_write(Args), write(')').
 sandbox_write(term('#@'(Name),Args)) :- !, write('#@'), write(Name), write('('), sandbox_write(Args), write(')').
 sandbox_write(term('#&'(Name),[X,Y])) :- !, write('('), sandbox_write(X), write(' #&'), write(Name), write(' '), sandbox_write(Y), write(')'). 
 sandbox_write(term('#|'(Name),[X,Y])) :- !, write('('), sandbox_write(X), write(' #|'), write(Name), write(' '), sandbox_write(Y), write(')'). 
