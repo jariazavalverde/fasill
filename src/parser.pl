@@ -399,7 +399,7 @@ grammar_term_args([], pos(L,C), P1) -->
 % Parses a prefix connective.
 grammar_connective(term(Con, [X|Xs]), P1) -->
     [token(atom, Type, [C1|_], _, false)], {C1 \= '\''},
-    {member(Type, ['@','&','|','#@','#&','#|'])},
+    {member(Type, ['@','&','|','#@','#&','#|', '#?'])},
     [token(atom, Name, [C2|_], _, false)], {C2 \= '\''},
     [token(lparen, _, _, _, _)],
     grammar_expression(999, X, P0),
