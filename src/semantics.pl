@@ -204,7 +204,7 @@ is_fuzzy_computed_answer(X) :-
 % with the variable ?Var instead of the atom ?Atom.
 select_atom(term(Term, Args), term(Term, Args_), Var, Atom) :-
     functor(Term, Op, _),
-    member(Op, ['@','&','|','#@','#&','#|','#?']), !,
+    member(Op, ['@','&','|','#@','#&','#|','#/','#?']), !,
     select_atom(Args, Args_, Var, Atom).
 select_atom(term(Term, Args), Var, Var, term(Term, Args)) :-
     \+functor(Term, '#', 1),
@@ -246,7 +246,7 @@ interpretable(Expr) :- \+select_atom(Expr, _, _, _).
 % This predicate succeeds when ?Answer is a fuzzy computed
 % answer (fca) for the goal +Goal. A fca is a term of the
 % form state(TD, Substitution), where TD is the truth degree.
-:- dynamic(check_success/0, trace_derivation/1, trace_level/1).
+:- dynamic check_success/0, trace_derivation/1, trace_level/1.
 query(Goal, Answer) :-
     retractall(check_success),
     retractall(trace_derivation),

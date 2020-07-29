@@ -65,7 +65,7 @@ findall_symbolic_cons(sup(X, Y), Sym) :- !,
 findall_symbolic_cons(term('#'(Name),[]), [sym(td, Name, 0)]) :- !.
 findall_symbolic_cons(term(Term, Args), [sym(Type, Name, Arity)|Sym]) :-
     Term =.. [Op,Name],
-    member((Op,Type), [('#&',and),('#|',or),('#@',agr),('#?',con)]),
+    member((Op,Type), [('#&',and),('#|',or),('#/',or),('#@',agr),('#?',con)]),
     !, length(Args, Arity),
     findall_symbolic_cons(Args, Sym).
 findall_symbolic_cons(term(_, Args), Sym) :- !, findall_symbolic_cons(Args, Sym).
@@ -88,12 +88,14 @@ symbolic_substitution([H|T], [H/H_|T_]) :-
 symbolic_substitution(sym(td,Sym,0), val(td,Value,0)) :-
     lattice_call_members(Sym, Members),
     member(Value, Members).
-symbolic_substitution(sym(Type,_,Arity), val(Type,Name,Arity)) :-
+symbolic_substitution(sym(Type,_,Arity), val(Ty,Name,Arity)) :-
     Arity > 0,
     Arity_ is Arity + 1,
-    atom_concat(Type, '_', Type_),
+    (Type == con -> (Ty = and ; Ty = or ; Ty = agr) ; Ty = Type),
+    atom_concat(Ty, '_', Type_),
     current_predicate(environment:Predicate/Arity_),
-    atom_concat(Type_, Name, Predicate).
+    atom_concat(Type_, Name, Predicate),
+    \+lattice_call_exclude(Predicate/Arity_).
 
 % apply_symbolic_substitution/3
 % apply_symbolic_substitution(+ExpressionIn, +Substitution, -ExpressionOut)
@@ -106,7 +108,7 @@ apply_symbolic_substitution(term('#'(Name),[]), Subs, Value) :-
 apply_symbolic_substitution(term(Term,Args), Subs, term(Term2,Args_)) :-
     Term =.. [Op, Name],
     length(Args, Length),
-    member((Op,Type), [('#&',and),('#|',or),('#@',agr),('#?',con)]),
+    member((Op,Type), [('#&',and),('#|',or),('#/',or),('#@',agr),('#?',con)]),
     member(sym(Type,Name,Length)/val(Type2,Value,Length), Subs),
     member((Op2,Type2), [('&',and),('|',or),('@',agr)]),
     Term2 =.. [Op2, Value],

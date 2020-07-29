@@ -66,6 +66,7 @@ sandbox_write(term('#?'(Name),Args)) :- !, write('#?'), write(Name), write('('),
 sandbox_write(term('#@'(Name),Args)) :- !, write('#@'), write(Name), write('('), sandbox_write(Args), write(')').
 sandbox_write(term('#&'(Name),[X,Y])) :- !, write('('), sandbox_write(X), write(' #&'), write(Name), write(' '), sandbox_write(Y), write(')'). 
 sandbox_write(term('#|'(Name),[X,Y])) :- !, write('('), sandbox_write(X), write(' #|'), write(Name), write(' '), sandbox_write(Y), write(')'). 
+sandbox_write(term('#/'(Name),[X,Y])) :- !, write('('), sandbox_write(X), write(' #|'), write(Name), write(' '), sandbox_write(Y), write(')'). 
 sandbox_write(term('&'(Name),[X,Y])) :- !, write('('), sandbox_write(X), write(' &'), write(Name), write(' '), sandbox_write(Y), write(')'). 
 sandbox_write(term('@'(Name),Xs)) :- !, write(@), write(Name), write('('), sandbox_write(Xs), write(')').
 sandbox_write(term('|'(Name),[X,Y])) :- !, write('('), sandbox_write(X), write(' |'), write(Name), write(' '), sandbox_write(Y), write(')'). 

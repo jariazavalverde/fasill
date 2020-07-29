@@ -164,6 +164,7 @@ current_op(1300, fx,  '<-',   no).
 current_op(1300, fx,  ':-',   no).
 current_op(1200, xfx, 'with', no).
 current_op(1100, xfy, '#|',   yes).
+current_op(1100, xfy, '#/',   yes).
 current_op(1100, xfy, '|',    yes).
 current_op(1100, xfy, '|',    no).
 current_op(1100, xfy, ';',    no).
@@ -204,6 +205,7 @@ current_op(200,  fy,  '-',    no).
 current_op(200,  fx,  ':',    no).
 current_op(0,    f,   '#?',   yes).
 current_op(0,    f,   '#@',   yes).
+current_op(0,    f,   '#/',   yes).
 
 % next_priority/2
 % Gives the next priority to derivate an expression.
@@ -402,7 +404,7 @@ grammar_term_args([], pos(L,C), P1) -->
 % Parses a prefix connective.
 grammar_connective(term(Con, [X|Xs]), P1) -->
     [token(atom, Type, [C1|_], _, false)], {C1 \= '\''},
-    {member(Type, ['@','&','|','#@','#&','#|', '#?'])},
+    {member(Type, ['@','&','|','#@','#&','#|', '#/', '#?'])},
     [token(atom, Name, [C2|_], _, false)], {C2 \= '\''},
     [token(lparen, _, _, _, _)],
     grammar_expression(999, X, P0),

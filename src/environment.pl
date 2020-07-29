@@ -47,6 +47,7 @@
     lattice_call_member/1,
     lattice_call_members/1,
     lattice_call_members/2,
+    lattice_call_exclude/1,
     lattice_call_leq/2,
     lattice_call_distance/3,
     lattice_call_connective/3,
@@ -65,7 +66,7 @@
 :- use_module(exceptions).
 :- use_module(semantics).
 
-:- dynamic(
+:- dynamic
     fasill_rule/3,
     fasill_testcase/2,
     fasill_testcase_precondition/1,
@@ -76,8 +77,7 @@
     fasill_similarity/4,
     fasill_warning/1,
     current_lattice_top/1,
-    current_lattice_bot/1
-).
+    current_lattice_bot/1.
 
 
 
@@ -352,8 +352,9 @@ program_consult(Path) :-
 :- dynamic(last_prolog_id/1).
 last_prolog_id(0).
 program_import_prolog(Path) :-
+    set_prolog_flag(double_quotes, atom),
     open(Path, read, Stream),
-    program_import_prolog_(Stream).
+    once(program_import_prolog_(Stream)).
 program_import_prolog_(Stream) :-
     read(Stream, PrologTerm),
     PrologTerm \= end_of_file,
@@ -572,6 +573,15 @@ lattice_call_members(Constant, Members) :-
     members(Constant, Prolog),
     maplist(from_prolog, Prolog, Members), !.
 lattice_call_members(_, Members) :- lattice_call_members(Members).
+
+% lattice_call_exclude/1
+% lattice_call_exclude(+Exclude)
+%
+% This predicate succeeds when -Exclude is a predicate indicator
+% excluded (for tuning) in the lattice loaded into the environment.
+lattice_call_exclude(Exclude) :-
+    current_predicate(exclude/1),
+    exclude(Exclude), !.
 
 % lattice_call_leq/2
 % lattice_call_leq(+Member1, +Member2)
