@@ -3,7 +3,7 @@
   * FILENAME: tuning.pl
   * DESCRIPTION: This module contains predicates for tuning symbolic FASILL programs.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 08.05.2020
+  * UPDATED: 11.09.2020
   * 
   **/
 
@@ -11,7 +11,8 @@
 
 :- module(tuning, [
     findall_symbolic_cons/1,
-    tuning_thresholded/2
+    tuning_thresholded/2,
+    tuning_thresholded/3
 ]).
 
 :- use_module('environment').
@@ -204,29 +205,48 @@ add_symbols_testcase([Set|Sets0], Test, [Set|Sets1]) :-
 % This predicate succeeds when ?Substitution is the best
 % symbolic substitution for the set of test cases loaded
 % into the current environment, with deviation ?Deviation.
-tuning_thresholded(Best, Deviation) :-
-	testcases_disjoint_sets(Tests, Preconditions),
-    tuning_thresholded(Tests, Preconditions, Bests, Deviations),
-    append(Bests, Best),
-    sum_list(Deviations, Deviation).
+tuning_thresholded(Substitution, Deviation) :-
+	tuning_thresholded(0.0, Substitution, Deviation).
 
-
-% tuning_thresholded/4
-% tuning_thresholded(+TestSets, +PreconditionSets, ?Substitutions, ?Deviations)
+% tuning_thresholded/3
+% tuning_thresholded(+Cut, ?Substitution, ?Deviation)
 %
-% This predicate succeeds when ?Substitutions is the list of best
-% symbolic substitutions for the sets of tests cases +TestSets, with
-% deviations ?Deviations.
-tuning_thresholded([], [], [], []).
-tuning_thresholded([Symbols-Test|Tests], [Symbols-Precondition|Preconditions], [Best|Bests], [Deviation|Deviations]) :-
-    retractall(tuning_best_substitution(_,_)),
-    ( symbolic_substitution(Symbols, Subs),
-      tuning_check_preconditions(Precondition, Subs),
-	  tuning_thresholded_do(Test, Subs, 0.0),
-      fail ; true ),
-    tuning_best_substitution(Best, Deviation),
-    tuning_thresholded(Tests, Preconditions, Bests, Deviations).
+% This predicate succeeds when ?Substitution is the a
+% symbolic substitution for the set of test cases loaded
+% into the current environment, with deviation ?Deviation
+% less than or equal to +Cut. If +Cut is set to 0.0, ?Substitution
+% is the best symbolic substitution.
+tuning_thresholded(Cut, Substitution, Deviation) :-
+	testcases_disjoint_sets(Tests, Preconditions),
+    tuning_thresholded(Cut, Tests, Preconditions, Substitutions, _, 0.0, Deviation),
+    append(Substitutions, Substitution).
 
+% tuning_thresholded/7
+% tuning_thresholded(+Cut, +Tests, +Preconditions, -Substitutions, -Deviations, +Initial, -Cumulative)
+%
+% This predicate succeeds when -Substitutions is the list of best
+% symbolic substitutions for the sets of test cases +Test, with
+% deviations -Deviations.
+tuning_thresholded(_, [], [], [], [], E, E).
+tuning_thresholded(Cut, [Sym-T], [_-P], [S], [D], E0, E1) :-
+    Margin is Cut - E0,
+    retractall(tuning_best_substitution(_,_)),
+    ( symbolic_substitution(Sym, Sub),
+      tuning_check_preconditions(P, Sub),
+	  tuning_thresholded_do(T, Sub, 0.0),
+      tuning_best_substitution(S, D),
+      (D =< Margin -> ! ; fail) ; true ),
+    tuning_best_substitution(S, D),
+    E1 is E0 + D.
+tuning_thresholded(Cut, [Sym-T,T2|Ts], [_-P,P2|Ps], [S|Ss], [D|Ds], E0, E2) :-
+    retractall(tuning_best_substitution(_,_)),
+    ( symbolic_substitution(Sym, Sub),
+      tuning_check_preconditions(P, Sub),
+	  tuning_thresholded_do(T, Sub, 0.0),
+      fail ; true ),
+    tuning_best_substitution(S, D),
+    E1 is E0 + D,
+    tuning_thresholded(Cut, [T2|Ts], [P2|Ps], Ss, Ds, E1, E2).
 
 % tuning_thresholded_do/3
 % tuning_thresholded_do(+Tests, +Substitution, ?Error)
@@ -235,14 +255,14 @@ tuning_thresholded([Symbols-Test|Tests], [Symbols-Precondition|Preconditions], [
 % symbolic substitution for the set of test cases loaded
 % into the current environment, with deviation ?Deviation.
 % +Tests is the set of test cases with goal partially executed.
-tuning_thresholded_do([], Subs, Error) :- !,
+tuning_thresholded_do([], Sub, Error) :- !,
     (tuning_best_substitution(_, Best) -> Best > Error ; true),
 	retractall(tuning_best_substitution(_,_)),
-	asserta(tuning_best_substitution(Subs, Error)).
-tuning_thresholded_do([testcase(TD,SFCA)|Tests], Subs, Error) :-
+	asserta(tuning_best_substitution(Sub, Error)).
+tuning_thresholded_do([testcase(TD,SFCA)|Tests], Sub, Error) :-
     (tuning_best_substitution(_, Best) -> Best > Error ; true),
-    apply_symbolic_substitution(SFCA, Subs, FCA),
+    apply_symbolic_substitution(SFCA, Sub, FCA),
     query(FCA, state(TD_, _)),
 	lattice_call_distance(TD, TD_, num(Distance)),
 	Error_ is Error + Distance,
-    tuning_thresholded_do(Tests, Subs, Error_).
+    tuning_thresholded_do(Tests, Sub, Error_).

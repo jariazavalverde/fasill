@@ -3,7 +3,7 @@
   * FILENAME: sandbox.pl
   * DESCRIPTION: This module contains predicates for the web interface.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 08.05.2020
+  * UPDATED: 11.09.2020
   * 
   **/
 
@@ -167,7 +167,8 @@ sandbox_tune(Program, Lattice, Sim, Tests, Limit, Options) :-
     catch(similarity_consult(Sim), Error3, (write('uncaught exception in similarities: '), sandbox_write(Error3), nl)),
     (member(prolog(PathPl), Options) -> program_import_prolog(PathPl); true),
     statistics(runtime,[_,_]),
-    tuning_thresholded(Subs, Deviation),
+    (member(tuning_cut(Cut), Options) -> true ; Cut = 0.0),
+    tuning_thresholded(Cut, Subs, Deviation),
     statistics(runtime,[_,T1]),
     write('best symbolic substitution: '),
     sandbox_write(symbolic_subs(Subs)), nl,
