@@ -76,9 +76,9 @@ extend_term(var(X), var(X), _, TD, TD).
 extend_term(num(X), num(X), _, TD, TD).
 extend_term(term(X, Xs), term(Y, Ys), Lambda, CurrentTD, TD) :-
     length(Xs, Arity),
-    (X = Y , lattice_call_top(Sim) ; similarity_between(X, Y, Arity, Sim) , X \== Y),
+    (X = Y, lattice_call_top(Sim) ; similarity_between(X, Y, Arity, Sim, _), nonvar(Y), X \== Y),
     similarity_tnorm(Tnorm),
-    lattice_call_connective('&'(Tnorm), [CurrentTD, Sim], TDnorm),
+    lattice_call_connective(Tnorm, [CurrentTD, Sim], TDnorm),
     lattice_call_leq(Lambda, TDnorm),
     extend_term(Xs, Ys, Lambda, TDnorm, TD).
 extend_term([], [], _, TD, TD).
