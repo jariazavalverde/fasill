@@ -761,9 +761,9 @@ similarity_consult(Path) :-
 % transitive closure of the similarity scheme asserted
 % into the current environment.
 similarity_closure :-
-    setof(Atom/Arity, _Atom^_TD^_Sym^(
-        similarity_between(Atom, _Atom, Arity, _TD, _Sym);
-        similarity_between(_Atom, Atom, Arity, _TD, _Sym)
+    setof(Atom/Arity, Atom2^TD^Sym^(
+        similarity_between(Atom, Atom2, Arity, TD, Sym);
+        similarity_between(Atom2, Atom, Arity, TD, Sym)
     ), Dom),
     findall(sim(Atom1,Atom2,Arity,TD,Sym), similarity_between(Atom1,Atom2,Arity,TD,Sym), Scheme),
     similarity_tnorm(Tnorm),
@@ -780,9 +780,9 @@ similarity_closure_check_equations(Dom, Scheme) :-
     member(X/Arity, Dom),
     member(Y/Arity, Dom),
     X @< Y,
-    setof(TD, _Sym^(
-        member(sim(X,Y,Arity,TD,_Sym), Scheme);
-        member(sim(Y,X,Arity,TD,_Sym), Scheme)
+    setof(TD, Sym^(
+        member(sim(X,Y,Arity,TD,Sym), Scheme);
+        member(sim(Y,X,Arity,TD,Sym), Scheme)
     ), Set),
     length(Set, Length),
     from_prolog_list(Set, FSet),

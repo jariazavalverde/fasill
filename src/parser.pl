@@ -383,7 +383,7 @@ grammar_expression_zero(T, P) --> grammar_term(T, P), !.
 % Parses a symbolic constant.
 grammar_symbolic_constant(term('#'(Name), []), P) -->
     [token(atom, '#', ['#'], _, false)],
-    [token(atom, Name, [C|_], P, _)].
+    [token(atom, Name, [_C|_], P, _)].
 
 % grammar_term/4
 % Parses a (possible compound) term.

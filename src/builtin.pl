@@ -448,7 +448,7 @@ eval_builtin_predicate('=..'/2, state(_, Subs), selected(ExprVar, Expr, Atom), s
             (\+fasill_var(List), \+fasill_list(List) -> type_error(list, List, '=..'/2, Error), throw_exception(Error) ; (
                 (\+fasill_var(Term), \+fasill_term(Term) -> type_error(atom, Term, '=..'/2, Error), throw_exception(Error) ; (
                     (\+fasill_var(Term) -> Term = term(Name,Args), from_prolog_list(Args,Args_), List_ = term('.',[term(Name,[]),Args_]), Expr = term('~',[List,List_]) ; (
-                        (List = term('[]',[]) -> Term_ = List ; List = term('.',[term(Name,[]), Args]), to_prolog_list(Args,Args_), Term_ = term(Name, Args_), Expr = term('~',[Term,Term_]))
+                        (List = term('[]',[]) -> Term_ = List ; List = term('.',[term(Name,[]), Args]), to_prolog_list(Args,Args_), Term_ = term(Name, Args_)), Expr = term('~',[Term,Term_])
                     ))
                 ))
             ))
