@@ -233,6 +233,23 @@ select_expression(sup(X, Y), ExprVar, Var, Atom) :- select_expression([X,Y], Exp
 select_expression([Term|Args], [Term_|Args], Var, Atom) :- select_expression(Term, Term_, Var, Atom), !.
 select_expression([Term|Args], [Term|Args_], Var, Atom) :- select_expression(Args, Args_, Var, Atom).
 
+% select_simplifiable/4
+% select_simplifiable(+Expression, ?ExprVar, ?Var, ?Atom)
+%
+% This predicate selects a simplifiable expression ?Atom
+% from the expression +Expression, where ?ExprVar is the
+% expression +Expression with the variable ?Var instead of
+% the atom ?Atom.
+select_simplifiable(term(Term, [X,Y]), Var, Var, term(Term, [X,Y])) :-
+    functor(Term, '&', _),
+    lattice_call_bot(Bot),
+    once((X == Bot ; X == bot ; Y == Bot ; Y == bot)), !.
+select_simplifiable(term(Term, Args), term(Term, Args_), Var, Expr) :-
+    select_simplifiable(Args, Args_, Var, Expr), !.
+select_simplifiable(sup(X, Y), ExprVar, Var, Atom) :- select_simplifiable([X,Y], ExprVar, Var, Atom), !.
+select_simplifiable([Term|Args], [Term_|Args], Var, Atom) :- select_simplifiable(Term, Term_, Var, Atom), !.
+select_simplifiable([Term|Args], [Term|Args_], Var, Atom) :- select_simplifiable(Args, Args_, Var, Atom).
+
 % interpretable/1
 % interpretable(+Expression)
 %
@@ -300,6 +317,9 @@ derivation(From, State, State_, [X|Xs]) :-
 % is an atom containg information about the rule used in
 % the derivation.
 inference(From, State, State_, Info) :-
+    current_fasill_flag(simplification_steps, term(true,[])),
+    simplification_step(From, State, State_, Info), !.
+inference(From, State, State_, Info) :-
     operational_step(From, State, State_, Info).
 inference(From, state(Goal,Subs), State_, Info) :-
     interpretable(Goal),
@@ -319,6 +339,17 @@ operational_step(_, State1, State2, Info) :-
     check_success,
     retractall(check_success),
     failure_step(State1, State2, Info).
+
+% simplification_step/4
+% simplification_step(+From, +State1, ?State2, ?Info)
+%
+% This predicate performs a successful admissible step
+% from the state +State1 to the state ?State2. ?Info is
+% an atom containg information about the rule used in
+% the derivation.
+simplification_step(From, state(Goal,Subs), state(ExprVar,Subs), 'SS') :-
+    select_simplifiable(Goal, ExprVar, Bot, term(Name, [X,Y])),
+    lattice_call_bot(Bot).
 
 % success_step/4
 % success_step(+From, +State1, ?State2, ?Info)

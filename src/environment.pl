@@ -98,6 +98,7 @@ fasill_flag(occurs_check, [term(false,[]), term(true,[])], term(false,[])).
 fasill_flag(max_inferences, [term(false,[]), num(_)], term(false,[])).
 fasill_flag(symbolic, [term(false,[]), term(true,[])], term(true,[])).
 fasill_flag(failure_steps, [term(false,[]), term(true,[])], term(true,[])).
+fasill_flag(simplification_steps, [term(false,[]), term(true,[])], term(false,[])).
 fasill_flag(lambda_unification, [_], bot).
 fasill_flag(operators, [term(false,[]), term(true,[])], term(true,[])).
 
