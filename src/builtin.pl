@@ -52,6 +52,7 @@ is_builtin_predicate(Name/Arity) :-
         '\\~'/2,
         unify_with_occurs_check/2,
         weakly_unify_with_occurs_check/2,
+        wmgus/3,
         % term comparison
         '=='/2,
         '@<'/2,
@@ -237,7 +238,6 @@ eval_builtin_predicate(truth_degree/2, state(_, Subs), selected(ExprVar, Var, Te
     (State = state(TD_,Subs_) -> Var = term('~',[TD,TD_]) ; State = exception(Error), throw_exception(Error)).
 
 
-
 %% ALL SOLUTIONS
 
 %%% findall/3
@@ -359,6 +359,34 @@ eval_builtin_predicate(unify_with_occurs_check/2, state(_, Subs), selected(ExprV
     mgu(X, Y, true, SubsUnification),
     apply(SubsUnification, ExprVar, ExprSubs),
     compose(Subs, SubsUnification, Subs_).
+
+%%% wmgus/3
+%%% wmgus( +term, +term, ?list )
+%%%
+%%% WMGUS.
+%%% wmgus(Xs, Ys, TDs) is true if TDs is a list with the unification degree
+%%% for the terms in Xs and Ys (one by one).
+eval_builtin_predicate(wmgus/3, state(_, Sub1), selected(ExprVar, TD, Term), state(ExprSubs2, Sub4)) :-
+    Term = term(wmgus, [Xs,Ys,TDs]),
+    lattice_call_bot(Bot),
+    list_wmgus(Bot, Xs, Ys, UDs, Sub1, Sub2, Subs),
+    unify(TDs, UDs, _, state(TD, Sub3)),
+    compose(Sub2, Sub3, Sub4),
+    apply_wmgus(Subs, ExprVar, ExprSubs1),
+    apply(Sub3, ExprSubs1, ExprSubs2).
+
+list_wmgus(_, term('[]',[]), term('[]',[]), term('[]',[]), Sub, Sub, []).
+list_wmgus(Bot, term('.',[X,Xs]), term('.',[Y,Ys]), term('.',[TD,TDs]), Sub1, Sub4, [Sub2|Subs]) :-
+    unify(X, Y, _, state(TD, Sub2)),
+    compose(Sub1, Sub2, Sub3), !,
+    apply(Sub2, Xs, Xs2),
+    list_wmgus(Bot, Xs2, Ys, TDs, Sub3, Sub4, Subs).
+list_wmgus(Bot, term('.',[_,Xs]), term('.',[_,Ys]), term('.',[Bot,TDs]), Sub1, Sub2, Subs) :-
+    list_wmgus(Bot, Xs, Ys, TDs, Sub1, Sub2, Subs).
+apply_wmgus([], Expr, Expr).
+apply_wmgus([X|Xs], Expr1, Expr3) :-
+    apply(X, Expr1, Expr2),
+    apply_wmgus(Xs, Expr2, Expr3).
 
 
 
