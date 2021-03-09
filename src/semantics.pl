@@ -412,7 +412,12 @@ failure_step(state(Goal,Subs), state(Goal_,Subs), 'FS') :-
 % containg information about the derivation. This steps
 % only can be performed when there is no atoms to perform
 % admissible steps.
-interpretive_step(From, state(Goal,Subs), state(Goal_,Subs), 'IS') :-
+interpretive_step(From, state(Goal,Subs), state(TD,Subs), 'IS') :-
+    current_fasill_flag(interpretive_steps, term(short, [])), !,
+    (deep_interpret(Goal,TD) -> true ;
+        type_error(truth_degree, Goal, From, Error),
+        throw_exception(Error)).
+interpretive_step(From, state(Goal,Subs), state(Goal_,Subs), 'is') :-
     ( select_expression(Goal, Goal_, Var, Expr) -> interpret(Expr, Var) ; (
         type_error(truth_degree, Goal, From, Error),
         throw_exception(Error)
@@ -427,6 +432,20 @@ interpret(bot, Bot) :- !, lattice_call_bot(Bot).
 interpret(top, Top) :- !, lattice_call_top(Top).
 interpret(sup(X, Y), Z) :- !, lattice_call_supremum(X, Y, Z).
 interpret(term(Op, Args), Result) :- lattice_call_connective(Op, Args, Result).
+
+% deep_interpret/2
+% deep_interpret(+Expression, ?Result)
+% 
+% This predicate fully interprets the expression +Expression
+% in the expression. ?Result is the resulting expression.
+deep_interpret(X, X) :- lattice_call_member(X), !.
+deep_interpret(bot, Bot) :- !, lattice_call_bot(Bot).
+deep_interpret(top, Top) :- !, lattice_call_top(Top).
+deep_interpret(sup(X, Y), Z) :- !, lattice_call_supremum(X, Y, Z).
+deep_interpret(term(Op, Args), Result) :-
+    maplist(deep_interpret, Args, Args2),
+    (lattice_call_connective(Op, Args2, Result) ; Result = term(Op, Args2)), !.
+deep_interpret(X, X).
 
 % rename/2
 % rename(+Expression, ?Renamed)
