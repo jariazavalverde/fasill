@@ -293,21 +293,33 @@ get_variables2(_,[]).
 % derivation(+From, +State1, ?State2, ?Info)
 %
 % This predicate performs a complete derivation from
-% an initial state ?State1 to the final state ?State2,
-% using the program +Program. ?Info is a list containing
-% the information of each step.
-derivation(_, exception(Error), exception(Error), []) :- !.
-derivation(_, state(Goal,Subs), State, []) :-
+% an initial state ?State1 to the final state ?State2.
+% ?Info is a list containing the information of each step.
+derivation(From, State1, State2, Info) :-
+    current_fasill_flag(depth_limit, num(Depth)),
+    derivation(Depth, From, State1, State2, 0, _, Info).
+
+% derivation/7
+% derivation(+DepthLimit, +From, +State1, ?State2, +CurrentDepth, ?ResultDepth, ?Info)
+%
+% This predicate performs a complete derivation from
+% an initial state ?State1 to the final state ?State2.
+% ?Info is a list containing the information of each step.
+derivation(Depth, _, State, State, N, Depth, []) :-
+    Depth > 0, N > Depth, !.
+derivation(_, _, exception(Error), exception(Error), N, N, []) :- !.
+derivation(_, _, state(Goal,Subs), State, N, N, []) :-
     is_fuzzy_computed_answer(Goal), !,
     lattice_call_bot(Bot),
     (Bot == Goal -> current_fasill_flag(failure_steps, term(true, [])) ; true),
     State = state(Goal, Subs).
-derivation(From, State, State_, [X|Xs]) :-
+derivation(Depth, From, State, State_, N, P, [X|Xs]) :-
     (trace_level(Level) -> Level_ is Level+1 ; Level_ = false),
     catch(inference(From, State, State1, X), Error, (State1 = exception(Error), !)),
     (current_fasill_flag(trace, term(true,[])), State1 \= exception(_) -> assertz(trace_derivation(trace(Level_, X, State1))) ; true),
     ( Level_\= false -> retractall(trace_level(_)), assertz(trace_level(Level_)) ; true),
-    derivation(From, State1, State_, Xs).
+    succ(N, M),
+    derivation(Depth, From, State1, State_, M, P, Xs).
 
 % inference/4
 % inference(+From, +State1, ?State2, ?Info)
@@ -347,9 +359,13 @@ operational_step(_, State1, State2, Info) :-
 % from the state +State1 to the state ?State2. ?Info is
 % an atom containg information about the rule used in
 % the derivation.
-simplification_step(From, state(Goal,Subs), state(ExprVar,Subs), 'SS') :-
-    select_simplifiable(Goal, ExprVar, Bot, term(Name, [X,Y])),
-    lattice_call_bot(Bot).
+simplification_step(From, state(Goal,Subs), state(Goal2,Subs), 'IS*') :-
+    lattice_call_bot(Bot),
+    lattice_call_top(Top),
+    deep_simplify(Bot, Top, Goal, Goal2),
+    Goal \== Goal2.
+    %select_simplifiable(Goal, ExprVar, Bot, term(Name, [X,Y])),
+    %lattice_call_bot(Bot).
 
 % success_step/4
 % success_step(+From, +State1, ?State2, ?Info)
@@ -443,9 +459,41 @@ deep_interpret(bot, Bot) :- !, lattice_call_bot(Bot).
 deep_interpret(top, Top) :- !, lattice_call_top(Top).
 deep_interpret(sup(X, Y), Z) :- !, lattice_call_supremum(X, Y, Z).
 deep_interpret(term(Op, Args), Result) :-
+    Op =.. [F|_],
+    once(member(F, ['&','|','@','#&','#|','#@','#?'])),
     maplist(deep_interpret, Args, Args2),
     (lattice_call_connective(Op, Args2, Result) ; Result = term(Op, Args2)), !.
 deep_interpret(X, X).
+
+% deep_simplify/2
+% deep_simplify(+Bot, +Top, +Expression, ?Result)
+% 
+% This predicate fully simplifies the expression +Expression
+% in the expression. ?Result is the simplified expression.
+deep_simplify(Bot, Top, term(Op, [X,Y]), Result) :- 
+    Op =.. [F|_],
+    once(member(F, ['&','#&'])),
+    deep_simplify(Bot, Top, X, X2),
+    ((X2 == Bot ; X2 == bot) -> Result = Bot ;
+     ((X2 == Top ; X2 == top) -> deep_simplify(Bot, Top, Y, Result) ;
+      deep_simplify(Bot, Top, Y, Y2),
+      ((Y2 == Bot ; Y2 == bot) -> Result = Bot ;
+       ((Y2 == Top ; Y2 == top) -> Result = X2 ;
+        Result = term(Op, [X2,Y2]))))), !.
+
+deep_simplify(Bot, Top, term(Op, [X,Y]), Result) :- 
+    Op =.. [F|_],
+    once(member(F, ['|','#|'])),
+    deep_simplify(Bot, Top, X, X2),
+    deep_simplify(Bot, Top, Y, Y2),
+    ((X2 == Bot ; X2 == bot) -> Result = Y2 ;
+     ((Y2 == Bot ; Y2 == bot) -> Result = X2 ;
+      Result = term(Op, [X2,Y2]))), !.
+deep_simplify(Bot, Top, term(Op, Args), term(Op, Args2)) :- 
+    Op =.. [F|_],
+    once(member(F, ['@','#@','#?'])),
+    maplist(deep_simplify(Bot, Top), Args, Args2), !.
+deep_simplify(_, _, X, X).
 
 % rename/2
 % rename(+Expression, ?Renamed)

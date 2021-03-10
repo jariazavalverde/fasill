@@ -95,7 +95,7 @@ fasill_flag(weak_unification, [term(false,[]), term(true,[])], term(true,[])).
 fasill_flag(quoted_chars, [term(chars,[]), term(codes,[]), term(atom,[])], term(chars,[])).
 fasill_flag(unknown, [term(error,[]), term(fail,[]), term(warning,[])], term(error,[])).
 fasill_flag(occurs_check, [term(false,[]), term(true,[])], term(false,[])).
-fasill_flag(max_inferences, [term(false,[]), num(_)], term(false,[])).
+fasill_flag(depth_limit, [num(_)], num(0)).
 fasill_flag(symbolic, [term(false,[]), term(true,[])], term(true,[])).
 fasill_flag(failure_steps, [term(false,[]), term(true,[])], term(true,[])).
 fasill_flag(interpretive_steps, [term(short,[]), term(long,[])], term(short,[])).

@@ -105,7 +105,7 @@ sandbox_write_list(X) :- write('|'), sandbox_write(X).
 % the resulting derivations.
 sandbox_run(Program, Lattice, Sim, Goal, Limit, Options) :-
     set_fasill_flag(trace, term(true,[])),
-    set_fasill_flag(max_inferences, num(Limit)),
+    set_fasill_flag(depth_limit, num(Limit)),
     (member(cut(LambdaPl), Options) ->
         from_prolog(LambdaPl, Lambda), set_fasill_flag(lambda_unification, Lambda);
         true),
@@ -157,7 +157,7 @@ sandbox_unfold(Program, Lattice, Sim, Rule) :-
 % of test cases +Tests, with a limit of derivations +Limit,
 % and writes in the standard output the resulting substitution.
 sandbox_tune(Program, Lattice, Sim, Tests, Limit, Options) :-
-    set_fasill_flag(max_inferences, num(Limit)),
+    set_fasill_flag(depth_limit, num(Limit)),
     (member(cut(LambdaPl), Options) ->
         from_prolog(LambdaPl, Lambda), set_fasill_flag(lambda_unification, Lambda);
         true),
@@ -184,7 +184,7 @@ sandbox_tune(Program, Lattice, Sim, Tests, Limit, Options) :-
 % with a limit of derivations +Limit, and writes in the standard
 % output the resulting substitution.
 sandbox_tune_smt(Program, Lattice, Sim, Tests, Domain, LatticeSMT, Limit, Options) :-
-    set_fasill_flag(max_inferences, num(Limit)),
+    set_fasill_flag(depth_limit, num(Limit)),
     (member(cut(LambdaPl), Options) ->
         from_prolog(LambdaPl, Lambda), set_fasill_flag(lambda_unification, Lambda);
         true),
