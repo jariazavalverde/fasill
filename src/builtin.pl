@@ -18,6 +18,8 @@
 :- use_module('exceptions').
 :- use_module('semantics').
 
+:- discontiguous builtin:eval_builtin_predicate/4.
+
 
 
 % is_builtin_predicate/1
@@ -369,24 +371,21 @@ eval_builtin_predicate(unify_with_occurs_check/2, state(_, Subs), selected(ExprV
 eval_builtin_predicate(wmgus/3, state(_, Sub1), selected(ExprVar, TD, Term), state(ExprSubs2, Sub4)) :-
     Term = term(wmgus, [Xs,Ys,TDs]),
     lattice_call_bot(Bot),
-    list_wmgus(Bot, Xs, Ys, UDs, Sub1, Sub2, Subs),
+    list_wmgus(Bot, Xs, Ys, UDs, Sub1, Sub2, ExprVar, ExprSubs1),
     unify(TDs, UDs, _, state(TD, Sub3)),
     compose(Sub2, Sub3, Sub4),
-    apply_wmgus(Subs, ExprVar, ExprSubs1),
     apply(Sub3, ExprSubs1, ExprSubs2).
 
-list_wmgus(_, term('[]',[]), term('[]',[]), term('[]',[]), Sub, Sub, []).
-list_wmgus(Bot, term('.',[X,Xs]), term('.',[Y,Ys]), term('.',[TD,TDs]), Sub1, Sub4, [Sub2|Subs]) :-
+list_wmgus(_, term('[]',[]), term('[]',[]), term('[]',[]), Sub, Sub, Expr, Expr).
+list_wmgus(Bot, term('.',[X,Xs]), term('.',[Y,Ys]), term('.',[TD,TDs]), Sub1, Sub4, Expr1, Expr3) :-
     unify(X, Y, _, state(TD, Sub2)),
     compose(Sub1, Sub2, Sub3), !,
     apply(Sub2, Xs, Xs2),
-    list_wmgus(Bot, Xs2, Ys, TDs, Sub3, Sub4, Subs).
-list_wmgus(Bot, term('.',[_,Xs]), term('.',[_,Ys]), term('.',[Bot,TDs]), Sub1, Sub2, Subs) :-
-    list_wmgus(Bot, Xs, Ys, TDs, Sub1, Sub2, Subs).
-apply_wmgus([], Expr, Expr).
-apply_wmgus([X|Xs], Expr1, Expr3) :-
-    apply(X, Expr1, Expr2),
-    apply_wmgus(Xs, Expr2, Expr3).
+    apply(Sub2, Ys, Ys2),
+    apply(Sub2, Expr1, Expr2),
+    list_wmgus(Bot, Xs2, Ys2, TDs, Sub3, Sub4, Expr2, Expr3).
+list_wmgus(Bot, term('.',[_,Xs]), term('.',[_,Ys]), term('.',[Bot,TDs]), Sub1, Sub2, Expr1, Expr2) :-
+    list_wmgus(Bot, Xs, Ys, TDs, Sub1, Sub2, Expr1, Expr2).
 
 
 

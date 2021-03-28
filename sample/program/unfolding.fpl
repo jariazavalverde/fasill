@@ -1,0 +1,16 @@
+<- set_fasill_flag(simplification_steps, true).
+append([], X, X).
+append([H|T], X, [H|S]) <- append(T, X, S).
+
+permutation0([], []).
+permutation0([H|T], P) <- permutation0(T, Q) &godel append(X, Y, Q) &godel append(X, [H|Y], P).
+
+permutation1([], []).
+permutation1([H|T], P) <- wmgus([permutation1(T, Q)],[permutation1([], [])],[TD1]) &godel TD1 &godel append(X, Y, Q) &godel append(X, [H|Y], P).
+permutation1([H|T], P) <- wmgus([permutation1(T, Q)],[permutation1([H1|T1], P1)],[TD1]) &godel TD1 &godel permutation1(T1, Q1) &godel append(X1, Y1, Q1) &godel append(X1, [H1|Y1], P1) &godel append(X, Y, Q) &godel append(X, [H|Y], P).
+
+permutation2([], []).
+permutation2([H|T], P) <- wmgus([permutation2(T, Q)],[permutation2([], [])],[TD1]) &godel TD1 &godel append(X, Y, Q) &godel append(X, [H|Y], P).
+permutation2([H|T], P) <- wmgus([permutation2(T, Q),permutation2(T1, Q1)],[permutation2([H1|T1], P1),permutation2([], [])],[TD1,TD2]) &godel TD1 &godel TD2 &godel append(X1, Y1, Q1) &godel append(X1, [H1|Y1], P1) &godel append(X, Y, Q) &godel append(X, [H|Y], P).
+permutation2([H|T], P) <- wmgus([permutation2(T, Q),permutation2(T1, Q1),permutation2(T2, Q2)],[permutation2([H1|T1], P1),permutation2([H2|T2], P2),permutation2([], [])],[TD1,TD2,TD12]) &godel TD1 &godel TD2 &godel TD12 &godel append(X2, Y2, Q2) &godel append(X2, [H2|Y2], P2) &godel append(X1, Y1, Q1) &godel append(X1, [H1|Y1], P1) &godel append(X, Y, Q) &godel append(X, [H|Y], P).
+permutation2([H|T], P) <- wmgus([permutation2(T, Q),permutation2(T1, Q1),permutation2(T2, Q2)],[permutation2([H1|T1], P1),permutation2([H2|T2], P2),permutation2([H12|T12], P12)],[TD1,TD2,TD12]) &godel TD1 &godel TD2 &godel TD12 &godel permutation2(T12, Q12) &godel append(X12, Y12, Q12) &godel append(X12, [H12|Y12], P12) &godel append(X2, Y2, Q2) &godel append(X2, [H2|Y2], P2) &godel append(X1, Y1, Q1) &godel append(X1, [H1|Y1], P1) &godel append(X, Y, Q) &godel append(X, [H|Y], P).

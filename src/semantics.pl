@@ -20,6 +20,7 @@
     derivation/4,
     get_variables/2,
     inference/4,
+    simplification_step/4,
     operational_step/4,
     interpretive_step/4,
     failure_step/3,
@@ -306,7 +307,7 @@ derivation(From, State1, State2, Info) :-
 % an initial state ?State1 to the final state ?State2.
 % ?Info is a list containing the information of each step.
 derivation(Depth, _, State, State, N, Depth, []) :-
-    Depth > 0, N > Depth, !.
+    Depth > 0, N >= Depth, !.
 derivation(_, _, exception(Error), exception(Error), N, N, []) :- !.
 derivation(_, _, state(Goal,Subs), State, N, N, []) :-
     is_fuzzy_computed_answer(Goal), !,
@@ -359,7 +360,7 @@ operational_step(_, State1, State2, Info) :-
 % from the state +State1 to the state ?State2. ?Info is
 % an atom containg information about the rule used in
 % the derivation.
-simplification_step(From, state(Goal,Subs), state(Goal2,Subs), 'IS*') :-
+simplification_step(_From, state(Goal,Subs), state(Goal2,Subs), 'IS*') :-
     lattice_call_bot(Bot),
     lattice_call_top(Top),
     deep_simplify(Bot, Top, Goal, Goal2),
@@ -536,6 +537,7 @@ compose(Subs0, Subs1, Subs2) :- map_assoc(apply(Subs1), Subs0, Subs2).
 % This predicate applies the substitution +Substitution to
 % the expression +ExpressionIn. ?ExpressionOut is the resulting
 % expression.
+apply(_, X, X) :- var(X), !.
 apply(Subs, term(T,Args), term(T,Args_)) :- !, apply(Subs, Args, Args_).
 apply(Subs, var(X), Y) :- !, (get_assoc(X, Subs, Y) -> true ; Y = var(X)).
 apply(Subs, [X|Xs], [Y|Ys]) :- !, apply(Subs, X, Y), apply(Subs, Xs, Ys).
