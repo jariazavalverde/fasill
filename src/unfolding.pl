@@ -153,29 +153,31 @@ guards_unfold(R1, R2) :-
 	semantics:auto_fresh_variable_id(VarId),
 	Var = var('$'(VarId)),
 	findall(
-		Eq,
+		Guard,
 		( inference(unfolding/0, state(Body, Vars), state(Expr, Sub), _),
 		  exclude_trivial_vars(Sub, SubVars),
 		  substitution_to_list(SubVars, GuardList),
 		  crisp_substitution(Sub, CrispSub),
 		  make_guard(GuardList, G1, G2),
-		  Guard = term('~', [term(g, G1), term(g, G2)]),
+		  Unification = term('~', [term(g, G1), term(g, G2)]),
 	      ReplaceVar = term(Tnorm, [Var, Replace]),
 	  	  select_atom(Body, ExprVar, ReplaceVar, _),
 		  apply(CrispSub, ExprVar, ExprVarSub),
-		  Eq = term('->', [Guard, ExprVarSub])
-		), Eqs, [FS]
+		  Guard = term('->', [Unification, ExprVarSub])
+		),
+		RegularGuards
 	),
 	failure_step(state(Body, Vars), state(Expr, _), _),
 	(short_interpretive_step(unfolding/0, state(Expr, Vars), state(Expr2, _), _) -> true ; Expr2 = Expr),
 	(simplification_step(unfolding/0, state(Expr2, Vars), state(Expr3, _), _) -> true ; Expr3 = Expr2),
 	fasill_term_variables(Head, FSVars),
 	rename(FSVars, [FSVars, Expr3], [FSVarsR, ExprR]),
-	FS = term('->', [term('^~', [term(g, FSVars), term(g, FSVarsR)]), ExprR]),
-	(is_safe_unfolding(Eqs, FS) ->
+	FailureGuard = term('->', [term('^~', [term(g, FSVars), term(g, FSVarsR)]), ExprR]),
+	(is_safe_unfolding(RegularGuards, FailureGuard) ->
 		classic_unfold(R1, R2)
 	;
-		vector_guards(Eqs, Guards),
+		append(RegularGuards, [FailureGuard], Vector),
+		vector_guards(Vector, Guards),
 		BodyG = term(guards, [term(on, [Guards, Var])]),
 		R2 = fasill_rule(head(Head), body(BodyG), Info)
 	).
@@ -183,14 +185,23 @@ guards_unfold(R1, R2) :-
 	classic_unfold(R1, R2).
 
 % is_safe_unfolding/2
-% is_safe_unfolding(+Guards, +FailureGuard)
+% is_safe_unfolding(+RegularGuards, +FailureGuard)
 %
-% Check if it is safe to perform a classic unfolding.
-is_safe_unfolding(Eqs, _) :-
-	forall(member(Eq, Eqs), is_empty_guard(Eq)).
-is_safe_unfolding(Eqs, term('->', [term('^~', _), Bot])) :-
-	lattice_call_bot(Bot),
-	forall(member(Eq, Eqs), any_similarity(Eq)).
+% This predicate succeeds when it is safe to perform a classic unfolding.
+% I.e.:
+%     (∀ i ∈ {1,...,n}, \sigma_i is crisp)
+%                       ∧
+%     [(∃ i ∈ {1,...,n}: \sigma_i = id) ∨ (B_{n+1} ≡ ⊥)].
+is_safe_unfolding(RegularGuards, FailureGuard) :-
+	RegularGuard = term('->', [term('~', [_,term(g, G)]), _]),
+	% (∀ i ∈ {1,...,n}, \sigma_i is crisp)
+	forall(member(RegularGuard, RegularGuards), is_crisp(G)),
+	once(
+		% (∃ i ∈ {1,...,n}: \sigma_i = id)
+		(member(RegularGuard, RegularGuards), G = []) ;
+		% (\cB_{n+1} ≡ ⊥)
+		(lattice_call_bot(Bot), FailureGuard = term('->', [_, Bot]))
+	).
 
 % is_empty_guard/1
 % is_empty_guard(+Guard)
