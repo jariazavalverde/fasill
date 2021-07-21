@@ -3,7 +3,7 @@
   * FILENAME: builtin.pl
   * DESCRIPTION: This module contains the definition of the FASILL built-in predicates.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 04.02.2020
+  * UPDATED: 21.07.2021
   * 
   **/
 
@@ -44,6 +44,7 @@ is_builtin_predicate(Name/Arity) :-
         top/0,
         bot/0,
         truth_degree/2,
+        guards/1,
         % all solutions
         findall/3,
         findall/4,
@@ -238,6 +239,48 @@ eval_builtin_predicate(truth_degree/2, state(_, Subs), selected(ExprVar, Var, Te
     (current_fasill_flag(trace, term(true,[])) -> assertz(trace_derivation(trace(Level_, truth_degree/2, state(Goal,Subs)))) ; true),
     derivation(truth_degree/2, state(Goal,Subs), State, _),
     (State = state(TD_,Subs_) -> Var = term('~',[TD,TD_]) ; State = exception(Error), throw_exception(Error)).
+
+%%% guards/1
+%%% guards(on(+Guards, -TD))
+%%%
+%%% Guards.
+%%% 
+eval_builtin_predicate(guards/1, state(_, Sub), selected(ExprVar, Body, Atom), state(ExprVar, SubU)) :-
+    Atom = term(guards, [term(on, [Guards, TD])]),
+    guards_last_id(N),
+    retractall(guards_last_id(_)),
+    succ(N, M),
+    asserta(guards_last_id(M)),
+    asserta(guards_count(M, 0)),
+    call_guards(M, Guards, TD, Body, Sub, SubS, Unifier),
+    compose(SubS, Unifier, SubU).
+
+call_guards(N, term(';', [A, B]), TD, Body, Sub, SubS, Unifier) :- !,
+    (call_guards(N, A, TD, Body, Sub, SubS, Unifier) ;
+     call_guards(N, B, TD, Body, Sub, SubS, Unifier)).
+call_guards(N, term('->', [term('~', [G,H]), Body]), var(V), BodyU, Sub, SubS, Unifier) :- !,
+    unify(G, H, _, state(TD, Unifier)),
+    guards_count(N, C1),
+    succ(C1, C2),
+    retractall(guards_count(N, _)),
+    asserta(guards_count(N, C2)),
+    empty_substitution(Empty),
+    put_substitution(Empty, V, TD, VarSub),
+    apply(VarSub, Body, BodyS),
+    apply(Unifier, BodyS, BodyU),
+    compose(Sub, Unifier, SubS).
+call_guards(N, term('->', [term('^~', [G, H]), Body]), var(V), BodyU, Sub, SubS, Unifier) :-
+    guards_count(N, 0),
+    unify(G, H, _, state(TD, Unifier)),
+    empty_substitution(Empty),
+    put_substitution(Empty, V, TD, VarSub),
+    apply(VarSub, Body, BodyS),
+    apply(Unifier, BodyS, BodyU),
+    compose(Sub, Unifier, SubS).
+
+:- dynamic guards_last_id/1, guards_count/2.
+guards_last_id(0).
+
 
 
 %% ALL SOLUTIONS

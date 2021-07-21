@@ -10,6 +10,7 @@
 
 
 :- module(environment, [
+    fasill_term_variables/2,
     to_prolog/2,
     to_prolog_list/2,
     from_prolog/2,
@@ -142,6 +143,19 @@ set_fasill_flag(Flag, Value) :-
 
 
 % OBJECT MANIPULATION
+
+% fasill_term_variables/2
+% fasill_term_variables(+Term, ?Variables)
+%
+% This predicate succeeds when ?Variables is the list of
+% variables in the term +Term.
+fasill_term_variables(var(X), [var(X)]) :- !.
+fasill_term_variables(term(_,Args), Vars) :- !, fasill_term_variables(Args, Vars).
+fasill_term_variables([H|T], Vars) :- !,
+    fasill_term_variables(H, Vh),
+    fasill_term_variables(T, Vt),
+    append(Vh, Vt, Vars).
+fasill_term_variables(_, []).
 
 % to_prolog/2
 % to_prolog(+FASILL, ?Prolog)
@@ -543,6 +557,7 @@ lattice_call_top(_) :-
 %
 % This predicate succeeds when +Member is a member
 % of the lattice loaded into the environment.
+lattice_call_member(var(_)) :- !, fail.
 lattice_call_member(Member) :-
     current_predicate(member/1), !,
     to_prolog(Member, Prolog),

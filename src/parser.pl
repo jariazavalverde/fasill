@@ -158,23 +158,26 @@ parse_testcases(Input, Testcases) :-
 current_op(1300, xfx, '#<-',  yes).
 current_op(1300, xfx, ':-',   no).
 current_op(1300, xfx, '<-',   no).
-current_op(1300, xfx, '->',   no).
 current_op(1300, xfx, '<-',   yes).
 current_op(1300, fx,  '<-',   no).
 current_op(1300, fx,  ':-',   no).
 current_op(1200, xfx, 'with', no).
+current_op(1200, fx, 'guards',no).
+current_op(1150, xfx, 'on',   no).
+current_op(1100, xfy, ';',    no).
 current_op(1100, xfy, '#|',   yes).
 current_op(1100, xfy, '#/',   yes).
 current_op(1100, xfy, '|',    yes).
-current_op(1100, xfy, '|',    no).
-current_op(1100, xfy, ';',    no).
-current_op(1000, xfy, '#&',   yes).
-current_op(1000, xfy, '&',    yes).
-current_op(1000, xfy, '&',    no).
+current_op(1100, xfy, '|',     no).
 current_op(1000, xfy, ',',    no).
+current_op(975, xfx, '->',    no).
+current_op(900, xfy, '#&',   yes).
+current_op(900, xfy, '&',    yes).
+current_op(900, xfy, '&',     no).
 current_op(700,  xfx, 'is',   no).
 current_op(700,  xfx, '=',    no).
 current_op(700,  xfx, '~',    no).
+current_op(700,  xfx, '^~',    no).
 current_op(700,  xfx, '\\=',  no).
 current_op(700,  xfx, '\\~',  no).
 current_op(700,  xfx, '==',   no).
@@ -203,17 +206,22 @@ current_op(200,  xfy, '^^',   no).
 current_op(200,  fy,  '+',    no).
 current_op(200,  fy,  '-',    no).
 current_op(200,  fx,  ':',    no).
-current_op(0,    f,   '#?',   yes).
-current_op(0,    f,   '#@',   yes).
-current_op(0,    f,   '#/',   yes).
+current_op(0,    f,   '#?',  yes).
+current_op(0,    f,   '#@',  yes).
+current_op(0,    f,   '#/',  yes).
 
 % next_priority/2
 % Gives the next priority to derivate an expression.
 next_priority(1300, 1200).
-next_priority(1200, 1100).
+next_priority(1200, 1150).
+next_priority(1150, 1125).
+next_priority(1125, 1100).
 next_priority(1100, 1000).
-next_priority(1000, 700).
-next_priority(999, 700).
+next_priority(1000, 975).
+next_priority(999, 975).
+next_priority(975, 950).
+next_priority(950, 900).
+next_priority(900, 700).
 next_priority(700, 500).
 next_priority(500, 400).
 next_priority(400, 200).
@@ -376,8 +384,8 @@ grammar_expression_zero(T, P) --> grammar_list(T, P), !.
 grammar_expression_zero(T, P) --> grammar_brace(T, P), !.
 grammar_expression_zero(T, P) --> grammar_symbolic_constant(T, P), !.
 grammar_expression_zero(T, P) --> grammar_connective(T, P), !.
-grammar_expression_zero(term(Op, []), P) --> grammar_operator(_, _, Op, _, P), !.
 grammar_expression_zero(T, P) --> grammar_term(T, P), !.
+grammar_expression_zero(term(Op, []), P) --> grammar_operator(_, _, Op, _, P), !.
 
 % grammar_symbolic_constant/4
 % Parses a symbolic constant.

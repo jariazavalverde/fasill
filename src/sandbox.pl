@@ -12,6 +12,7 @@
 :- module(sandbox, [
     sandbox_run/6,
     sandbox_listing/1,
+    sandbox_classic_unfold/4,
     sandbox_unfold/4,
     sandbox_tune/6,
     sandbox_tune_smt/8,
@@ -60,6 +61,8 @@ sandbox_write(var('$'(X))) :- !, write('V'), write(X).
 sandbox_write(var(X)) :- write(X).
 sandbox_write(X/Y) :- write(X), write('/'), sandbox_write(Y).
 sandbox_write(X-Y) :- write(X), write('/'), sandbox_write(Y).
+sandbox_write(term('[]',[])) :- !, write('[]').
+sandbox_write(term([],[])) :- !, write('[]').
 sandbox_write(term('#'(Name),[])) :- !, write('#'), write(Name).
 sandbox_write(term(T,[])) :- T =.. [A,B], !, write(A), write(B).
 sandbox_write(term('#?'(Name),Args)) :- !, write('#?'), write(Name), write('('), sandbox_write(Args), write(')').
@@ -104,7 +107,7 @@ sandbox_write_list(X) :- write('|'), sandbox_write(X).
 % of derivations +Limit, and writes in the standard output
 % the resulting derivations.
 sandbox_run(Program, Lattice, Sim, Goal, Limit, Options) :-
-    set_fasill_flag(trace, term(true,[])),
+    (member(notrace, Options) -> true ; set_fasill_flag(trace, term(true,[]))),
     set_fasill_flag(depth_limit, num(Limit)),
     (member(cut(LambdaPl), Options) ->
         from_prolog(LambdaPl, Lambda), set_fasill_flag(lambda_unification, Lambda);
@@ -133,6 +136,20 @@ sandbox_listing(Program) :-
     catch(program_consult(Program), Error1, (write('uncaught exception in program: '), sandbox_write(Error1), nl)),
     ( fasill_rule(Head, Body, Info),
       sandbox_write(fasill_rule(Head, Body, Info)),
+      nl, fail ; true).
+
+% sandbox_classic_unfold/4
+% sandbox_classic_unfold(+Program, +Lattice, +Sim, +Rule)
+% 
+% This predicate loads the program <+Program, +Lattice, +Sim>
+% into the environemnt and runs the unfolding of the rule +Rule.
+sandbox_classic_unfold(Program, Lattice, Sim, Rule) :-
+    lattice_consult(Lattice),
+    catch(program_consult(Program), Error1, (write('uncaught exception in program: '), sandbox_write(Error1), nl)),
+    catch(similarity_consult(Sim), Error2, (write('uncaught exception in similarities: '), sandbox_write(Error2), nl)),
+    classic_unfold_by_id(Rule),
+    ( fasill_rule(Head, Body, _),
+      sandbox_write(rule(Head, Body)),
       nl, fail ; true).
 
 % sandbox_unfold/4

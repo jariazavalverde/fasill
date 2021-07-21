@@ -13,24 +13,34 @@
     lambda_wmgu/5,
     wmgu/4,
     mgu/4,
+    empty_substitution/1,
+    substitution_to_list/2,
+    list_to_substitution/2,
+    put_substitution/4,
     unify/4,
     query/2,
     select_atom/4,
     select_expression/4,
+    interpretable/1,
     derivation/4,
     get_variables/2,
     inference/4,
     simplification_step/4,
     operational_step/4,
     interpretive_step/4,
+    short_interpretive_step/4,
+    long_interpretive_step/4,
     failure_step/3,
     apply/3,
     compose/3,
     rename/2,
+    rename/3,
+    is_rename/2,
     arithmetic_evaluation/3,
     arithmetic_comparison/3,
     trace_derivation/1,
-    trace_level/1
+    trace_level/1,
+    auto_fresh_variable_id/1
 ]).
 
 :- use_module(library(assoc)).
@@ -50,7 +60,7 @@
 % +ExpressionB with level +Threshold.
 lambda_wmgu(ExprA, ExprB, Lambda, OccursCheck, State) :-
     lattice_call_top(Top),
-    empty_assoc(Subs),
+    empty_substitution(Subs),
     lambda_wmgu(ExprA, ExprB, Lambda, OccursCheck, state(Top,Subs), State).
 %%% anonymous variable
 lambda_wmgu(var('_'), _, _, _, State, State) :- !.
@@ -117,7 +127,7 @@ wmgu(ExprA, ExprB, OccursCheck, State) :-
 % This predicate returns the most general unifier (mgu)
 % ?MGU of the expressions +ExpressionA and +ExpressionB.
 mgu(ExprA, ExprB, OccursCheck, Subs1) :-
-    empty_assoc(Subs0),
+    empty_substitution(Subs0),
     mgu(ExprA, ExprB, OccursCheck, Subs0, Subs1).
 %%% anonymous variable
 mgu(var('_'), _, _, Subs, Subs) :- !.
@@ -183,6 +193,38 @@ unify(Term1, Term2, OccursCheck, state(Top, Subs)) :-
 
 
 
+% SUBSTITUTIONS
+
+% empty_substitution/1
+% empty_substitution(?Substitution)
+%
+% This predicate succeeds when ?Substitution is
+% an empty substitution.
+empty_substitution(Sub) :- empty_assoc(Sub).
+
+% substitution_to_list/2
+% substitution_to_list(+Substitution, ?List)
+%
+% This predicate translates +Substitution to a list ?List of
+% Variable-Value pairs.
+substitution_to_list(Sub, List) :- assoc_to_list(Sub, List).
+
+% list_to_substitution/2
+% list_to_substitution(+List, ?Substitution)
+%
+% This predicate translates +List of Variable-Value pairs
+% into a substitution ?Substitution.
+list_to_substitution(List, Sub) :- list_to_assoc(List, Sub).
+
+% put_substitution/2
+% put_substitution(+SubstitutionIn, +Var, +Value, ?SubtitutionOut)
+%
+% This predicate adds a new link +Var/+Value to the substitution
+% +SubstitutionIn, producing the new substitution ?SubtitutionOut.
+put_substitution(Sub, Var, Value, Sub2) :- put_assoc(Var, Sub, Value, Sub2).
+
+
+
 % DERIVATIONS
 
 % is_fuzzy_computed_answer/1
@@ -203,6 +245,7 @@ is_fuzzy_computed_answer(X) :-
 % This predicate selects an atom ?Atom from the expression
 % +Expression, where ?ExprVar is the expression +Expression
 % with the variable ?Var instead of the atom ?Atom.
+:- dynamic select_atom/4.
 select_atom(term(Term, Args), term(Term, Args_), Var, Atom) :-
     functor(Term, Op, _),
     member(Op, ['@','&','|','#@','#&','#|','#/','#?']), !,
@@ -220,6 +263,7 @@ select_atom([Term|Args], [Term|Args_], Var, Atom) :- select_atom(Args, Args_, Va
 % from the expression +Expression, where ?ExprVar is the
 % expression +Expression with the variable ?Var instead of
 % the atom ?Atom.
+:- dynamic select_expression/4.
 select_expression(top, Var, Var, top) :- !.
 select_expression(bot, Var, Var, bot) :- !.
 select_expression(term(Term, Args), Var, Var, term(Term, Args)) :-
@@ -421,24 +465,46 @@ failure_step(state(Goal,Subs), state(Goal_,Subs), 'FS') :-
     lattice_call_bot(Bot),
     select_atom(Goal, Goal_, Bot, _).
 
-% interpretive_step/4
-% interpretive_step(+From, +State1, ?State2, ?Info)
+% short_interpretive_step/4
+% short_interpretive_step(+From, +State1, ?State2, ?Info)
 %
-% This predicate performs an interpretive step from the
-% state +State1 to the state ?State2 ?Info is an atom
+% This predicate performs a short interpretive step from the
+% state +State1 to the state ?State2. ?Info is an atom
 % containg information about the derivation. This steps
 % only can be performed when there is no atoms to perform
 % admissible steps.
-interpretive_step(From, state(Goal,Subs), state(TD,Subs), 'IS') :-
-    current_fasill_flag(interpretive_steps, term(short, [])), !,
+short_interpretive_step(From, state(Goal,Subs), state(TD,Subs), 'IS') :-
     (deep_interpret(Goal,TD) -> true ;
         type_error(truth_degree, Goal, From, Error),
         throw_exception(Error)).
-interpretive_step(From, state(Goal,Subs), state(Goal_,Subs), 'is') :-
+
+% long_interpretive_step/4
+% long_interpretive_step(+From, +State1, ?State2, ?Info)
+%
+% This predicate performs a long interpretive step from the
+% state +State1 to the state ?State2. ?Info is an atom
+% containg information about the derivation. This steps
+% only can be performed when there is no atoms to perform
+% admissible steps.
+long_interpretive_step(From, state(Goal,Subs), state(Goal_,Subs), 'is') :-
     ( select_expression(Goal, Goal_, Var, Expr) -> interpret(Expr, Var) ; (
         type_error(truth_degree, Goal, From, Error),
         throw_exception(Error)
     )).
+
+% interpretive_step/4
+% interpretive_step(+From, +State1, ?State2, ?Info)
+%
+% This predicate performs an interpretive step from the
+% state +State1 to the state ?State2. ?Info is an atom
+% containg information about the derivation. This steps
+% only can be performed when there is no atoms to perform
+% admissible steps.
+interpretive_step(From, State1, State2, Info) :-
+    current_fasill_flag(interpretive_steps, term(short, [])), !,
+    short_interpretive_step(From, State1, State2, Info).
+interpretive_step(From, State1, State2, Info) :-
+    long_interpretive_step(From, State1, State2, Info).
 
 % interpret/2
 % interpret(+Expression, ?Result)
@@ -463,7 +529,7 @@ deep_interpret(term(Op, Args), Result) :-
     Op =.. [F|_],
     once(member(F, ['&','|','@','#&','#|','#@','#?'])),
     maplist(deep_interpret, Args, Args2),
-    (lattice_call_connective(Op, Args2, Result) ; Result = term(Op, Args2)), !.
+    catch((lattice_call_connective(Op, Args2, Result) ; Result = term(Op, Args2)), _, Result = term(Op, Args2)), !.
 deep_interpret(X, X).
 
 % deep_simplify/2
@@ -481,7 +547,6 @@ deep_simplify(Bot, Top, term(Op, [X,Y]), Result) :-
       ((Y2 == Bot ; Y2 == bot) -> Result = Bot ;
        ((Y2 == Top ; Y2 == top) -> Result = X2 ;
         Result = term(Op, [X2,Y2]))))), !.
-
 deep_simplify(Bot, Top, term(Op, [X,Y]), Result) :- 
     Op =.. [F|_],
     once(member(F, ['|','#|'])),
@@ -503,7 +568,7 @@ deep_simplify(_, _, X, X).
 % the variables of the expression by fresh variables. ?Renamed
 % is the expression +Expression with fresh variables.
 rename(X, Y) :-
-    empty_assoc(Subs),
+    empty_substitution(Subs),
     rename(X, Y, Subs, _).
 rename(var('_'), var('_'), Subs, Subs) :- !.
 rename(var(X), var(Y), Subs, Subs) :-
@@ -523,6 +588,55 @@ rename(X, Y, Subs0, Subs1) :-
     rename(Args, Args_, Subs0, Subs1),
     Y =.. [Name|Args_].
 rename(X, X, Subs, Subs).
+
+% rename/3
+% rename(+Variables, +Expression, ?Renamed)
+%
+% This predicate renames the expression +Expression, replacing
+% the variables in +Variables by fresh variables. ?Renamed
+% is the expression +Expression with fresh variables.
+rename(V, X, Y) :-
+    empty_substitution(Subs),
+    rename(V, X, Y, Subs, _).
+rename(_, var('_'), var('_'), Subs, Subs) :- !.
+rename(V, var(X), var(Y), Subs, Subs) :-
+    member(var(X), V),
+    get_assoc(X, Subs, Y), !.
+rename(V, var(X), var('$'(Id)), Subs0, Subs1) :- 
+    member(var(X), V), !,
+    auto_fresh_variable_id(Id),
+    put_assoc(X, Subs0, '$'(Id), Subs1).
+rename(V, term(Name, Xs), term(Name, Ys), Subs0, Subs1) :-
+    !, rename(V, Xs, Ys, Subs0, Subs1).
+rename(_, [], [], Subs, Subs) :- !.
+rename(V, [X|Xs], [Y|Ys], Subs0, Subs3) :-
+    !, rename(V, X, Y, Subs0, Subs2),
+    rename(V, Xs, Ys, Subs2, Subs3).
+rename(V, X, Y, Subs0, Subs1) :-
+    compound(X), !,
+    X =.. [Name|Args],
+    rename(V, Args, Args_, Subs0, Subs1),
+    Y =.. [Name|Args_].
+rename(_, X, X, Subs, Subs).
+
+% is_rename/2
+% is_rename(+Term1, +Term2)
+%
+% This predicate succeeds when +Term2 is a 
+% renamed version of +Term1.
+is_rename(X, Y) :-
+    empty_substitution(Sub),
+    is_rename(X, Y, Sub, _).
+is_rename(var(X), var(Y), Sub1, Sub3) :- !,
+    (\+get_assoc(X, Sub1, _), put_assoc(X, Sub1, Y, Sub2) ; get_assoc(X, Sub1, Y), Sub2 = Sub1),
+    (\+get_assoc(Y, Sub2, _), put_assoc(Y, Sub2, X, Sub3) ; get_assoc(Y, Sub2, X), Sub3 = Sub2).
+is_rename(term(Name, Args1), term(Name, Args2), Sub1, Sub2) :- !,
+    is_rename(Args1, Args2, Sub1, Sub2).
+is_rename([], [], Sub, Sub) :- !.
+is_rename([X|Xs], [Y|Ys], Sub1, Sub3) :- !,
+    is_rename(X, Y, Sub1, Sub2),
+    is_rename(Xs, Ys, Sub2, Sub3).
+is_rename(X, Y, Sub, Sub) :- X == Y.
 
 % compose/3
 % compose(+Substitution1, +Substitution2, ?SubstitutionOut)
