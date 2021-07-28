@@ -3,7 +3,7 @@
   * FILENAME: unfolding.pl
   * DESCRIPTION: This module contains predicates for unfolding FASILL programs.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 21.07.2021
+  * UPDATED: 28.07.2021
   * 
   **/
 
@@ -157,12 +157,12 @@ guards_unfold(R1, R2) :-
 		( inference(unfolding/0, state(Body, Vars), state(Expr, Sub), _),
 		  exclude_trivial_vars(Sub, SubVars),
 		  substitution_to_list(SubVars, GuardList),
-		  crisp_substitution(Sub, CrispSub),
+		  bound_substitution(Sub, BoundSub),
 		  make_guard(GuardList, G1, G2),
 		  Unification = term('~', [term(g, G1), term(g, G2)]),
 	      ReplaceVar = term(Tnorm, [Var, Replace]),
 	  	  select_atom(Body, ExprVar, ReplaceVar, _),
-		  apply(CrispSub, ExprVar, ExprVarSub),
+		  apply(BoundSub, ExprVar, ExprVarSub),
 		  Guard = term('->', [Unification, ExprVarSub])
 		),
 		RegularGuards
@@ -172,7 +172,7 @@ guards_unfold(R1, R2) :-
 	(simplification_step(unfolding/0, state(Expr2, Vars), state(Expr3, _), _) -> true ; Expr3 = Expr2),
 	fasill_term_variables(Head, FSVars),
 	rename(FSVars, [FSVars, Expr3], [FSVarsR, ExprR]),
-	FailureGuard = term('->', [term('^~', [term(g, FSVars), term(g, FSVarsR)]), ExprR]),
+	FailureGuard = term('->', [term('^', [term('~', [term(g, FSVars), term(g, FSVarsR)])]), ExprR]),
 	(is_safe_unfolding(RegularGuards, FailureGuard) ->
 		classic_unfold(R1, R2)
 	;
@@ -189,26 +189,19 @@ guards_unfold(R1, R2) :-
 %
 % This predicate succeeds when it is safe to perform a classic unfolding.
 % I.e.:
-%     (∀ i ∈ {1,...,n}, \sigma_i is crisp)
+%     (∀ i ∈ {1,...,n}, \sigma_i is bound)
 %                       ∧
 %     [(∃ i ∈ {1,...,n}: \sigma_i = id) ∨ (B_{n+1} ≡ ⊥)].
 is_safe_unfolding(RegularGuards, FailureGuard) :-
 	RegularGuard = term('->', [term('~', [_,term(g, G)]), _]),
-	% (∀ i ∈ {1,...,n}, \sigma_i is crisp)
-	forall(member(RegularGuard, RegularGuards), is_crisp(G)),
+	% (∀ i ∈ {1,...,n}, \sigma_i is bound)
+	forall(member(RegularGuard, RegularGuards), is_bound(G)),
 	once(
 		% (∃ i ∈ {1,...,n}: \sigma_i = id)
 		(member(RegularGuard, RegularGuards), G = []) ;
-		% (\cB_{n+1} ≡ ⊥)
+		% (B_{n+1} ≡ ⊥)
 		(lattice_call_bot(Bot), FailureGuard = term('->', [_, Bot]))
 	).
-
-% is_empty_guard/1
-% is_empty_guard(+Guard)
-%
-% Check if the unification problem of a guard is empty.
-is_empty_guard(term('->', [term('~', [term(g, []), term(g, [])]), _])).
-is_empty_guard(term('->', [term('^~', _), _])).
 
 % vector_guards/2
 % vector_guards(+Vector, -Guards)
@@ -229,23 +222,23 @@ make_guard([], [], []).
 make_guard([K-V|Xs], [var(K)|Ks], [V|Vs]) :-
 	make_guard(Xs, Ks, Vs).
 
-% crisp_substitution/1
-% crisp_substitution(+Substitution, ?CrispSubstitution)
+% bound_substitution/1
+% bound_substitution(+Substitution, ?BoundSubstitution)
 %
-% This predicate succeeds when +CrispSubstitution is +Substitution
-% restringed to its variables whose images are crisp terms.
-crisp_substitution(Sub, CrispSub) :-
+% This predicate succeeds when +BoundSubstitution is +Substitution
+% restringed to its variables whose images are bound terms.
+bound_substitution(Sub, BoundSub) :-
 	substitution_to_list(Sub, Binds),
-	include(is_crisp, Binds, CrispBinds),
-	list_to_substitution(CrispBinds, CrispSub).
+	include(is_bound, Binds, BoundBinds),
+	list_to_substitution(BoundBinds, BoundSub).
 
-% is_crisp/1
-% is_crisp(+Term)
+% is_bound/1
+% is_bound(+Term)
 %
-% Check if a term is crisp.
-is_crisp(_-Term) :- !,
-	is_crisp(Term).
-is_crisp(term(Name, Args)) :- !,
+% Check if a term is bound.
+is_bound(_-Term) :- !,
+	is_bound(Term).
+is_bound(term(Name, Args)) :- !,
 	length(Args, Arity),
 	lattice_call_top(Top),
 	lattice_call_bot(Bot),
@@ -253,12 +246,12 @@ is_crisp(term(Name, Args)) :- !,
 		similarity_between(Name, _, Arity, TD, _),
 		(TD == Top ; TD == Bot)
 	),
-	is_crisp(Args).
-is_crisp([]) :- !.
-is_crisp([X|Xs]) :- !,
-	is_crisp(X),
-	is_crisp(Xs).
-is_crisp(_).
+	is_bound(Args).
+is_bound([]) :- !.
+is_bound([X|Xs]) :- !,
+	is_bound(X),
+	is_bound(Xs).
+is_bound(_).
 
 exclude_trivial_vars(Sub1, Sub2) :-
 	substitution_to_list(Sub1, List1),

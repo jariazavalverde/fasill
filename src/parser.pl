@@ -3,7 +3,7 @@
   * FILENAME: parser.pl
   * DESCRIPTION: This module contains predicates for parsing FASILL programs.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 15.06.2020
+  * UPDATED: 28.07.2021
   * 
   **/
 
@@ -177,7 +177,6 @@ current_op(900, xfy, '&',     no).
 current_op(700,  xfx, 'is',   no).
 current_op(700,  xfx, '=',    no).
 current_op(700,  xfx, '~',    no).
-current_op(700,  xfx, '^~',    no).
 current_op(700,  xfx, '\\=',  no).
 current_op(700,  xfx, '\\~',  no).
 current_op(700,  xfx, '==',   no).

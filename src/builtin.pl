@@ -3,7 +3,7 @@
   * FILENAME: builtin.pl
   * DESCRIPTION: This module contains the definition of the FASILL built-in predicates.
   * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 21.07.2021
+  * UPDATED: 28.07.2021
   * 
   **/
 
@@ -269,7 +269,7 @@ call_guards(N, term('->', [term('~', [G,H]), Body]), var(V), BodyU, Sub, SubS, U
     apply(VarSub, Body, BodyS),
     apply(Unifier, BodyS, BodyU),
     compose(Sub, Unifier, SubS).
-call_guards(N, term('->', [term('^~', [G, H]), Body]), var(V), BodyU, Sub, SubS, Unifier) :-
+call_guards(N, term('->', [term('^', [term('~', [G, H])]), Body]), var(V), BodyU, Sub, SubS, Unifier) :-
     guards_count(N, 0),
     unify(G, H, _, state(TD, Unifier)),
     empty_substitution(Empty),
@@ -277,7 +277,35 @@ call_guards(N, term('->', [term('^~', [G, H]), Body]), var(V), BodyU, Sub, SubS,
     apply(VarSub, Body, BodyS),
     apply(Unifier, BodyS, BodyU),
     compose(Sub, Unifier, SubS).
-
+call_guards(N, term('->', [Goal, Body]), var(V), BodyU, Sub, SubS, Unifier) :-
+    Goal \= term('^', [_]),
+    Goal \= term('~', [_,_]),
+    get_variables(Goal, Vars),
+    derivation(guards/1, state(Goal,Vars), state(TD,Unifier), _),
+    lattice_call_bot(Bot),
+    TD \= Bot,
+    guards_count(N, C1),
+    succ(C1, C2),
+    retractall(guards_count(N, _)),
+    asserta(guards_count(N, C2)),
+    empty_substitution(Empty),
+    put_substitution(Empty, V, TD, VarSub),
+    apply(VarSub, Body, BodyS),
+    apply(Unifier, BodyS, BodyU),
+    compose(Sub, Unifier, SubS).
+call_guards(N, term('->', [term('^', [Goal]), Body]), var(V), BodyU, Sub, SubS, Unifier) :-
+    Goal \= term('~', [_,_]),
+    guards_count(N, 0),
+    get_variables(Goal, Vars),
+    derivation(guards/1, state(Goal,Vars), state(TD,Unifier), _),
+    lattice_call_bot(Bot),
+    TD \= Bot,
+    empty_substitution(Empty),
+    put_substitution(Empty, V, TD, VarSub),
+    apply(VarSub, Body, BodyS),
+    apply(Unifier, BodyS, BodyU),
+    compose(Sub, Unifier, SubS).
+    
 :- dynamic guards_last_id/1, guards_count/2.
 guards_last_id(0).
 
