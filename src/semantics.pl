@@ -31,6 +31,7 @@
     short_interpretive_step/4,
     long_interpretive_step/4,
     failure_step/3,
+    up_body/2,
     apply/3,
     compose/3,
     rename/2,
@@ -560,6 +561,19 @@ deep_simplify(Bot, Top, term(Op, Args), term(Op, Args2)) :-
     once(member(F, ['@','#@','#?'])),
     maplist(deep_simplify(Bot, Top), Args, Args2), !.
 deep_simplify(_, _, X, X).
+
+% up_body/2
+% up_body(+Expression, ?ExpressionUp)
+%
+% ?ExpressionUp is the result of interpreting the expression with no atoms, 
+% obtained from the body +Expression by replacing each ocurrence of an atom
+% by the top of the current lattice.
+each occurrence of a propositional symbol by >.
+up_body(Expr, ExprUp) :-
+    select_atom(Expr, ExprTop, top, _), !,
+    up_body(ExprTop, ExprUp).
+up_body(Expr, ExprUp) :-
+    deep_interpret(Expr, ExprUp).
 
 % rename/2
 % rename(+Expression, ?Renamed)

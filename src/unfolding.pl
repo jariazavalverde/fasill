@@ -168,14 +168,12 @@ guards_unfold(R1, R2) :-
 		RegularGuards
 	),
 	failure_step(state(Body, Vars), state(Expr, _), _),
-	(short_interpretive_step(unfolding/0, state(Expr, Vars), state(Expr2, _), _) -> true ; Expr2 = Expr),
-	(simplification_step(unfolding/0, state(Expr2, Vars), state(Expr3, _), _) -> true ; Expr3 = Expr2),
-	fasill_term_variables(Head, FSVars),
-	rename(FSVars, [FSVars, Expr3], [FSVarsR, ExprR]),
-	FailureGuard = term('->', [term('^', [term('~', [term(g, FSVars), term(g, FSVarsR)])]), ExprR]),
-	(is_safe_unfolding(RegularGuards, FailureGuard) ->
+	(is_safe_unfolding(RegularGuards, Expr) ->
 		classic_unfold(R1, R2)
 	;
+		fasill_term_variables(Head, FSVars),
+		rename(FSVars, [FSVars, Expr], [FSVarsR, ExprR]),
+		FailureGuard = term('->', [term('^', [term('~', [term(g, FSVars), term(g, FSVarsR)])]), ExprR]),
 		append(RegularGuards, [FailureGuard], Vector),
 		vector_guards(Vector, Guards),
 		BodyG = term(guards, [term(on, [Guards, Var])]),
@@ -185,14 +183,14 @@ guards_unfold(R1, R2) :-
 	classic_unfold(R1, R2).
 
 % is_safe_unfolding/2
-% is_safe_unfolding(+RegularGuards, +FailureGuard)
+% is_safe_unfolding(+RegularGuards, +FailureBody)
 %
 % This predicate succeeds when it is safe to perform a classic unfolding.
 % I.e.:
 %     (∀ i ∈ {1,...,n}, \sigma_i is bound)
 %                       ∧
 %     [(∃ i ∈ {1,...,n}: \sigma_i = id) ∨ (B_{n+1} ≡ ⊥)].
-is_safe_unfolding(RegularGuards, FailureGuard) :-
+is_safe_unfolding(RegularGuards, FailureBody) :-
 	RegularGuard = term('->', [term('~', [_,term(g, G)]), _]),
 	% (∀ i ∈ {1,...,n}, \sigma_i is bound)
 	forall(member(RegularGuard, RegularGuards), is_bound(G)),
@@ -200,7 +198,7 @@ is_safe_unfolding(RegularGuards, FailureGuard) :-
 		% (∃ i ∈ {1,...,n}: \sigma_i = id)
 		(member(RegularGuard, RegularGuards), G = []) ;
 		% (B_{n+1} ≡ ⊥)
-		(lattice_call_bot(Bot), FailureGuard = term('->', [_, Bot]))
+		(lattice_call_bot(Bot), up_body(FailureBody, Bot))
 	).
 
 % vector_guards/2
