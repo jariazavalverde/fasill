@@ -73,15 +73,15 @@
     For more details see:
 
     Riaza, José A., and Ginés Moreno. "Using SAT/SMT solvers for efficiently
-	tuning fuzzy logic programs." 2020 IEEE International Conference on Fuzzy
-	Systems (FUZZ-IEEE). IEEE, 2020.
+    tuning fuzzy logic programs." 2020 IEEE International Conference on Fuzzy
+    Systems (FUZZ-IEEE). IEEE, 2020.
 
     DOI: https://doi.org/10.1109/FUZZ48607.2020.9177798
 */
 
 %!  tuning_smt(+Domain, +LatFile, ?Substitution, ?Deviation)
 %
-%   This predicate succeeds when ?Substitution is the best symbolic substitution
+%   This predicate succeeds when Substitution is the best symbolic substitution
 %   for the set of test cases loaded into the current environment, with
 %   deviation Deviation. LatFile is an SMT-LIB script representing the
 %   corresponding Prolog lattice.
@@ -195,7 +195,8 @@ sfca_to_smtlib(num(X), decimal(Y)) :-
 	Y is ceil(X*100)/100,
 	!.
 sfca_to_smtlib(term('#'(X),[]), symbol(Y)) :-
-	atom_concat('sym!td!0!', X, Y), !.
+	atom_concat('sym!td!0!', X, Y),
+	!.
 sfca_to_smtlib(term(X,[]), symbol(X)) :-
 	atomic(X),
 	!.
@@ -231,7 +232,7 @@ sfca_to_smtlib(term(X,[]), symbol(X)).
 %!  tuning_theory_options(+Theory, -Options)
 %
 %   This predicate succeeds when Options is a list of options in SMT-LIB format
-%   for the theory +Theroy.
+%   for the theory Theroy.
 
 tuning_theory_options('Bool', []).
 tuning_theory_options('Real', [[reserved('set-option'), keyword('pp.decimal'), symbol(true)]]).
