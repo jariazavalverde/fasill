@@ -21,7 +21,8 @@
     syntax_error/4
 ]).
 
-:- use_module('environment').
+:- use_module(environment).
+:- use_module(term).
 
 
 

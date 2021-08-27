@@ -63,7 +63,7 @@ guard_tree_unfold(Goal, Depth) :-
 guard_tree_unfold(_, 0, term('[]',[])) :- !.
 guard_tree_unfold(Goal, Depth, Tree) :-
 	succ(N, Depth),
-	get_variables(Goal, Vars),
+	substitution:init_substitution(Goal, Vars),
 	append_fresh_variable(Goal, Var, GoalVar),
 	findall(term(t, [Var, term(wmgu, [term(g, Guard1), term(g, Guard2)]), Child]), (
 		unfolding_inference(state(GoalVar, Vars), state(Goal2, Sub), Info),

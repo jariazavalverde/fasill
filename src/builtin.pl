@@ -283,7 +283,7 @@ call_guards(N, term('->', [term('^', [term('~', [G, H])]), Body]), var(V), BodyU
 call_guards(N, term('->', [Goal, Body]), var(V), BodyU, Sub, SubS, Unifier) :-
     Goal \= term('^', [_]),
     Goal \= term('~', [_,_]),
-    get_variables(Goal, Vars),
+    substitution:init_substitution(Goal, Vars),
     derivation(guards/1, state(Goal,Vars), state(TD,Unifier), _),
     lattice_call_bot(Bot),
     TD \= Bot,
@@ -299,7 +299,7 @@ call_guards(N, term('->', [Goal, Body]), var(V), BodyU, Sub, SubS, Unifier) :-
 call_guards(N, term('->', [term('^', [Goal]), Body]), var(V), BodyU, Sub, SubS, Unifier) :-
     Goal \= term('~', [_,_]),
     guards_count(N, 0),
-    get_variables(Goal, Vars),
+    substitution:init_substitution(Goal, Vars),
     derivation(guards/1, state(Goal,Vars), state(TD,Unifier), _),
     lattice_call_bot(Bot),
     TD \= Bot,
@@ -344,7 +344,7 @@ eval_builtin_predicate(findall/4, state(_, Subs), selected(ExprVar, Var, Term), 
         ( \+fasill_callable(Goal) -> type_error(callable, Goal, findall/4, Error), throw_exception(Error) ;
             (\+fasill_var(Instances), \+fasill_list(Instances) -> type_error(list, Instances, findall/4, Error), throw_exception(Error) ;
                 lattice_call_bot(Bot),
-                get_variables(Goal, GoalVars),
+                substitution:init_substitution(Goal, GoalVars),
                 (trace_level(Level) -> Level_ is Level+1, retractall(trace_level(_)), assertz(trace_level(Level_)) ; true),
                 (current_fasill_flag(trace, term(true,[])) -> assertz(trace_derivation(trace(Level_, findall/4, state(Goal,GoalVars)))) ; true),
                 findall([TD,Template_], (

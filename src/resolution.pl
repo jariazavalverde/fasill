@@ -39,7 +39,6 @@
 	select_expression/4,
 	interpretable/1,
 	derivation/4,
-	get_variables/2,
 	inference/4,
 	simplification_step/4,
 	operational_step/4,
@@ -181,33 +180,12 @@ query(Goal, Answer) :-
 	retractall(trace_derivation),
 	retractall(trace_level(_)),
 	assertz(trace_level(0)),
-	get_variables(Goal, Vars),
+	substitution:init_substitution(Goal, Vars),
 	State = state(Goal, Vars),
 	(environment:current_fasill_flag(trace, term(true,[])) ->
 		assertz(trace_derivation(trace(0, 'GOAL', State))) ;
 		true),
 	derivation(top_level/0, State, Answer, _).
-
-%!  get_variables(+Term, ?Variables)
-%
-%   This predicate succeeds when Variables is the initial substitution for the
-%   term Term, where each variable in Term is replaced by itself (X/X).
-
-get_variables(X, Z) :-
-	get_variables2(X, Y),
-	list_to_set(Y, S),
-	substitution:list_to_substitution(S, Z).
-get_variables2(var(X), [X-var(X)]) :-
-	!.
-get_variables2(term(_,Args), Vars) :-
-	!,
-	get_variables2(Args, Vars).
-get_variables2([H|T], Vars) :-
-	!,
-	get_variables2(H, Vh),
-	get_variables2(T, Vt),
-	append(Vh, Vt, Vars).
-get_variables2(_,[]).
 
 %!  derivation(+From, +State1, ?State2, ?Info)
 %

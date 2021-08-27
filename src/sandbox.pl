@@ -116,7 +116,7 @@ sandbox_run(Program, Lattice, Sim, Goal, Limit, Options) :-
     lattice_consult(Lattice),
     catch(program_consult(Program), Error1, (write('uncaught exception in program: '), sandbox_write(Error1), nl)),
     clear_warnings,
-    catch(similarity_consult(Sim), Error2, (write(Error2), write('uncaught exception in similarities: '), sandbox_write(Error2), nl)),
+    catch(similarity_consult(Sim), Error2, (write('uncaught exception in similarities: '), sandbox_write(Error2), nl)),
     (environment:fasill_warning(Warning), write('warning in similarities: '), sandbox_write(Warning), nl, fail ; true),
     statistics(runtime,[_,_]),
     ( catch(query_consult(Goal, State), Error3, (write('uncaught exception in goal: '), sandbox_write(Error3), nl)),
@@ -131,7 +131,7 @@ sandbox_run(Program, Lattice, Sim, Goal, Limit, Options) :-
 % sandbox_listing(+Program)
 % 
 % This predicate loads the program +Program
-% into the environemnt, and writes in the
+% into the environment, and writes in the
 % standard output the loaded rules.
 sandbox_listing(Program) :-
     catch(program_consult(Program), Error1, (write('uncaught exception in program: '), sandbox_write(Error1), nl)),
@@ -143,7 +143,7 @@ sandbox_listing(Program) :-
 % sandbox_classic_unfold(+Program, +Lattice, +Sim, +Rule)
 % 
 % This predicate loads the program <+Program, +Lattice, +Sim>
-% into the environemnt and runs the unfolding of the rule +Rule.
+% into the environment and runs the unfolding of the rule +Rule.
 sandbox_classic_unfold(Program, Lattice, Sim, Rule) :-
     lattice_consult(Lattice),
     catch(program_consult(Program), Error1, (write('uncaught exception in program: '), sandbox_write(Error1), nl)),
@@ -157,7 +157,7 @@ sandbox_classic_unfold(Program, Lattice, Sim, Rule) :-
 % sandbox_unfold(+Program, +Lattice, +Sim, +Rule)
 % 
 % This predicate loads the program <+Program, +Lattice, +Sim>
-% into the environemnt and runs the unfolding of the rule +Rule.
+% into the environment and runs the unfolding of the rule +Rule.
 sandbox_unfold(Program, Lattice, Sim, Rule) :-
     lattice_consult(Lattice),
     catch(program_consult(Program), Error1, (write('uncaught exception in program: '), sandbox_write(Error1), nl)),
@@ -222,7 +222,7 @@ sandbox_tune_smt(Program, Lattice, Sim, Tests, Domain, LatticeSMT, Limit, Option
 % sandbox_linearize_heads(+Program)
 % 
 % This predicate loads the program +Program
-% into the environemnt, and writes in the
+% into the environment, and writes in the
 % standard output the loaded rules after
 % linearizing the heads.
 sandbox_linearize_heads(Program) :-
@@ -236,7 +236,7 @@ sandbox_linearize_heads(Program) :-
 % sandbox_extend(+Program, +Lattice, +Sim, +Options)
 % 
 % This predicate loads the program <+Program, +Lattice, +Sim>
-% into the environemnt, and writes in the standard output the
+% into the environment, and writes in the standard output the
 % loaded rules after extending the program.
 sandbox_extend(Program, Lattice, Sim, Options) :-
     (member(cut(LambdaPl), Options) ->

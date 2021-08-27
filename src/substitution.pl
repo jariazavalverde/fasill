@@ -39,6 +39,7 @@
 	list_to_substitution/2,
 	put_substitution/4,
 	get_substitution/3,
+	init_substitution/2,
 	apply/3,
 	compose/3
 ]).
@@ -90,6 +91,33 @@ put_substitution(SubIn, Var, Term, SubOut) :-
 
 get_substitution(Sub, Var, Term) :-
 	get_assoc(Var, Sub, Term).
+
+%!  init_substitution(+Goal, ?Substitution)
+%
+%   This predicate succeeds when Substitution is the initial substitution for 
+%   the goal Goal, where each variable X in goal Goal is binded to itself (X/X).
+
+init_substitution(Goal, Sub) :-
+	empty_substitution(Id),
+	init_substitution(Goal, Id, Sub).
+
+% Variable
+init_substitution(var(X), Sub0, Sub1) :-
+	!,
+	(get_substitution(Sub0, X, _) ->
+		Sub1 = Sub0 ;
+		put_substitution(Sub0, X, var(X), Sub1)).
+% Term
+init_substitution(term(_,Args), Sub0, Sub1) :-
+	!,
+	init_substitution(Args, Sub0, Sub1).
+% List
+init_substitution([H|T], Sub0, Sub2) :-
+	!,
+	init_substitution(H, Sub0, Sub1),
+	init_substitution(T, Sub1, Sub2).
+% Others
+init_substitution(_, Sub, Sub).
 
 %!  compose(+Substitution1, +Substitution2, ?SubstitutionOut)
 %

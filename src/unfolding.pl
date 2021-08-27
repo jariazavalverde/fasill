@@ -30,6 +30,7 @@
 :- use_module(substitution).
 :- use_module(environment).
 :- use_module(resolution).
+:- use_module(term).
 
 
 
@@ -43,7 +44,7 @@
 % has the side effect of retracting the rule +Rule
 % and asserting the new unfolded rules.
 classic_unfold_by_id(Id) :-
-	fasill_rule(Head, Body, Info),
+	environment:fasill_rule(Head, Body, Info),
 	member(id(Id), Info), !,
 	classic_unfold(fasill_rule(Head, Body, Info)).
 
@@ -54,7 +55,7 @@ classic_unfold_by_id(Id) :-
 % of a FASILL rule Rule and ?Unfolded is an unfolded
 % rule of Rule.
 classic_unfold_by_id(Id, Rule) :-
-	fasill_rule(Head, Body, Info),
+	environment:fasill_rule(Head, Body, Info),
 	member(id(Id), Info), !,
 	classic_unfold(fasill_rule(Head, Body, Info), Rule).
 
@@ -68,11 +69,11 @@ classic_unfold_by_id(Id, Rule) :-
 classic_unfold(R1) :-
 	findall(R, classic_unfold(R1, R), Rules),
 	Rules \= [],
-	once(retract(R1)),
+	environment:once(retract(R1)),
 	( member(Rule, Rules),
-	  assertz(Rule),
+	  environment:assertz(Rule),
 	  fail ; true ),
-	sort_rules_by_id.
+	environment:sort_rules_by_id.
 
 % classic_unfold/2
 % classic_unfold(+Rule, ?Unfolded)
@@ -85,7 +86,7 @@ classic_unfold(R1, R2) :-
 	assertz(unfolding_id(1)),
 	R1 = fasill_rule(head(Head), body(Body), [id(Id)|Info]),
 	HeadR = Head, BodyR = Body,
-	get_variables(BodyR, Vars),
+	substitution:init_substitution(BodyR, Vars),
 	resolution:inference(unfolding/0, state(BodyR, Vars), state(Expr, Subs), _),
 	BodyR \= Expr,
 	substitution:apply(Subs, HeadR, Head_),
@@ -110,7 +111,7 @@ classic_unfold(R1, R2) :-
 % has the side effect of retracting the rule +Rule
 % and asserting the new unfolded rules.
 guards_unfold_by_id(Id) :-
-	fasill_rule(Head, Body, Info),
+	environment:fasill_rule(Head, Body, Info),
 	member(id(Id), Info), !,
 	guards_unfold(fasill_rule(Head, Body, Info)).
 
@@ -121,7 +122,7 @@ guards_unfold_by_id(Id) :-
 % of a FASILL rule Rule and ?Unfolded is an unfolded
 % rule of Rule.
 guards_unfold_by_id(Id, Rule) :-
-	fasill_rule(Head, Body, Info),
+	environment:fasill_rule(Head, Body, Info),
 	member(id(Id), Info), !,
 	guards_unfold(fasill_rule(Head, Body, Info), Rule).
 
@@ -135,11 +136,11 @@ guards_unfold_by_id(Id, Rule) :-
 guards_unfold(R1) :-
 	findall(R, guards_unfold(R1, R), Rules),
 	Rules \= [],
-	once(retract(R1)),
+	environment:once(retract(R1)),
 	( member(Rule, Rules),
-	  assertz(Rule),
+	  environment:assertz(Rule),
 	  fail ; true ),
-	sort_rules_by_id.
+	environment:sort_rules_by_id.
 
 % guards_unfold/2
 % guards_unfold(+Rule, ?Unfolded)
@@ -148,7 +149,7 @@ guards_unfold(R1) :-
 % and ?Unfolded is an unfolded rule of +Rule.
 guards_unfold(R1, R2) :-
 	R1 = fasill_rule(head(Head), body(Body), Info),
-	resolution:get_variables(Body, Vars),
+	substitution:init_substitution(Body, Vars),
 	resolution:select_atom(Body, Expr, Replace, _Selected), !,
 	environment:similarity_tnorm(Tnorm),
 	resolution:auto_fresh_variable_id(VarId),
@@ -172,8 +173,8 @@ guards_unfold(R1, R2) :-
 	(is_safe_unfolding(RegularGuards, Expr) ->
 		classic_unfold(R1, R2)
 	;
-		fasill_term_variables(Head, FSVars),
-		rename(FSVars, [FSVars, Expr], [FSVarsR, ExprR]),
+		term:fasill_term_variables(Head, FSVars),
+		resolution:rename(FSVars, [FSVars, Expr], [FSVarsR, ExprR]),
 		FailureGuard = term('->', [term('^', [term('~', [term(g, FSVars), term(g, FSVarsR)])]), ExprR]),
 		append(RegularGuards, [FailureGuard], Vector),
 		vector_guards(Vector, Guards),
@@ -271,7 +272,7 @@ trivial_var(X-var(X)).
 % has the side effect of retracting the rule +Rule
 % and asserting the new unfolded rules.
 unfold_by_id(Id) :-
-	fasill_rule(Head, Body, Info),
+	environment:fasill_rule(Head, Body, Info),
 	member(id(Id), Info), !,
 	unfold(fasill_rule(Head, Body, Info)).
 
@@ -282,7 +283,7 @@ unfold_by_id(Id) :-
 % of a FASILL rule Rule and ?Unfolded is an unfolded
 % rule of Rule.
 unfold_by_id(Id, Rule) :-
-	fasill_rule(Head, Body, Info),
+	environment:fasill_rule(Head, Body, Info),
 	member(id(Id), Info), !,
 	unfold(fasill_rule(Head, Body, Info), Rule).
 
@@ -296,9 +297,9 @@ unfold_by_id(Id, Rule) :-
 unfold(R1) :-
 	findall(R, unfold(R1, R), Rules),
 	Rules \= [],
-	once(retract(R1)),
+	environment:once(retract(R1)),
 	( member(Rule, Rules),
-	  assertz(Rule),
+	  environment:assertz(Rule),
 	  fail ; true ),
 	sort_rules_by_id.
 
@@ -314,8 +315,9 @@ unfold(R1, R2, Options) :-
 	R1 = fasill_rule(head(Head), body(Body), Info),
 	(member(rename(false), Options) ->
 		HeadR = Head, BodyR = Body ;
-		rename([Head,Body], [HeadR,BodyR])),
-	select_atom(BodyR, BodyVar, Var, term(guards, [term(on, [Guards, TD])])), !,
+		resolution:rename([Head,Body], [HeadR,BodyR])),
+	resolution:select_atom(BodyR, BodyVar, Var, term(guards, [term(on, [Guards, TD])])),
+	!,
 	vector_guards(GuardsList, Guards),
 	select(term('->', [HeadG, BodyG]), GuardsList, Rules, GuardsList2),
 	findall(
