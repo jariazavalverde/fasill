@@ -10,10 +10,6 @@
 
 
 :- module(semantics, [
-    lambda_wmgu/5,
-    wmgu/4,
-    mgu/4,
-    unify/4,
     query/2,
     select_atom/4,
     select_expression/4,
@@ -28,8 +24,6 @@
     long_interpretive_step/4,
     failure_step/3,
     up_body/2,
-    apply/3,
-    compose/3,
     rename/2,
     rename/3,
     is_rename/2,
@@ -40,153 +34,11 @@
     auto_fresh_variable_id/1
 ]).
 
-:- use_module('substitution').
-:- use_module('environment').
-:- use_module('exceptions').
-:- use_module('builtin').
-
-
-
-% UNIFICATION
-
-% lambda_wmgu/5
-% lambda_wmgu(+ExpressionA, +ExpressionB, +Threshold, +OccursCheck, ?State)
-%
-% This predicate returns the thresholded weak most general unifier
-% (lambda-wmgu) ?State of the expressions +ExpressionA and
-% +ExpressionB with level +Threshold.
-lambda_wmgu(ExprA, ExprB, Lambda, OccursCheck, State) :-
-    lattice_call_top(Top),
-    empty_substitution(Subs),
-    lambda_wmgu(ExprA, ExprB, Lambda, OccursCheck, state(Top,Subs), State).
-%%% anonymous variable
-lambda_wmgu(var('_'), _, _, _, State, State) :- !.
-lambda_wmgu(_, var('_'), _, _, State, State) :- !.
-%%% var with expression
-lambda_wmgu(var(X), Y, Lambda, OccursCheck, state(TD,Subs), State_) :-
-    get_assoc(X, Subs, Z), !,
-    lambda_wmgu(Z, Y, Lambda, OccursCheck, state(TD,Subs), State_).
-lambda_wmgu(var(X), Y, _, OccursCheck, state(TD,Subs0), state(TD,Subs3)) :- !,
-    (OccursCheck == true -> occurs_check(X, Y) ; true),
-    list_to_assoc([X-Y], Subs1),
-    compose(Subs0, Subs1, Subs2),
-    put_assoc(X, Subs2, Y, Subs3).
-%%% expression with var
-lambda_wmgu(X, var(Y), Lambda, OccursCheck, State, State_) :- !,
-    lambda_wmgu(var(Y), X, Lambda, OccursCheck, State, State_).
-%%% num with num
-lambda_wmgu(num(X), num(X), _, _, State, State) :- !.
-%%% term with term
-lambda_wmgu(term(X,Xs), term(X,Ys), Lambda, OccursCheck, State, State_) :- !,
-    length(Xs, Arity),
-    length(Ys, Arity),
-    lambda_wmgu(Xs, Ys, Lambda, OccursCheck, State, State_).
-lambda_wmgu(term(X,Xs), term(Y,Ys), Lambda, OccursCheck, state(TD, Subs), State) :- !,
-    length(Xs, Arity),
-    length(Ys, Arity),
-    similarity_between(X, Y, Arity, TDxy, S),
-    lattice_call_top(Top),
-    (TD == Top -> TD2 = TDxy; 
-        (TDxy == Top -> TD2 = TD; 
-            (similarity_tnorm(Tnorm),
-                ((S == no, Tnorm = '&'(_)) ->
-                    lattice_call_connective(Tnorm, [TD, TDxy], TD2),
-                    lattice_call_leq(Lambda, TD2)
-                    ; TD2 = term(Tnorm, [TD, TDxy])
-                )
-            )
-        )
-    ),
-    lattice_call_bot(Bot),
-    TD2 \== Bot,
-    lambda_wmgu(Xs, Ys, Lambda, OccursCheck, state(TD2, Subs), State).
-%%% arguments
-lambda_wmgu([], [], _, _, State, State) :- !.
-lambda_wmgu([X|Xs], [Y|Ys], Lambda, OccursCheck, State, State_) :- !,
-    lambda_wmgu(X, Y, Lambda, OccursCheck, State, StateXY),
-    StateXY = state(_, Subs),
-    apply(Subs, Xs, Xs_),
-    apply(Subs, Ys, Ys_),
-    lambda_wmgu(Xs_, Ys_, Lambda, OccursCheck, StateXY, State_).
-
-% wmgu/4
-% wmgu(+ExpressionA, +ExpressionB, +OccursCheck, ?State)
-%
-% This predicate returns the weak most general unifier (wmgu)
-% ?State of the expressions +ExpressionA and +ExpressionB.
-wmgu(ExprA, ExprB, OccursCheck, State) :-
-    lattice_call_bot(Bot),
-    lambda_wmgu(ExprA, ExprB, Bot, OccursCheck, State).
-
-% mgu/4
-% mgu(+ExpressionA, +ExpressionB, +OccursCheck, ?MGU)
-%
-% This predicate returns the most general unifier (mgu)
-% ?MGU of the expressions +ExpressionA and +ExpressionB.
-mgu(ExprA, ExprB, OccursCheck, Subs1) :-
-    empty_substitution(Subs0),
-    mgu(ExprA, ExprB, OccursCheck, Subs0, Subs1).
-%%% anonymous variable
-mgu(var('_'), _, _, Subs, Subs) :- !.
-mgu(_, var('_'), _, Subs, Subs) :- !.
-%%% var with expression
-mgu(var(X), Y, OccursCheck, Subs0, Subs1) :-
-    get_assoc(X, Subs0, Z), !,
-    mgu(Z, Y, OccursCheck, Subs0, Subs1).
-mgu(var(X), Y, OccursCheck, Subs0, Subs3) :- !,
-    (OccursCheck == true -> occurs_check(X, Y) ; true),
-    list_to_assoc([X-Y], Subs1),
-    compose(Subs0, Subs1, Subs2),
-    put_assoc(X, Subs2, Y, Subs3).
-%%% expression with var
-mgu(X, var(Y), OccursCheck, Subs0, Subs1) :- !,
-    mgu(var(Y), X, OccursCheck, Subs0, Subs1).
-%%% num with num
-mgu(num(X), num(X), _, Subs, Subs) :- !.
-%%% term with term
-mgu(term(X,Xs), term(X,Ys), OccursCheck, Subs0, Subs1) :- !,
-    length(Xs, Length),
-    length(Ys, Length),
-    mgu(Xs, Ys, OccursCheck, Subs0, Subs1).
-%%% arguments
-mgu([], [], _, Subs, Subs) :- !.
-mgu([X|Xs], [Y|Ys], OccursCheck, Subs0, Subs2) :- !,
-    mgu(X, Y, OccursCheck, Subs0, Subs1),
-    apply(Subs1, Xs, Xs_),
-    apply(Subs1, Ys, Ys_),
-    mgu(Xs_, Ys_, OccursCheck, Subs1, Subs2).
-
-% occurs_check/2
-% occurs_check(+Variable, +Expression)
-%
-% This predicate succeds when +Expression does not contain
-% the variable +Variable.
-occurs_check(Var, var(Var)) :- !, fail.
-occurs_check(Var, term(_, Xs)) :- !, maplist(occurs_check(Var), Xs).
-occurs_check(_, _).
-
-% unify/4
-% unify(+ExpressionA, +ExpressionB, +OccursCheck, ?State)
-%
-% This predicate returns the unification ?State of
-% expressions +ExpressionA and ExpressionB using
-% the (possible weak) unification algorithm.
-unify(Term1, Term2, OccursCheck, Subs) :-
-    current_fasill_flag(weak_unification, term(true,[])), !,
-    current_fasill_flag(lambda_unification, Lambda_),
-    (var(OccursCheck) -> current_fasill_flag(occurs_check, term(OccursCheck, [])) ; true),
-    (Lambda_ == bot ->
-        lattice_call_bot(Lambda) ;
-        (Lambda_ == top ->
-            lattice_call_top(Lambda) ; 
-            Lambda = Lambda_
-        )
-    ),
-    lambda_wmgu(Term1, Term2, Lambda, OccursCheck, Subs).
-unify(Term1, Term2, OccursCheck, state(Top, Subs)) :-
-    (var(OccursCheck) -> current_fasill_flag(occurs_check, term(OccursCheck, [])) ; true),
-    mgu(Term1, Term2, OccursCheck, Subs),
-    lattice_call_top(Top).
+:- use_module(substitution).
+:- use_module(unification).
+:- use_module(environment).
+:- use_module(exceptions).
+:- use_module(builtin).
 
 
 
@@ -615,25 +467,6 @@ is_rename([X|Xs], [Y|Ys], Sub1, Sub3) :- !,
     is_rename(X, Y, Sub1, Sub2),
     is_rename(Xs, Ys, Sub2, Sub3).
 is_rename(X, Y, Sub, Sub) :- X == Y.
-
-% compose/3
-% compose(+Substitution1, +Substitution2, ?SubstitutionOut)
-%
-% This predicate composes both substitutions, +Substitution1
-% and +Substitution2 in ?SubstitutionOut.
-compose(Subs0, Subs1, Subs2) :- map_assoc(apply(Subs1), Subs0, Subs2).
-
-% apply/3
-% apply(+Substitution, +ExpressionIn, ?ExpressionOut)
-%
-% This predicate applies the substitution +Substitution to
-% the expression +ExpressionIn. ?ExpressionOut is the resulting
-% expression.
-apply(_, X, X) :- var(X), !.
-apply(Subs, term(T,Args), term(T,Args_)) :- !, apply(Subs, Args, Args_).
-apply(Subs, var(X), Y) :- !, (get_assoc(X, Subs, Y) -> true ; Y = var(X)).
-apply(Subs, [X|Xs], [Y|Ys]) :- !, apply(Subs, X, Y), apply(Subs, Xs, Ys).
-apply(_, X, X).
 
 % arithmetic_evaluation/3
 % arithmetic_evaluation(+Indicator, +Expression, ?Result)

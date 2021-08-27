@@ -27,9 +27,9 @@
 	unfold_by_id/2
 ]).
 
-:- use_module('substitution').
-:- use_module('environment').
-:- use_module('semantics').
+:- use_module(substitution).
+:- use_module(environment).
+:- use_module(semantics).
 
 
 
@@ -86,9 +86,9 @@ classic_unfold(R1, R2) :-
 	R1 = fasill_rule(head(Head), body(Body), [id(Id)|Info]),
 	HeadR = Head, BodyR = Body,
 	get_variables(BodyR, Vars),
-	inference(unfolding/0, state(BodyR, Vars), state(Expr, Subs), _),
+	semantics:inference(unfolding/0, state(BodyR, Vars), state(Expr, Subs), _),
 	BodyR \= Expr,
-	apply(Subs, HeadR, Head_),
+	substitution:apply(Subs, HeadR, Head_),
 	( unfolding_id(R),
 	  atom_number(Atom, R),
 	  atom_concat(Id, '-', Id_),
@@ -148,27 +148,27 @@ guards_unfold(R1) :-
 % and ?Unfolded is an unfolded rule of +Rule.
 guards_unfold(R1, R2) :-
 	R1 = fasill_rule(head(Head), body(Body), Info),
-	get_variables(Body, Vars),
-	select_atom(Body, Expr, Replace, _Selected), !,
-	similarity_tnorm(Tnorm),
+	semantics:get_variables(Body, Vars),
+	semantics:select_atom(Body, Expr, Replace, _Selected), !,
+	environment:similarity_tnorm(Tnorm),
 	semantics:auto_fresh_variable_id(VarId),
 	Var = var('$'(VarId)),
 	findall(
 		Guard,
-		( inference(unfolding/0, state(Body, Vars), state(Expr, Sub), _),
+		( semantics:inference(unfolding/0, state(Body, Vars), state(Expr, Sub), _),
 		  exclude_trivial_vars(Sub, SubVars),
-		  substitution_to_list(SubVars, GuardList),
+		  substitution:substitution_to_list(SubVars, GuardList),
 		  bound_substitution(Sub, BoundSub),
 		  make_guard(GuardList, G1, G2),
 		  Unification = term('~', [term(g, G1), term(g, G2)]),
 	      ReplaceVar = term(Tnorm, [Var, Replace]),
-	  	  select_atom(Body, ExprVar, ReplaceVar, _),
-		  apply(BoundSub, ExprVar, ExprVarSub),
+	  	  semantics:select_atom(Body, ExprVar, ReplaceVar, _),
+		  substitution:apply(BoundSub, ExprVar, ExprVarSub),
 		  Guard = term('->', [Unification, ExprVarSub])
 		),
 		RegularGuards
 	),
-	failure_step(state(Body, Vars), state(Expr, _), _),
+	semantics:failure_step(state(Body, Vars), state(Expr, _), _),
 	(is_safe_unfolding(RegularGuards, Expr) ->
 		classic_unfold(R1, R2)
 	;
@@ -199,7 +199,7 @@ is_safe_unfolding(RegularGuards, FailureBody) :-
 		% (∃ i ∈ {1,...,n}: \sigma_i = id)
 		(member(RegularGuard, RegularGuards), G = []) ;
 		% (B_{n+1} ≡ ⊥)
-		(lattice_call_bot(Bot), up_body(FailureBody, Bot))
+		(environment:lattice_call_bot(Bot), semantics:up_body(FailureBody, Bot))
 	).
 
 % vector_guards/2
@@ -227,9 +227,9 @@ make_guard([K-V|Xs], [var(K)|Ks], [V|Vs]) :-
 % This predicate succeeds when +BoundSubstitution is +Substitution
 % restringed to its variables whose images are bound terms.
 bound_substitution(Sub, BoundSub) :-
-	substitution_to_list(Sub, Binds),
+	substitution:substitution_to_list(Sub, Binds),
 	include(is_bound, Binds, BoundBinds),
-	list_to_substitution(BoundBinds, BoundSub).
+	substitution:list_to_substitution(BoundBinds, BoundSub).
 
 % is_bound/1
 % is_bound(+Term)
@@ -239,10 +239,10 @@ is_bound(_-Term) :- !,
 	is_bound(Term).
 is_bound(term(Name, Args)) :- !,
 	length(Args, Arity),
-	lattice_call_top(Top),
-	lattice_call_bot(Bot),
+	environment:lattice_call_top(Top),
+	environment:lattice_call_bot(Bot),
 	forall(
-		similarity_between(Name, _, Arity, TD, _),
+		environment:similarity_between(Name, _, Arity, TD, _),
 		(TD == Top ; TD == Bot)
 	),
 	is_bound(Args).
@@ -253,9 +253,9 @@ is_bound([X|Xs]) :- !,
 is_bound(_).
 
 exclude_trivial_vars(Sub1, Sub2) :-
-	substitution_to_list(Sub1, List1),
+	substitution:substitution_to_list(Sub1, List1),
 	exclude(trivial_var, List1, List2),
-	list_to_substitution(List2, Sub2).
+	substitution:list_to_substitution(List2, Sub2).
 
 trivial_var(X-var(X)).
 

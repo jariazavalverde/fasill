@@ -14,10 +14,11 @@
     eval_builtin_predicate/4
 ]).
 
-:- use_module('substitution').
-:- use_module('environment').
-:- use_module('exceptions').
-:- use_module('semantics').
+:- use_module(substitution).
+:- use_module(unification).
+:- use_module(environment).
+:- use_module(exceptions).
+:- use_module(semantics).
 
 :- discontiguous builtin:eval_builtin_predicate/4.
 

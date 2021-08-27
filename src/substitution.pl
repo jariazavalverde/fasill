@@ -37,7 +37,10 @@
 	empty_substitution/1,
 	substitution_to_list/2,
 	list_to_substitution/2,
-	put_substitution/4
+	put_substitution/4,
+	get_substitution/3,
+	apply/3,
+    compose/3
 ]).
 
 :- use_module(library(assoc)).
@@ -80,3 +83,40 @@ list_to_substitution(List, Sub) :-
 
 put_substitution(SubIn, Var, Term, SubOut) :-
 	put_assoc(Var, SubIn, Term, SubOut).
+
+%!  get_substitution(+Substitution, +Var, ?Term)
+%
+%   This predicate succeeds if Var-Term is a binding in Substitution. 
+
+get_substitution(Sub, Var, Term) :-
+	get_assoc(Var, Sub, Term).
+
+%!  compose(+Substitution1, +Substitution2, ?SubstitutionOut)
+%
+%   This predicate composes both substitutions, Substitution1 and Substitution2
+%   in SubstitutionOut.
+
+compose(Sub0, Sub1, Sub2) :-
+	map_assoc(apply(Sub1), Sub0, Sub2).
+
+%!  apply(+Substitution, +ExpressionIn, ?ExpressionOut)
+%
+% This predicate applies the substitution Substitution to the expression
+% ExpressionIn. ExpressionOut is the resulting expression.
+
+apply(_, X, X) :-
+	var(X),
+	!.
+apply(Sub, term(T,Args), term(T,Args_)) :-
+	!,
+	apply(Sub, Args, Args_).
+apply(Sub, var(X), Y) :-
+	!,
+	(get_assoc(X, Sub, Y) ->
+		true ;
+		Y = var(X)).
+apply(Sub, [X|Xs], [Y|Ys]) :-
+	!,
+	apply(Sub, X, Y),
+	apply(Sub, Xs, Ys).
+apply(_, X, X).
