@@ -1,13 +1,37 @@
-/**
-  * 
-  * FILENAME: unfolding.pl
-  * DESCRIPTION: This module contains predicates for unfolding FASILL programs.
-  * AUTHORS: José Antonio Riaza Valverde
-  * UPDATED: 28.07.2021
-  * 
-  **/
+/*  Part of FASILL
 
+	Author:        José Antonio Riaza Valverde
+	E-mail:        riaza.valverde@gmail.com
+	WWW:           https://dectau.uclm.es/fasill
+	Copyright (c)  2018 - 2021, José Antonio Riaza Valverde
+	All rights reserved.
 
+	Redistribution and use in source and binary forms, with or without
+	modification, are permitted provided that the following conditions are met:
+
+	* Redistributions of source code must retain the above copyright notice, 
+	  this list of conditions and the following disclaimer.
+
+	* Redistributions in binary form must reproduce the above copyright notice,
+	  this list of conditions and the following disclaimer in the documentation
+	  and/or other materials provided with the distribution.
+
+	* Neither the name of the copyright holder nor the names of its
+	  contributors may be used to endorse or promote products derived from
+	  this software without specific prior written permission.
+
+	THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+	AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+	IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
+	ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE 
+	LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
+	CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
+	SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
+	INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+	CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+	ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+	POSSIBILITY OF SUCH DAMAGE.
+*/
 
 :- module(unfolding, [
 	% classic unfolding
@@ -32,40 +56,46 @@
 :- use_module(resolution).
 :- use_module(term).
 
-
+/** <module> Unfolding
+    This library provides predicates for unfolding FASILL programs.
+    
+    Unfolding is a well-known, widely used, semantics-preserving program
+	transformation operation which is able to improve programs, generating more
+	efficient code. The unfolding transformation traditionally considered in
+	pure logic programming consists in the replacement of a program clause C by
+	the set of clauses obtained after applying a computation step in all its
+	possible forms on the body of C.
+*/
 
 % CLASSIC UNFOLDING
 
-% classic_unfold_by_id/1
-% classic_unfold_by_id(?Id)
+%!  classic_unfold_by_id(?Id)
 %
-% This predicate succeeds unfolding the FASILL
-% rule Rule with identifier ?Id. This predicate
-% has the side effect of retracting the rule +Rule
-% and asserting the new unfolded rules.
+%   This predicate succeeds unfolding the FASILL rule Rule with identifier Id.
+%   This predicate has the side effect of retracting the rule Rule and
+%   asserting the new unfolded rules.
+
 classic_unfold_by_id(Id) :-
 	environment:fasill_rule(Head, Body, Info),
 	member(id(Id), Info), !,
 	classic_unfold(fasill_rule(Head, Body, Info)).
 
-% classic_unfold_by_id/2
-% classic_unfold_by_id(?Id, ?Unfolded)
+%!  classic_unfold_by_id(?Id, ?Unfolded)
 %
-% This predicate succeeds when ?Id is the identifier
-% of a FASILL rule Rule and ?Unfolded is an unfolded
-% rule of Rule.
+%   This predicate succeeds when Id is the identifier of a FASILL rule Rule
+%   and Unfolded is an unfolded rule of Rule.
+
 classic_unfold_by_id(Id, Rule) :-
 	environment:fasill_rule(Head, Body, Info),
 	member(id(Id), Info), !,
 	classic_unfold(fasill_rule(Head, Body, Info), Rule).
 
-% classic_unfold/1
-% classic_unfold(+Rule)
+%!  classic_unfold(+Rule)
 %
-% This predicate succeeds unfolding the FASILL
-% rule +Rule. This predicate has the side effect
-% of retracting the rule +Rule and asserting the
-% new unfolded rules.
+%   This predicate succeeds unfolding the FASILL rule Rule. This predicate has
+%   the side effect of retracting the rule Rule and asserting the new unfolded
+%   rules.
+
 classic_unfold(R1) :-
 	findall(R, classic_unfold(R1, R), Rules),
 	Rules \= [],
@@ -75,11 +105,11 @@ classic_unfold(R1) :-
 	  fail ; true ),
 	environment:sort_rules_by_id.
 
-% classic_unfold/2
-% classic_unfold(+Rule, ?Unfolded)
+%!  classic_unfold(+Rule, ?Unfolded)
 %
-% This predicate succeeds when +Rule is a FASILL rule
-% and ?Unfolded is an unfolded rule of +Rule.
+%   This predicate succeeds when +Rule is a FASILL rule and Unfolded is an
+%   unfolded rule of Rule.
+
 :- dynamic(unfolding_id/1).
 classic_unfold(R1, R2) :-
 	retractall(unfolding_id(_)),
@@ -99,40 +129,35 @@ classic_unfold(R1, R2) :-
 	  assertz(unfolding_id(N)) ),
 	R2 = fasill_rule(head(Head_), body(Expr), [id(Id2)|Info]).
 
-
-
 % GUARDS ON-BASED UNFOLDING
 
-% guards_unfold_by_id/1
-% guards_unfold_by_id(?Id)
+%!  guards_unfold_by_id(?Id)
 %
-% This predicate succeeds unfolding the FASILL
-% rule Rule with identifier ?Id. This predicate
-% has the side effect of retracting the rule +Rule
-% and asserting the new unfolded rules.
+%   This predicate succeeds unfolding the FASILL rule Rule with identifier Id.
+%   This predicate has the side effect of retracting the rule Rule and
+%   asserting the new unfolded rules.
+
 guards_unfold_by_id(Id) :-
 	environment:fasill_rule(Head, Body, Info),
 	member(id(Id), Info), !,
 	guards_unfold(fasill_rule(Head, Body, Info)).
 
-% guards_unfold_by_id/2
-% guards_unfold_by_id(?Id, ?Unfolded)
+%!  guards_unfold_by_id(?Id, ?Unfolded)
 %
-% This predicate succeeds when ?Id is the identifier
-% of a FASILL rule Rule and ?Unfolded is an unfolded
-% rule of Rule.
+%   This predicate succeeds when Id is the identifier of a FASILL rule Rule
+%   and Unfolded is an unfolded rule of Rule.
+
 guards_unfold_by_id(Id, Rule) :-
 	environment:fasill_rule(Head, Body, Info),
 	member(id(Id), Info), !,
 	guards_unfold(fasill_rule(Head, Body, Info), Rule).
 
-% guards_unfold/1
-% guards_unfold(+Rule)
+%!  guards_unfold(+Rule)
 %
-% This predicate succeeds unfolding the FASILL
-% rule +Rule. This predicate has the side effect
-% of retracting the rule +Rule and asserting the
-% new unfolded rules.
+%   This predicate succeeds unfolding the FASILL rule Rule. This predicate has
+%   the side effect of retracting the rule Rule and asserting the new unfolded
+%   rules.
+
 guards_unfold(R1) :-
 	findall(R, guards_unfold(R1, R), Rules),
 	Rules \= [],
@@ -142,11 +167,11 @@ guards_unfold(R1) :-
 	  fail ; true ),
 	environment:sort_rules_by_id.
 
-% guards_unfold/2
-% guards_unfold(+Rule, ?Unfolded)
+%!  guards_unfold(+Rule, ?Unfolded)
 %
-% This predicate succeeds when +Rule is a FASILL rule
-% and ?Unfolded is an unfolded rule of +Rule.
+%   This predicate succeeds when Rule is a FASILL rule and Unfolded is an
+%   unfolded rule of Rule.
+
 guards_unfold(R1, R2) :-
 	R1 = fasill_rule(head(Head), body(Body), Info),
 	substitution:init_substitution(Body, Vars),
@@ -162,7 +187,7 @@ guards_unfold(R1, R2) :-
 		  bound_substitution(Sub, BoundSub),
 		  make_guard(GuardList, G1, G2),
 		  Unification = term('~', [term(g, G1), term(g, G2)]),
-	      ReplaceVar = term(Tnorm, [Var, Replace]),
+		  ReplaceVar = term(Tnorm, [Var, Replace]),
 	  	  resolution:select_atom(Body, ExprVar, ReplaceVar, _),
 		  substitution:apply(BoundSub, ExprVar, ExprVarSub),
 		  Guard = term('->', [Unification, ExprVarSub])
@@ -184,14 +209,14 @@ guards_unfold(R1, R2) :-
 guards_unfold(R1, R2) :-
 	classic_unfold(R1, R2).
 
-% is_safe_unfolding/2
-% is_safe_unfolding(+RegularGuards, +FailureBody)
+%!  is_safe_unfolding(+RegularGuards, +FailureBody)
 %
-% This predicate succeeds when it is safe to perform a classic unfolding.
-% I.e.:
+%   This predicate succeeds when it is safe to perform a classic unfolding.
+%   I.e.:
 %     (∀ i ∈ {1,...,n}, \sigma_i is bound)
 %                       ∧
 %     [(∃ i ∈ {1,...,n}: \sigma_i = id) ∨ (B_{n+1} ≡ ⊥)].
+
 is_safe_unfolding(RegularGuards, FailureBody) :-
 	RegularGuard = term('->', [term('~', [_,term(g, G)]), _]),
 	% (∀ i ∈ {1,...,n}, \sigma_i is bound)
@@ -203,39 +228,39 @@ is_safe_unfolding(RegularGuards, FailureBody) :-
 		(environment:lattice_call_bot(Bot), resolution:up_body(FailureBody, Bot))
 	).
 
-% vector_guards/2
-% vector_guards(+Vector, -Guards)
-% vector_guards(-Vector, +Guards)
+%!  vector_guards(+Vector, -Guards)
+%!  vector_guards(-Vector, +Guards)
 %
-% Transform a list of guards +Vector into a valid body
-% -Guards for the *guards on* control construct.
+%   Transform a list of guards Vector into a valid body Guards for the
+%   *guards on* control construct.
+
 vector_guards([X|Xs], term(';', [X,Right])) :-
 	vector_guards(Xs, Right).
 vector_guards([X],  X) :- !.
 
-% make_guard/3
-% make_guard(+Binds, -G1, -G2)
+%!  make_guard(+Binds, -G1, -G2)
 %
-% This predicates makes the pair of guards -G1 -G2 from 
-% a list of bindings +Binds.
+%   This predicates makes the pair of guards G1-G2 from a list of bindings
+%   Binds.
+
 make_guard([], [], []).
 make_guard([K-V|Xs], [var(K)|Ks], [V|Vs]) :-
 	make_guard(Xs, Ks, Vs).
 
-% bound_substitution/1
-% bound_substitution(+Substitution, ?BoundSubstitution)
+%!  bound_substitution(+Substitution, ?BoundSubstitution)
 %
-% This predicate succeeds when +BoundSubstitution is +Substitution
-% restringed to its variables whose images are bound terms.
+%   This predicate succeeds when BoundSubstitution is Substitution restringed
+%   to its variables whose images are bound terms.
+
 bound_substitution(Sub, BoundSub) :-
 	substitution:substitution_to_list(Sub, Binds),
 	include(is_bound, Binds, BoundBinds),
 	substitution:list_to_substitution(BoundBinds, BoundSub).
 
-% is_bound/1
-% is_bound(+Term)
+%!  is_bound(+Term)
 %
-% Check if a term is bound.
+%   Check if a term is bound.
+
 is_bound(_-Term) :- !,
 	is_bound(Term).
 is_bound(term(Name, Args)) :- !,
@@ -260,40 +285,36 @@ exclude_trivial_vars(Sub1, Sub2) :-
 
 trivial_var(X-var(X)).
 
-
-
 % SIMILARITY-BASED UNFOLDING
 
-% unfold_by_id/1
-% unfold_by_id(?Id)
+%!  unfold_by_id(?Id)
 %
-% This predicate succeeds unfolding the FASILL
-% rule Rule with identifier ?Id. This predicate
-% has the side effect of retracting the rule +Rule
-% and asserting the new unfolded rules.
+%   This predicate succeeds unfolding the FASILL rule Rule with identifier Id.
+%   This predicate has the side effect of retracting the rule Rule and asserting
+%   the new unfolded rules.
+
 unfold_by_id(Id) :-
 	environment:fasill_rule(Head, Body, Info),
-	member(id(Id), Info), !,
+	member(id(Id), Info),
+	!,
 	unfold(fasill_rule(Head, Body, Info)).
 
-% unfold_by_id/2
-% unfold_by_id(?Id, ?Unfolded)
+%!  unfold_by_id(?Id, ?Unfolded)
 %
-% This predicate succeeds when ?Id is the identifier
-% of a FASILL rule Rule and ?Unfolded is an unfolded
-% rule of Rule.
+%   This predicate succeeds when Id is the identifier of a FASILL rule Rule and
+%   Unfolded is an unfolded rule of Rule.
+
 unfold_by_id(Id, Rule) :-
 	environment:fasill_rule(Head, Body, Info),
 	member(id(Id), Info), !,
 	unfold(fasill_rule(Head, Body, Info), Rule).
 
-% unfold/1
-% unfold(+Rule)
+%!  unfold(+Rule)
 %
-% This predicate succeeds unfolding the FASILL
-% rule +Rule. This predicate has the side effect
-% of retracting the rule +Rule and asserting the
-% new unfolded rules.
+%   This predicate succeeds unfolding the FASILL rule Rule. This predicate has
+%   the side effect of retracting the rule Rule and asserting the new unfolded
+%   rules.
+
 unfold(R1) :-
 	findall(R, unfold(R1, R), Rules),
 	Rules \= [],
@@ -303,11 +324,11 @@ unfold(R1) :-
 	  fail ; true ),
 	sort_rules_by_id.
 
-% unfold/2
-% unfold(+Rule, ?Unfolded)
+%!  unfold(+Rule, ?Unfolded)
 %
-% This predicate succeeds when +Rule is a FASILL rule
-% and ?Unfolded is an unfolded rule of +Rule.
+%   This predicate succeeds when Rule is a FASILL rule and Unfolded is an
+%   unfolded rule of Rule.
+
 unfold(R1, R2) :-
 	unfold(R1, R2, [rename(true)]).
 
