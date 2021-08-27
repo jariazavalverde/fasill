@@ -65,7 +65,7 @@
 :- use_module(library(assoc)).
 :- use_module(parser).
 :- use_module(exceptions).
-:- use_module(semantics).
+:- use_module(resolution).
 
 :- dynamic
     fasill_rule/3,

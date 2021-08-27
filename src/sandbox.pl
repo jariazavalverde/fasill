@@ -123,7 +123,7 @@ sandbox_run(Program, Lattice, Sim, Goal, Limit, Options) :-
     statistics(runtime,[_,T1]),
     (member(runtime, Options) -> (write('execution time: '), write(T1), writeln(' milliseconds')) ; true),
     nl,
-    ( semantics:trace_derivation(Trace),
+    ( resolution:trace_derivation(Trace),
       sandbox_write(Trace), nl, fail ; true).
 
 % sandbox_listing/1

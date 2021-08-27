@@ -16,7 +16,7 @@
 ]).
 
 :- use_module('environment').
-:- use_module('semantics').
+:- use_module('resolution').
 :- use_module(library(union_find_assoc)).
 
 

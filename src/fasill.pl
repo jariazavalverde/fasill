@@ -13,7 +13,7 @@
 :- use_module(library(assoc)).
 :- use_module('parser').
 :- use_module('builtin').
-:- use_module('semantics').
+:- use_module('resolution').
 :- use_module('environment').
 :- use_module('exceptions').
 :- use_module('unfolding').

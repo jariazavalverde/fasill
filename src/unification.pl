@@ -35,9 +35,9 @@
 
 :- module(unification, [
 	lambda_wmgu/5,
-    wmgu/4,
-    mgu/4,
-    unify/4,
+	wmgu/4,
+	mgu/4,
+	unify/4,
 	occurs_check/2
 ]).
 

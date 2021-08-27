@@ -18,7 +18,7 @@
 :- use_module(unification).
 :- use_module(environment).
 :- use_module(exceptions).
-:- use_module(semantics).
+:- use_module(resolution).
 
 :- discontiguous builtin:eval_builtin_predicate/4.
 

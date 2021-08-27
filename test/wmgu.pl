@@ -1,5 +1,5 @@
 :- use_module('../src/environment').
-:- use_module('../src/semantics').
+:- use_module('../src/resolution').
 
 
 

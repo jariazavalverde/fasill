@@ -8,7 +8,7 @@
   **/
 
 :- use_module(library(random)).
-:- use_module('../../src/semantics').
+:- use_module('../../src/resolution').
 :- use_module('../../src/environment').
 
 

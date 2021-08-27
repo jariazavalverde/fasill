@@ -29,7 +29,7 @@
 
 :- use_module(substitution).
 :- use_module(environment).
-:- use_module(semantics).
+:- use_module(resolution).
 
 
 
@@ -86,7 +86,7 @@ classic_unfold(R1, R2) :-
 	R1 = fasill_rule(head(Head), body(Body), [id(Id)|Info]),
 	HeadR = Head, BodyR = Body,
 	get_variables(BodyR, Vars),
-	semantics:inference(unfolding/0, state(BodyR, Vars), state(Expr, Subs), _),
+	resolution:inference(unfolding/0, state(BodyR, Vars), state(Expr, Subs), _),
 	BodyR \= Expr,
 	substitution:apply(Subs, HeadR, Head_),
 	( unfolding_id(R),
@@ -148,27 +148,27 @@ guards_unfold(R1) :-
 % and ?Unfolded is an unfolded rule of +Rule.
 guards_unfold(R1, R2) :-
 	R1 = fasill_rule(head(Head), body(Body), Info),
-	semantics:get_variables(Body, Vars),
-	semantics:select_atom(Body, Expr, Replace, _Selected), !,
+	resolution:get_variables(Body, Vars),
+	resolution:select_atom(Body, Expr, Replace, _Selected), !,
 	environment:similarity_tnorm(Tnorm),
-	semantics:auto_fresh_variable_id(VarId),
+	resolution:auto_fresh_variable_id(VarId),
 	Var = var('$'(VarId)),
 	findall(
 		Guard,
-		( semantics:inference(unfolding/0, state(Body, Vars), state(Expr, Sub), _),
+		( resolution:inference(unfolding/0, state(Body, Vars), state(Expr, Sub), _),
 		  exclude_trivial_vars(Sub, SubVars),
 		  substitution:substitution_to_list(SubVars, GuardList),
 		  bound_substitution(Sub, BoundSub),
 		  make_guard(GuardList, G1, G2),
 		  Unification = term('~', [term(g, G1), term(g, G2)]),
 	      ReplaceVar = term(Tnorm, [Var, Replace]),
-	  	  semantics:select_atom(Body, ExprVar, ReplaceVar, _),
+	  	  resolution:select_atom(Body, ExprVar, ReplaceVar, _),
 		  substitution:apply(BoundSub, ExprVar, ExprVarSub),
 		  Guard = term('->', [Unification, ExprVarSub])
 		),
 		RegularGuards
 	),
-	semantics:failure_step(state(Body, Vars), state(Expr, _), _),
+	resolution:failure_step(state(Body, Vars), state(Expr, _), _),
 	(is_safe_unfolding(RegularGuards, Expr) ->
 		classic_unfold(R1, R2)
 	;
@@ -199,7 +199,7 @@ is_safe_unfolding(RegularGuards, FailureBody) :-
 		% (∃ i ∈ {1,...,n}: \sigma_i = id)
 		(member(RegularGuard, RegularGuards), G = []) ;
 		% (B_{n+1} ≡ ⊥)
-		(environment:lattice_call_bot(Bot), semantics:up_body(FailureBody, Bot))
+		(environment:lattice_call_bot(Bot), resolution:up_body(FailureBody, Bot))
 	).
 
 % vector_guards/2

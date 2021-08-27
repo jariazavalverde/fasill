@@ -6,7 +6,7 @@ def fasill():
 	pl.consult("src/fasill.pl")
 	pl.consult("src/parser.pl")
 	pl.consult("src/environment.pl")
-	pl.consult("src/semantics.pl")
+	pl.consult("src/resolution.pl")
 	list(pl.query("initialize([])"))
 	stdscr = curses.initscr()
 	stdscr.keypad(True)

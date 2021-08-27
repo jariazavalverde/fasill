@@ -40,7 +40,7 @@
 	put_substitution/4,
 	get_substitution/3,
 	apply/3,
-    compose/3
+	compose/3
 ]).
 
 :- use_module(library(assoc)).
