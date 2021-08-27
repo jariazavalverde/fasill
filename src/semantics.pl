@@ -13,10 +13,6 @@
     lambda_wmgu/5,
     wmgu/4,
     mgu/4,
-    empty_substitution/1,
-    substitution_to_list/2,
-    list_to_substitution/2,
-    put_substitution/4,
     unify/4,
     query/2,
     select_atom/4,
@@ -44,7 +40,7 @@
     auto_fresh_variable_id/1
 ]).
 
-:- use_module(library(assoc)).
+:- use_module('substitution').
 :- use_module('environment').
 :- use_module('exceptions').
 :- use_module('builtin').
@@ -191,38 +187,6 @@ unify(Term1, Term2, OccursCheck, state(Top, Subs)) :-
     (var(OccursCheck) -> current_fasill_flag(occurs_check, term(OccursCheck, [])) ; true),
     mgu(Term1, Term2, OccursCheck, Subs),
     lattice_call_top(Top).
-
-
-
-% SUBSTITUTIONS
-
-% empty_substitution/1
-% empty_substitution(?Substitution)
-%
-% This predicate succeeds when ?Substitution is
-% an empty substitution.
-empty_substitution(Sub) :- empty_assoc(Sub).
-
-% substitution_to_list/2
-% substitution_to_list(+Substitution, ?List)
-%
-% This predicate translates +Substitution to a list ?List of
-% Variable-Value pairs.
-substitution_to_list(Sub, List) :- assoc_to_list(Sub, List).
-
-% list_to_substitution/2
-% list_to_substitution(+List, ?Substitution)
-%
-% This predicate translates +List of Variable-Value pairs
-% into a substitution ?Substitution.
-list_to_substitution(List, Sub) :- list_to_assoc(List, Sub).
-
-% put_substitution/2
-% put_substitution(+SubstitutionIn, +Var, +Value, ?SubtitutionOut)
-%
-% This predicate adds a new link +Var/+Value to the substitution
-% +SubstitutionIn, producing the new substitution ?SubtitutionOut.
-put_substitution(Sub, Var, Value, Sub2) :- put_assoc(Var, Sub, Value, Sub2).
 
 
 

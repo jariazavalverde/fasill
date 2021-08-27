@@ -27,6 +27,7 @@
 	unfold_by_id/2
 ]).
 
+:- use_module('substitution').
 :- use_module('environment').
 :- use_module('semantics').
 
