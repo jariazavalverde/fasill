@@ -19,6 +19,7 @@
 :- use_module(environment).
 :- use_module(exceptions).
 :- use_module(resolution).
+:- use_module(term).
 
 :- discontiguous builtin:eval_builtin_predicate/4.
 
@@ -354,9 +355,9 @@ eval_builtin_predicate(findall/4, state(_, Subs), selected(ExprVar, Var, Term), 
                 ), List),
                 maplist(nth0(0), List, TDs),
                 maplist(nth0(1), List, Bodies),
-                from_prolog_list(Bodies, Result),
-                to_prolog(Op, Op_),
-                lattice_reduce_connective(Op_, TDs, TD),
+                term:from_prolog_list(Bodies, Result),
+                term:to_prolog(Op, Op_),
+                environment:lattice_reduce_connective(Op_, TDs, TD),
                 Var = term(Op_, [TD, term('~',[Instances, Result])])
             )
         )
@@ -472,7 +473,7 @@ list_wmgus(Bot, term('.',[_,Xs]), term('.',[_,Ys]), term('.',[Bot,TDs]), Sub1, S
 eval_builtin_predicate('=='/2, state(_, Subs), selected(ExprVar, top, Term), state(ExprVar, Subs)) :-
     Term = term('==', [X,Y]),
     (( X = var(X_), Y = var(Y_)) -> X_ == Y_ ;
-        ( to_prolog(X, X_), to_prolog(Y, Y_), X_ == Y_ )
+        ( term:to_prolog(X, X_), term:to_prolog(Y, Y_), X_ == Y_ )
     ).
 
 %%% '\=='/2
@@ -483,7 +484,7 @@ eval_builtin_predicate('=='/2, state(_, Subs), selected(ExprVar, top, Term), sta
 eval_builtin_predicate('\\=='/2, state(_, Subs), selected(ExprVar, top, Term), state(ExprVar, Subs)) :-
     Term = term('\\==', [X,Y]),
     (( X = var(X_), Y = var(Y_)) -> X_ \== Y_ ;
-        ( to_prolog(X, X_), to_prolog(Y, Y_), X_ \== Y_ )
+        ( term:to_prolog(X, X_), term:to_prolog(Y, Y_), X_ \== Y_ )
     ).
 
 %%% '@<'/2
@@ -494,7 +495,7 @@ eval_builtin_predicate('\\=='/2, state(_, Subs), selected(ExprVar, top, Term), s
 eval_builtin_predicate('@<'/2, state(_, Subs), selected(ExprVar, top, Term), state(ExprVar, Subs)) :-
     Term = term('@<', [X,Y]),
     (( X = var(X_), Y = var(Y_)) -> X_ @< Y_ ;
-        ( to_prolog(X, X_), to_prolog(Y, Y_), X_ @< Y_ )
+        ( term:to_prolog(X, X_), term:to_prolog(Y, Y_), X_ @< Y_ )
     ).
 
 %%% '@>'/2
@@ -505,7 +506,7 @@ eval_builtin_predicate('@<'/2, state(_, Subs), selected(ExprVar, top, Term), sta
 eval_builtin_predicate('@>'/2, state(_, Subs), selected(ExprVar, top, Term), state(ExprVar, Subs)) :-
     Term = term('@>', [X,Y]),
     (( X = var(X_), Y = var(Y_)) -> X_ @> Y_ ;
-        ( to_prolog(X, X_), to_prolog(Y, Y_), X_ @> Y_ )
+        ( term:to_prolog(X, X_), term:to_prolog(Y, Y_), X_ @> Y_ )
     ).
 
 %%% '@=<'/2
@@ -516,7 +517,7 @@ eval_builtin_predicate('@>'/2, state(_, Subs), selected(ExprVar, top, Term), sta
 eval_builtin_predicate('@=<'/2, state(_, Subs), selected(ExprVar, top, Term), state(ExprVar, Subs)) :-
     Term = term('@=<', [X,Y]),
     (( X = var(X_), Y = var(Y_)) -> X_ @=< Y_ ;
-        ( to_prolog(X, X_), to_prolog(Y, Y_), X_ @=< Y_ )
+        ( term:to_prolog(X, X_), term:to_prolog(Y, Y_), X_ @=< Y_ )
     ).
 
 %%% '@>='/2
@@ -527,7 +528,7 @@ eval_builtin_predicate('@=<'/2, state(_, Subs), selected(ExprVar, top, Term), st
 eval_builtin_predicate('@>='/2, state(_, Subs), selected(ExprVar, top, Term), state(ExprVar, Subs)) :-
     Term = term('@>=', [X,Y]),
     (( X = var(X_), Y = var(Y_)) -> X_ @>= Y_ ;
-        ( to_prolog(X, X_), to_prolog(Y, Y_), X_ @>= Y_ )
+        ( term:to_prolog(X, X_), term:to_prolog(Y, Y_), X_ @>= Y_ )
     ).
 
 
@@ -547,8 +548,8 @@ eval_builtin_predicate('=..'/2, state(_, Subs), selected(ExprVar, Expr, Atom), s
         (\+fasill_list(List) -> type_error(list, List, '=..'/2, Error), throw_exception(Error) ; (
             (\+fasill_var(List), \+fasill_list(List) -> type_error(list, List, '=..'/2, Error), throw_exception(Error) ; (
                 (\+fasill_var(Term), \+fasill_term(Term) -> type_error(atom, Term, '=..'/2, Error), throw_exception(Error) ; (
-                    (\+fasill_var(Term) -> Term = term(Name,Args), from_prolog_list(Args,Args_), List_ = term('.',[term(Name,[]),Args_]), Expr = term('~',[List,List_]) ; (
-                        (List = term('[]',[]) -> Term_ = List ; List = term('.',[term(Name,[]), Args]), to_prolog_list(Args,Args_), Term_ = term(Name, Args_)), Expr = term('~',[Term,Term_])
+                    (\+fasill_var(Term) -> Term = term(Name,Args), term:from_prolog_list(Args,Args_), List_ = term('.',[term(Name,[]),Args_]), Expr = term('~',[List,List_]) ; (
+                        (List = term('[]',[]) -> Term_ = List ; List = term('.',[term(Name,[]), Args]), term:to_prolog_list(Args,Args_), Term_ = term(Name, Args_)), Expr = term('~',[Term,Term_])
                     ))
                 ))
             ))
@@ -717,9 +718,9 @@ eval_builtin_predicate(atom_length/2, state(_, Subs), selected(ExprVar, Var, Ter
     ( fasill_var(Atom) -> instantiation_error(atom_length/2, Error), throw_exception(Error) ;
         ( \+fasill_atom(Atom) -> type_error(atom, Atom, atom_length/2, Error), throw_exception(Error) ;
             ( \+fasill_var(Length), \+fasill_integer(Length) -> type_error(integer, Length, atom_length/2, Error), throw_exception(Error) ;
-                to_prolog(Atom, X), to_prolog(Length, Y),
+                term:to_prolog(Atom, X), term:to_prolog(Length, Y),
                 atom_length(X,Y),
-                from_prolog(X, Fx), from_prolog(Y, Fy),
+                term:from_prolog(X, Fx), term:from_prolog(Y, Fy),
                 Var = term('&', [term('~',[Atom, Fx]), term('~',[Length, Fy])])
             )
         )
@@ -741,9 +742,9 @@ eval_builtin_predicate(atom_concat/3, state(_, Subs), selected(ExprVar, Var, Ato
             ( \+fasill_var(Start), \+fasill_atom(Start) -> type_error(atom, Start, atom_concat/3, Error), throw_exception(Error) ;
                 ( \+fasill_var(End), \+fasill_atom(End) -> type_error(atom, End, atom_concat/3, Error), throw_exception(Error) ;
                     ( \+fasill_var(Whole), \+fasill_atom(Whole) -> type_error(atom, Whole, atom_concat/3, Error), throw_exception(Error) ;
-                        to_prolog(Start, X), to_prolog(End, Y), to_prolog(Whole, Z),
+                        term:to_prolog(Start, X), term:to_prolog(End, Y), term:to_prolog(Whole, Z),
                         atom_concat(X,Y,Z),
-                        from_prolog(X, Fx), from_prolog(Y, Fy), from_prolog(Z, Fz),
+                        term:from_prolog(X, Fx), term:from_prolog(Y, Fy), term:from_prolog(Z, Fz),
                         Var = term('&', [term('~',[Start,Fx]), term('&',[term('~',[End,Fy]),term('~',[Whole,Fz])])])
                     )
                 )

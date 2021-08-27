@@ -28,6 +28,7 @@
 :- use_module('linearization').
 :- use_module('tuning').
 :- use_module('tuning_smt').
+:- use_module('term').
 
 
 
@@ -115,7 +116,7 @@ sandbox_run(Program, Lattice, Sim, Goal, Limit, Options) :-
     lattice_consult(Lattice),
     catch(program_consult(Program), Error1, (write('uncaught exception in program: '), sandbox_write(Error1), nl)),
     clear_warnings,
-    catch(similarity_consult(Sim), Error2, (write('uncaught exception in similarities: '), sandbox_write(Error2), nl)),
+    catch(similarity_consult(Sim), Error2, (write(Error2), write('uncaught exception in similarities: '), sandbox_write(Error2), nl)),
     (environment:fasill_warning(Warning), write('warning in similarities: '), sandbox_write(Warning), nl, fail ; true),
     statistics(runtime,[_,_]),
     ( catch(query_consult(Goal, State), Error3, (write('uncaught exception in goal: '), sandbox_write(Error3), nl)),

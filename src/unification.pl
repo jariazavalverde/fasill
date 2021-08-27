@@ -85,7 +85,7 @@ lambda_wmgu(_, var('_'), _, _, WMGU, WMGU) :-
 lambda_wmgu(var(V), Term, Lambda, OccursCheck, state(TD,Sub), WMGU) :-
 	substitution:get_substitution(Sub, V, TermSub),
 	!,
-	lambda_wmgu(TermSub, Term, Lambda, OccursCheck, state(TD,Subs), WMGU).
+	lambda_wmgu(TermSub, Term, Lambda, OccursCheck, state(TD,Sub), WMGU).
 lambda_wmgu(var(V), Term, _, OccursCheck, state(TD,Sub0), state(TD,Sub3)) :-
 	!,
 	(OccursCheck == true -> occurs_check(V, Term) ; true),

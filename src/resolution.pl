@@ -63,6 +63,7 @@
 :- use_module(environment).
 :- use_module(exceptions).
 :- use_module(builtin).
+:- use_module(term).
 
 /** <module> Resolution
     This library provides predicates for resolution.
@@ -600,12 +601,12 @@ arithmetic_evaluation(Indicator, term(Op,Args), Result) :-
 	catch(
 		(   maplist(arithmetic_evaluation(Indicator), Args, Args_),
 			maplist(arithmetic_type, Args_, Types),
-			maplist(to_prolog, Args_, Prolog),
+			maplist(term:to_prolog, Args_, Prolog),
 			arithmetic_op(Op, Prolog, Types, Result),
 			!
 		), Error,
 		(Error = type(Type, From) ->
-			(from_prolog(From, From_), exceptions:type_error(Type, From_, Indicator, Exception), exceptions:throw_exception(Exception)) ;
+			(term:from_prolog(From, From_), exceptions:type_error(Type, From_, Indicator, Exception), exceptions:throw_exception(Exception)) ;
 			(Error = evaluation(Cause) ->
 				(evaluation_error(Cause, Indicator, Exception), exceptions:throw_exception(Exception)) ;
 				(Error = exception(Exception) -> exceptions:throw_exception(Exception) ;
@@ -623,8 +624,8 @@ arithmetic_evaluation(Indicator, term(Op,Args), Result) :-
 arithmetic_comparison(Name/2, Expr1, Expr2) :-
 	arithmetic_evaluation(Name/2, Expr1, Result1),
 	arithmetic_evaluation(Name/2, Expr2, Result2),
-	environment:to_prolog(Result1, Result1_),
-	environment:to_prolog(Result2, Result2_),
+	term:to_prolog(Result1, Result1_),
+	term:to_prolog(Result2, Result2_),
 	call(Name, Result1_, Result2_).
 
 %!  arithmetic_type(+Number, ?Type)
