@@ -34,8 +34,6 @@
 */
 
 :- module(term, [
-	fasill_show/1,
-	fasill_show/2,
 	fasill_term_variables/2,
 	to_prolog/2,
 	to_prolog_list/2,
@@ -76,161 +74,33 @@
       `term(p, [term(a,[]), var('X')])`).
 */
 
-%!  fasill_show(+Term, ?Representation)
-%
-% This predicate succeeds when Term is a valid FASILL term and Representation is
-% the Prolog term which represent the literal FASILL term Term.
-
-fasill_show(Term, Output) :-
-	with_output_to(atom(Output), fasill_show(Term)).
-
-fasill_show([]) :-
-	!.
-fasill_show(X) :-
-	is_assoc(X),
-	!,
-	assoc_to_list(X, Subs),
-	fasill_show(Subs).
-fasill_show(top) :-
-	write(top).
-fasill_show(bot) :-
-	write(bot).
-fasill_show(sup(X, Y)) :-
-	write('sup('),
-	fasill_show(X),
-	write(', '),
-	fasill_show(Y),
-	write(')').
-fasill_show(num(X)) :-
-	write(X).
-fasill_show(var('$'(X))) :-
-	!,
-	write('V'),
-	write(X).
-fasill_show(var(X)) :-
-	write(X).
-fasill_show(X-Y) :-
-	write(X),
-	write('/'),
-	fasill_show(Y).
-fasill_show(X/Y) :-
-	write(X),
-	write('/'),
-	fasill_show(Y).
-fasill_show(term('#'(Name),[])) :-
-	!,
-	write('#'),
-	write(Name).
-fasill_show(term('#@'(Name),Args)) :-
-	!,
-	write('#@'),
-	write(Name),
-	write('('),
-	fasill_show(Args),
-	write(')').
-fasill_show(term('#&'(Name),[X,Y])) :-
-	!,
-	write('('),
-	fasill_show(X),
-	write(' #&'),
-	write(Name),
-	write(' '),
-	fasill_show(Y),
-	write(')'). 
-fasill_show(term('#|'(Name),[X,Y])) :-
-	!,
-	write('('),
-	fasill_show(X),
-	write(' #|'),
-	write(Name),
-	write(' '),
-	fasill_show(Y),
-	write(')'). 
-fasill_show(term('&'(Name),[X,Y])) :-
-	!,
-	write('('),
-	fasill_show(X),
-	write(' &'), write(Name),
-	write(' '),
-	fasill_show(Y),
-	write(')'). 
-fasill_show(term('|'(Name),[X,Y])) :-
-	!,
-	write('('),
-	fasill_show(X),
-	write(' |'),
-	write(Name),
-	write(' '),
-	fasill_show(Y),
-	write(')'). 
-fasill_show(term('.',[X,Y])) :-
-	!,
-	fasill_show_list(list(term('.',[X,Y]))). 
-fasill_show(term(X,[])) :-
-	write(X).
-fasill_show(term(X,Y)) :-
-	Y \= [],
-	write(X),
-	write('('),
-	fasill_show(Y),
-	write(')').
-fasill_show(exception(X)) :-
-	write('uncaught exception in derivation: '),
-	fasill_show(X).
-fasill_show(state(Goal,Subs)) :-
-	write('<'),
-	fasill_show(Goal),
-	write(', {'),
-	fasill_show(Subs),
-	write('}>').
-fasill_show([X|Y]) :-
-	Y \= [],
-	fasill_show(X),
-	write(', '),
-	fasill_show(Y).
-fasill_show([X]) :-
-	fasill_show(X).
-
-fasill_show_list(term('[]',[])) :-
-	!.
-fasill_show_list(term([],[])) :-
-	!.
-fasill_show_list(term('.',[X,Y])) :-
-	!,
-	write(','),
-	fasill_show(X),
-	fasill_show_list(Y).
-fasill_show_list(list(term('.',[X,Y]))) :-
-	!,
-	write('['),
-	fasill_show(X),
-	fasill_show_list(Y),
-	write(']').
-fasill_show_list(X) :-
-	write('|'),
-	fasill_show(X).
-
 %!  fasill_term_variables(+Term, ?Variables)
 %
-%   This predicate succeeds when Variables is the list of variables in the term
-%   Term.
+%   This predicate succeeds when Variables is a list made up by the variables
+%   of Term, in order of appearance and with repetition.
 
-fasill_term_variables(var(X), [var(X)]) :-
+fasill_term_variables(Term, Vars) :-
+	fasill_term_variables_dif(Term, Vars, []).
+
+% Variable
+fasill_term_variables_dif(var(X), [var(X)|Xs], Xs) :-
 	!.
-fasill_term_variables(term(_,Args), Vars) :-
+% Term
+fasill_term_variables_dif(term(_, Args), Vars, Xs) :-
 	!,
-	fasill_term_variables(Args, Vars).
-fasill_term_variables([H|T], Vars) :-
+	fasill_term_variables_dif(Args, Vars, Xs).
+% List
+fasill_term_variables_dif([H|T], Vars, Xs) :-
 	!,
-	fasill_term_variables(H, Vh),
-	fasill_term_variables(T, Vt),
-	append(Vh, Vt, Vars).
-fasill_term_variables(_, []).
+	fasill_term_variables_dif(H, Hvars, Tvars),
+	fasill_term_variables_dif(T, Tvars, Xs).
+% Other
+fasill_term_variables_dif(_, Xs, Xs).
 
 %!  to_prolog(+FASILL, ?Prolog)
 %
-%   This predicate takes the FASILL object FASILL and returns the object Prolog
-%   in Prolog notation.
+%   This predicate takes the ground object FASILL and returns the object Prolog
+%   in Prolog representation.
 
 to_prolog(num(X), X) :-
 	!.
@@ -251,7 +121,7 @@ to_prolog(term(X,Xs), Term) :-
 %!  from_prolog(+Prolog, ?FASILL)
 %
 %   This predicate takes the Prolog object Prolog and returns the object FASILL
-%   in FASILL notation.
+%   in ground representation.
 
 from_prolog(X, var(X)) :-
 	var(X),
@@ -276,8 +146,8 @@ from_prolog(X, term(H,Args)) :-
 
 %!  to_prolog_list(+FASILL, ?Prolog)
 %
-%   This predicate takes the FASILL list FASILL and returns the list Prolog in
-%   Prolog notation.
+%   This predicate takes a FASILL list FASILL and returns the list Prolog in
+%   Prolog representation.
 
 to_prolog_list(term('[]', []), []).
 to_prolog_list(term('.',[H,S]), [H|T]) :-
@@ -285,8 +155,8 @@ to_prolog_list(term('.',[H,S]), [H|T]) :-
 
 %!  from_prolog_list(+Prolog, ?FASILL)
 %
-%  This predicate takes the Prolog list Prolog and returns the list FASILL in
-%  FASILL notation.
+%  This predicate takes a Prolog list Prolog and returns the list FASILL in
+%  FASILL ground representation.
 
 from_prolog_list([], term('[]', [])).
 from_prolog_list([H|T], term('.',[H,S])) :-
@@ -335,7 +205,6 @@ fasill_var(var(_)).
 %   This predicate succeeds when Term is a FASILL ground term.
 
 fasill_ground(num(_)).
-fasill_ground(str(_)).
 fasill_ground(term(_,Xs)) :-
 	maplist(fasill_ground, Xs).
 

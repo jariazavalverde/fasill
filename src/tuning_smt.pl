@@ -14,9 +14,9 @@
 ]).
 
 :- use_module(library(smtlib)).
-:- use_module('tuning', [findall_symbolic_cons/1]).
-:- use_module('environment').
-:- use_module('resolution').
+:- use_module(tuning, [findall_symbolic_cons/1]).
+:- use_module(environment).
+:- use_module(resolution).
 
 
 
