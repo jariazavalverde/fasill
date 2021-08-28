@@ -53,11 +53,10 @@
 	% variables
 	fasill_term_variables/2,
 	fasill_count_variables/2,
-	fasill_max_variable/3
+	fasill_max_variable/3,
+	% format
+	fasill_print_term/1
 ]).
-
-:- use_module(library(assoc)).
-:- use_module(environment).
 
 /** <module> Term
     This library provides basic predicates for terms manipulation.
@@ -198,10 +197,9 @@ fasill_ground(term(_,Xs)) :-
 %
 %   This predicate succeeds when Term is a callable term.
 
-fasill_callable(term(_, _)) :-
-	!.
-fasill_callable(X) :-
-	environment:lattice_call_member(X).
+fasill_callable(var(_)) :-
+	!, fail.
+fasill_callable(_).
 
 %!  fasill_list(+Term)
 %
@@ -302,3 +300,82 @@ fasill_max_variable([X|Xs], Variable, N, Max) :-
 	fasill_max_variable(X, Variable, N, M),
 	fasill_max_variable(Xs, Variable, M, Max).
 fasill_max_variable(_, _, N, N).
+
+% FORMAT
+
+%!  fasill_print_term(+Term)
+% 
+%   This predicate writes a FASILL term for the standard output.
+
+% Fresh variable
+fasill_print_term(var($(N))) :-
+	write('V'),
+	write(N), !.
+% Variable
+fasill_print_term(var(V)) :-
+	write(V), !.
+% Number
+fasill_print_term(num(N)) :-
+	write(N), !.
+% List
+fasill_print_term(term('[]', [])) :-
+	write('[]'), !.
+fasill_print_term(term('.', [H,T])) :-
+	write('['),
+	fasill_print_term(H),
+	fasill_print_list(T),
+	write(']'), !.
+% Symbolic constant
+fasill_print_term(term('#'(K), [])) :-
+	write('#'),
+	write(K), !.
+% Labelled connective
+fasill_print_term(term(Con, [])) :-
+	Con =.. [Type, Label],
+	write(Type),
+	write(Label), !.
+fasill_print_term(term(Con, [X|Xs])) :-
+	Con =.. [Type, Label],
+	write(Type),
+	write(Label),
+	write('('),
+	fasill_print_term(X),
+	fasill_print_term(Xs),
+	write(')'), !.
+% Supremum
+fasill_print_term(sup(X,Y)) :-
+	write('sup('),
+	fasill_print_term(X),
+	write(','),
+	fasill_print_term(Y),
+	write(')'), !.
+% Atom
+fasill_print_term(term(Atom, [])) :-
+	write_term(Atom, [quoted(true)]), !.
+% Compound term
+fasill_print_term(term(Atom, [X|Xs])) :-
+	write_term(Atom, [quoted(true)]),
+	write('('),
+	fasill_print_term(X),
+	fasill_print_term(Xs),
+	write(')'), !.
+% Arguments
+fasill_print_term([]) :-
+	!.
+fasill_print_term([X|Xs]) :-
+	write(','),
+	fasill_print_term(X),
+	fasill_print_term(Xs), !.
+% Other
+fasill_print_term(X) :-
+	write(X).
+% List (elements)
+fasill_print_list(term('.', [H,T])) :-
+	write(','),
+	fasill_print_term(H),
+	fasill_print_list(T), !.
+fasill_print_list(term('[]', [])) :-
+	!.
+fasill_print_list(X) :-
+	write('|'),
+	fasill_print_term(X).

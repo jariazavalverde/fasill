@@ -51,7 +51,9 @@
 	rename/3,
 	is_rename/2,
 	trace_derivation/1,
-	trace_level/1
+	trace_level/1,
+	fasill_print_fca/1,
+	fasill_print_trace/1
 ]).
 
 :- use_module(substitution).
@@ -561,3 +563,33 @@ is_rename([X|Xs], [Y|Ys], Sub1, Sub3) :-
 	is_rename(Xs, Ys, Sub2, Sub3).
 is_rename(X, Y, Sub, Sub) :-
 	X == Y.
+
+%!  fasill_print_fca(+State)
+% 
+%   This predicate writes the FASILL fuzzy computed answer State for the
+%   standard output.
+
+fasill_print_fca(state(TD,Sub)) :-
+	nonvar(TD),
+	nonvar(Sub),
+	write('<'),
+	term:fasill_print_term(TD),
+	write(', '),
+	substitution:fasill_print_substitution(Sub),
+	write('>').
+
+%!  fasill_print_trace(+Trace)
+% 
+%   This predicate writes a FASILL trace Trace for the standard output.
+
+fasill_print_trace(level(0)) :-
+	!.
+fasill_print_trace(level(N)) :-
+	succ(M, N), !,
+	write('  '), 
+	fasill_print_trace(level(M)).
+fasill_print_trace(trace(Level, Info, State)) :-
+	fasill_print_trace(level(Level)),
+	write(Info),
+	write(' '),
+	fasill_print_fca(State).

@@ -56,80 +56,12 @@
 
 /** <module> Sandbox
     This library provides predicates for running FASILL actions (goals,
-	unfolding, tuning, etc.) in a simple way.
+    unfolding, tuning, etc.) in a simple way.
 
     This library is mainly used in the online sandbox freely available at:
     https://dectau.uclm.es/fasill/sandbox in order to show all the features of
     FASILL.
 */
-
-sandbox_write([]).
-sandbox_write(X) :- is_assoc(X), !, assoc_to_list(X, Subs), sandbox_write(Subs).
-sandbox_write(level(0)).
-sandbox_write(level(N)) :- N > 0, write('  '), M is N-1, sandbox_write(level(M)).
-sandbox_write(trace(Level, Info, State)) :- sandbox_write(level(Level)), write(Info), write(' '), sandbox_write(State).
-sandbox_write(rule(head(Head), empty)) :- !, sandbox_write(Head), write('.').
-sandbox_write(rule(head(Head), body(Body))) :- !, sandbox_write(Head), write(' <- '), sandbox_write(Body), write('.').
-sandbox_write(fasill_rule(head(Head), empty, [id(Id)|_])) :- !,
-    write(Id), write(' '),
-    sandbox_write(Head), write('.').
-sandbox_write(fasill_rule(head(Head), body(Body), [id(Id)|_])) :- !,
-    write(Id), write(' '),
-    sandbox_write(Head), write(' <- '),
-    sandbox_write(Body), write('.').
-sandbox_write(symbolic_subs(Subs)) :- !, write('{'), sandbox_write(Subs), write('}').
-sandbox_write(sym(Type1,Cons,Arity)/val(Type2,Name,Arity)) :- !,
-    Types = [(td,''),(and,'&'),(or,'|'),(agr,'@'),(con,'?')],
-    member((Type1,Op1), Types),
-    member((Type2,Op2), Types),
-    escape_atom(Cons, ConsE),
-    write('#'), write(Op1), write(ConsE), write('/'), write(Op2),
-    (Type1 = td -> sandbox_write(Name) ; write(Name)).
-sandbox_write(top) :- write(top).
-sandbox_write(bot) :- write(bot).
-sandbox_write(sup(X, Y)) :- write('sup('), sandbox_write(X), write(', '), sandbox_write(Y), write(')').
-sandbox_write(num(X)) :- write(X).
-sandbox_write(var('$'(X))) :- !, write('V'), write(X).
-sandbox_write(var(X)) :- write(X).
-sandbox_write(X/Y) :- write(X), write('/'), sandbox_write(Y).
-sandbox_write(X-Y) :- write(X), write('/'), sandbox_write(Y).
-sandbox_write(term('[]',[])) :- !, write('[]').
-sandbox_write(term([],[])) :- !, write('[]').
-sandbox_write(term('#'(Name),[])) :- !, write('#'), write(Name).
-sandbox_write(term(T,[])) :- T =.. [A,B], !, write(A), write(B).
-sandbox_write(term('#?'(Name),Args)) :- !, write('#?'), write(Name), write('('), sandbox_write(Args), write(')').
-sandbox_write(term('#@'(Name),Args)) :- !, write('#@'), write(Name), write('('), sandbox_write(Args), write(')').
-sandbox_write(term('#&'(Name),[X,Y])) :- !, write('('), sandbox_write(X), write(' #&'), write(Name), write(' '), sandbox_write(Y), write(')'). 
-sandbox_write(term('#|'(Name),[X,Y])) :- !, write('('), sandbox_write(X), write(' #|'), write(Name), write(' '), sandbox_write(Y), write(')'). 
-sandbox_write(term('#/'(Name),[X,Y])) :- !, write('('), sandbox_write(X), write(' #|'), write(Name), write(' '), sandbox_write(Y), write(')'). 
-sandbox_write(term('&'(Name),[X,Y])) :- !, write('('), sandbox_write(X), write(' &'), write(Name), write(' '), sandbox_write(Y), write(')'). 
-sandbox_write(term('@'(Name),Xs)) :- !, write(@), write(Name), write('('), sandbox_write(Xs), write(')').
-sandbox_write(term('|'(Name),[X,Y])) :- !, write('('), sandbox_write(X), write(' |'), write(Name), write(' '), sandbox_write(Y), write(')'). 
-sandbox_write(term('.',[X,Y])) :- !, sandbox_write_list(list(term('.',[X,Y]))). 
-sandbox_write(term(X,[])) :- escape_atom(X, X_), write(X_).
-sandbox_write(term(X,Y)) :- Y \= [], escape_atom(X, X_), write(X_), write('('), sandbox_write(Y), write(')').
-sandbox_write(exception(X)) :- write('uncaught exception in derivation: '), sandbox_write(X).
-sandbox_write(state(Goal,Subs)) :-
-    write('<'),
-    sandbox_write(Goal),
-    write(', {'),
-    sandbox_write(Subs),
-    write('}>').
-sandbox_write([X|Y]) :-
-    Y \= [],
-    sandbox_write(X),
-    write(', '),
-    sandbox_write(Y).
-sandbox_write([X]) :-
-    sandbox_write(X).
-
-sandbox_write_list(term('[]',[])) :- !.
-sandbox_write_list(term([],[])) :- !.
-sandbox_write_list(term('.',[X,Y])) :- !,
-    write(','), sandbox_write(X), sandbox_write_list(Y).
-sandbox_write_list(list(term('.',[X,Y]))) :- !,
-    write('['), sandbox_write(X), sandbox_write_list(Y), write(']').
-sandbox_write_list(X) :- write('|'), sandbox_write(X).
 
 %!  sandbox_run(+Program, +Lattice, +Sim, +Goal, +Limit, +Options)
 % 
@@ -149,24 +81,24 @@ sandbox_run(Program, Lattice, Sim, Goal, Limit, Options) :-
 	environment:lattice_consult(Lattice),
 	catch(environment:program_consult(Program), Error1, (
 		write('uncaught exception in program: '),
-		sandbox_write(Error1),
+		term:fasill_print_term(Error1),
 		nl)),
 	exceptions:clear_warnings,
 	catch(environment:similarity_consult(Sim), Error2, (
 		write('uncaught exception in similarities: '), 
-		sandbox_write(Error2),
+		term:fasill_print_term(Error2),
 		nl)),
 	(	environment:fasill_warning(Warning),
 		write('warning in similarities: '),
-		sandbox_write(Warning),
+		term:fasill_print_term(Warning),
 		nl,
 		fail ; true),
 	statistics(runtime,[_,_]),
 	(	catch(query_consult(Goal, State), Error3, (
 			write('uncaught exception in goal: '),
-			sandbox_write(Error3),
+			term:fasill_print_term(Error3),
 			nl)),
-		sandbox_write(State),
+		resolution:fasill_print_fca(State),
 		nl,
 		fail ; true ),
 	statistics(runtime,[_,T1]),
@@ -177,7 +109,7 @@ sandbox_run(Program, Lattice, Sim, Goal, Limit, Options) :-
 		true),
 	nl,
 	(	resolution:trace_derivation(Trace),
-		sandbox_write(Trace),
+		resolution:fasill_print_trace(Trace),
 		nl,
 		fail ; true).
 
@@ -189,10 +121,13 @@ sandbox_run(Program, Lattice, Sim, Goal, Limit, Options) :-
 sandbox_listing(Program) :-
 	catch(environment:program_consult(Program), Error1, (
 		write('uncaught exception in program: '),
-		sandbox_write(Error1),
+		term:fasill_print_term(Error1),
 		nl)),
 	(	environment:fasill_rule(Head, Body, Info),
-		sandbox_write(fasill_rule(Head, Body, Info)),
+		member(id(Id), Info),
+		write(Id),
+		write(' '),
+		environment:fasill_print_rule(fasill_rule(Head, Body, Info)),
 		nl,
 		fail ; true).
 
@@ -205,15 +140,15 @@ sandbox_classic_unfold(Program, Lattice, Sim, Rule) :-
 	environment:lattice_consult(Lattice),
 	catch(environment:program_consult(Program), Error1, (
 		write('uncaught exception in program: '),
-		sandbox_write(Error1),
+		term:fasill_print_term(Error1),
 		nl)),
 	catch(environment:similarity_consult(Sim), Error2, (
 		write('uncaught exception in similarities: '),
-		sandbox_write(Error2),
+		term:fasill_print_term(Error2),
 		nl)),
 	unfolding:classic_unfold_by_id(Rule),
-	(	fasill_rule(Head, Body, _),
-		sandbox_write(rule(Head, Body)),
+	(	environment:fasill_rule(Head, Body, Info),
+		environment:fasill_print_rule(fasill_rule(Head, Body, Info)),
 		nl,
 		fail ; true).
 
@@ -226,15 +161,15 @@ sandbox_unfold(Program, Lattice, Sim, Rule) :-
 	environment:lattice_consult(Lattice),
 	catch(environment:program_consult(Program), Error1, (
 		write('uncaught exception in program: '),
-		sandbox_write(Error1),
+		term:fasill_print_term(Error1),
 		nl)),
 	catch(environment:similarity_consult(Sim), Error2, (
 		write('uncaught exception in similarities: '),
-		sandbox_write(Error2),
+		term:fasill_print_term(Error2),
 		nl)),
 	unfolding:unfold_by_id(Rule),
-	(	fasill_rule(Head, Body, _),
-		sandbox_write(rule(Head, Body)),
+	(	environment:fasill_rule(Head, Body, Info),
+		environment:fasill_print_rule(fasill_rule(Head, Body, Info)),
 		nl,
 		fail ; true).
 
@@ -254,18 +189,18 @@ sandbox_tune(Program, Lattice, Sim, Tests, Limit, Options) :-
 	environment:lattice_consult(Lattice),
 	catch(environment:program_consult(Program), Error1, (
 		write('uncaught exception in program: '),
-		sandbox_write(Error1),
+		term:fasill_print_term(Error1),
 		nl)),
 	catch(environment:testcases_consult(Tests), Error2, (
 		write('uncaught exception in testcases: '),
-		sandbox_write(Error2),
+		term:fasill_print_term(Error2),
 		nl)),
 	catch(environment:similarity_consult(Sim), Error3, (
 		write('uncaught exception in similarities: '),
-		sandbox_write(Error3),
+		term:fasill_print_term(Error3),
 		nl)),
 	(member(prolog(PathPl), Options) ->
-		program_import_prolog(PathPl) ;
+		environment:program_import_prolog(PathPl) ;
 		true),
 	statistics(runtime,[_,_]),
 	(member(tuning_cut(Cut), Options) ->
@@ -274,7 +209,8 @@ sandbox_tune(Program, Lattice, Sim, Tests, Limit, Options) :-
 	tuning:tuning_thresholded(Cut, Subs, Deviation),
 	statistics(runtime,[_,T1]),
 	write('best symbolic substitution: '),
-	sandbox_write(symbolic_subs(Subs)), nl,
+	tuning:fasill_print_symbolic_substitution(Subs),
+	nl,
 	write('deviation: '), write(Deviation),
 	(member(runtime, Options) ->
 		nl,
@@ -299,21 +235,21 @@ sandbox_tune_smt(Program, Lattice, Sim, Tests, Domain, LatticeSMT, Limit, Option
 	environment:lattice_consult(Lattice),
 	catch(environment:program_consult(Program), Error1, (
 		write('uncaught exception in program: '),
-		sandbox_write(Error1),
+		term:fasill_print_term(Error1),
 		nl)),
 	catch(environment:testcases_consult(Tests), Error2, (
 		write('uncaught exception in testcases: '),
-		sandbox_write(Error2),
+		term:fasill_print_term(Error2),
 		nl)),
 	catch(environment:similarity_consult(Sim), Error3, (
 		write('uncaught exception in similarities: '),
-		sandbox_write(Error3),
+		term:fasill_print_term(Error3),
 		nl)),
 	statistics(runtime,[_,_]),
 	tuning_smt:tuning_smt(Domain, LatticeSMT, Subs, Deviation),
 	statistics(runtime,[_,T1]),
 	write('best symbolic substitution: '),
-	sandbox_write(symbolic_subs(Subs)),
+	tuning:fasill_print_symbolic_substitution(Subs),
 	nl,
 	write('deviation: '),
 	write(Deviation),
@@ -332,11 +268,11 @@ sandbox_tune_smt(Program, Lattice, Sim, Tests, Domain, LatticeSMT, Limit, Option
 sandbox_linearize_heads(Program) :-
 	catch(environment:program_consult(Program), Error, (
 		write('uncaught exception in program: '),
-		sandbox_write(Error),
+		term:fasill_print_term(Error),
 		nl)),
 	linearization:linearize_head_program,
-	(	environment:fasill_rule(Head, Body, _),
-		sandbox_write(rule(Head, Body)),
+	(	environment:fasill_rule(Head, Body, Info),
+		environment:fasill_print_rule(fasill_rule(Head, Body, Info)),
 		nl,
 		fail ; true).
 
@@ -354,14 +290,14 @@ sandbox_extend(Program, Lattice, Sim, Options) :-
 	environment:lattice_consult(Lattice),
 	catch(environment:program_consult(Program), Error1, (
 		write('uncaught exception in program: '),
-		sandbox_write(Error1),
+		term:fasill_print_term(Error1),
 		nl)),
 	catch(environment:similarity_consult(Sim), Error2, (
 		write('uncaught exception in similarities: '),
-		sandbox_write(Error2),
+		term:fasill_print_term(Error2),
 		nl)),
 	linearization:extend_program,
-	(	fasill_rule(Head, Body, _),
-		sandbox_write(rule(Head, Body)),
+	(	environment:fasill_rule(Head, Body, Info),
+		environment:fasill_print_rule(fasill_rule(Head, Body, Info)),
 		nl,
 		fail ; true).

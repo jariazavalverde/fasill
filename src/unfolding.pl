@@ -347,7 +347,7 @@ unfold(R1, R2, Options) :-
 	Rules \= [], !,
 	flatten(GuardsList2, GuardsListF),
 	vector_guards(GuardsListF, GuardsU),
-	Var = term(guards, term(on, [GuardsU, TD])),
+	Var = term(guards, [term(on, [GuardsU, TD])]),
 	R2 = fasill_rule(head(HeadR), body(BodyVar), Info).
 
 unfold(R1, R2, _Options) :-

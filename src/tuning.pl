@@ -36,12 +36,14 @@
 :- module(tuning, [
 	findall_symbolic_cons/1,
 	tuning_thresholded/2,
-	tuning_thresholded/3
+	tuning_thresholded/3,
+	fasill_print_symbolic_substitution/1
 ]).
 
 :- use_module(library(union_find_assoc)).
 :- use_module(environment).
 :- use_module(resolution).
+:- use_module(term).
 
 /** <module> Tuning
     This library provides predicates for tuning FASILL programs.
@@ -323,3 +325,39 @@ tuning_thresholded_do([testcase(TD,SFCA)|Tests], Sub, Error) :-
 	lattice_call_distance(TD, TD_, num(Distance)),
 	Error_ is Error + Distance,
 	tuning_thresholded_do(Tests, Sub, Error_).
+
+%!  fasill_print_symbolic_substitution(+Substitution)
+% 
+%   This predicate writes a FASILL symbolic substitution Substitution for the 
+%   standard output.
+
+% Identity symbolic substitution
+fasill_print_symbolic_substitution([]) :-
+	write('{}'),
+	!.
+% Non-empty symbolic substitution
+fasill_print_symbolic_substitution([X|Xs]) :-
+	write('{'),
+	fasill_print_symbolic_binding(X),
+	fasill_print_symbolic_bindings(Xs),
+	write('}'),
+	!.
+% Binding
+fasill_print_symbolic_binding(sym(Type1,Cons,Arity)/val(Type2,Name,Arity)) :-
+    Types = [(td,''),(and,'&'),(or,'|'),(agr,'@'),(con,'?')],
+    member((Type1,Op1), Types),
+    member((Type2,Op2), Types),
+    write('#'),
+	write(Op1),
+	write_term(Cons, [quoted(true)]),
+	write('/'),
+	write(Op2),
+    (Type1 = td ->
+		term:fasill_print_term(Name) ;
+		write(Name)).
+% Bindings
+fasill_print_symbolic_bindings([]).
+fasill_print_symbolic_bindings([X|Xs]) :-
+	write(','),
+	fasill_print_symbolic_binding(X),
+	fasill_print_symbolic_bindings(Xs).

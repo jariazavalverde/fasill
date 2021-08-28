@@ -41,10 +41,12 @@
 	get_substitution/3,
 	init_substitution/2,
 	apply/3,
-	compose/3
+	compose/3,
+	fasill_print_substitution/1
 ]).
 
 :- use_module(library(assoc)).
+:- use_module(term).
 
 /** <module> Substitutions
     This library provides basic predicates for substitutions manipulation.
@@ -148,3 +150,30 @@ apply(Sub, [X|Xs], [Y|Ys]) :-
 	apply(Sub, X, Y),
 	apply(Sub, Xs, Ys).
 apply(_, X, X).
+
+%!  fasill_print_substitution(+Substitution)
+% 
+%   This predicate writes a FASILL substitution Substitution for the standard
+%   output.
+
+% Bindings
+fasill_print_substitution([]) :-
+	!.
+fasill_print_substitution([V-X|Xs]) :-
+	write(V),
+	write('/'),
+	term:fasill_print_term(X),
+	fasill_print_substitution(Xs), !.
+% Identity substitution
+fasill_print_substitution(Sub) :-
+	empty_substitution(Sub), !,
+	write('{}').
+% Non-empty substitution
+fasill_print_substitution(Sub) :-
+	substitution_to_list(Sub, [V-X|Xs]),
+	write('{'),
+	write(V),
+	write('/'),
+	term:fasill_print_term(X),
+	fasill_print_substitution(Xs),
+	write('}').

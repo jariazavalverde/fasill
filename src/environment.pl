@@ -47,6 +47,7 @@
 	program_has_predicate/1,
 	query_consult/2,
 	sort_rules_by_id/0,
+	fasill_print_rule/1,
 	% lattices
 	lattice_tnorm/1,
 	lattice_tconorm/1,
@@ -287,6 +288,23 @@ sort_rules_by_id :-
 	( member(Rule, Sorted),
 		assertz(Rule),
 		fail ; true ).
+
+%!  fasill_print_rule(+Rule)
+% 
+%   This predicate writes a FASILL rule for the standard output.
+
+% Fact
+fasill_print_rule(fasill_rule(head(Head), empty, _Info)) :-
+	fasill_print_term(Head),
+	write('.'), !.
+% Rule
+fasill_print_rule(fasill_rule(head(Head), body(Body), Info)) :-
+	fasill_print_term(Head),
+	(member(syntax(fasill), Info) ->
+		write(' <- ') ;
+		write(' :- ')),
+	fasill_print_term(Body),
+	write('.'), !.
 
 %!  compare_rule_id(?Delta, +Rule1, +Rule2)
 %
