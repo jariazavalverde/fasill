@@ -14,6 +14,7 @@
     eval_builtin_predicate/4
 ]).
 
+:- use_module(arithmetic).
 :- use_module(substitution).
 :- use_module(unification).
 :- use_module(environment).
@@ -567,7 +568,7 @@ eval_builtin_predicate('=..'/2, state(_, Subs), selected(ExprVar, Expr, Atom), s
 %%% True if the first number is less than the second one.
 eval_builtin_predicate('<'/2, state(_, Subs), selected(ExprVar, top, Atom), state(ExprVar, Subs)) :-
     Atom = term('<', [Left, Right]),
-    arithmetic_comparison('<'/2, Left, Right).
+    arithmetic:arithmetic_comparison('<'/2, Left, Right).
 
 %%% '>'/2
 %%% '>'(@evaluable, @evaluable)
@@ -576,7 +577,7 @@ eval_builtin_predicate('<'/2, state(_, Subs), selected(ExprVar, top, Atom), stat
 %%% True if the first number is greater than the second one.
 eval_builtin_predicate('>'/2, state(_, Subs), selected(ExprVar, top, Atom), state(ExprVar, Subs)) :-
     Atom = term('>', [Left, Right]),
-    arithmetic_comparison('>'/2, Left, Right).
+    arithmetic:arithmetic_comparison('>'/2, Left, Right).
 
 %%% '=:='/2
 %%% '=:='(@evaluable, @evaluable)
@@ -585,7 +586,7 @@ eval_builtin_predicate('>'/2, state(_, Subs), selected(ExprVar, top, Atom), stat
 %%% True if both numbers are equal.
 eval_builtin_predicate('=:='/2, state(_, Subs), selected(ExprVar, top, Atom), state(ExprVar, Subs)) :-
     Atom = term('=:=', [Left, Right]),
-    arithmetic_comparison('=:='/2, Left, Right).
+    arithmetic:arithmetic_comparison('=:='/2, Left, Right).
 
 %%% '=\\='/2
 %%% '=\\='(@evaluable, @evaluable)
@@ -594,7 +595,7 @@ eval_builtin_predicate('=:='/2, state(_, Subs), selected(ExprVar, top, Atom), st
 %%% True if the compared numbers are not equal.
 eval_builtin_predicate('=\\='/2, state(_, Subs), selected(ExprVar, top, Atom), state(ExprVar, Subs)) :-
     Atom = term('=\\=', [Left, Right]),
-    arithmetic_comparison('=\\='/2, Left, Right).
+    arithmetic:arithmetic_comparison('=\\='/2, Left, Right).
 
 %%% '=<'/2
 %%% '=<'(@evaluable, @evaluable)
@@ -603,7 +604,7 @@ eval_builtin_predicate('=\\='/2, state(_, Subs), selected(ExprVar, top, Atom), s
 %%% True if the first number is less than or equal to the second one.
 eval_builtin_predicate('=<'/2, state(_, Subs), selected(ExprVar, top, Atom), state(ExprVar, Subs)) :-
     Atom = term('=<', [Left, Right]),
-    arithmetic_comparison('=<'/2, Left, Right).
+    arithmetic:arithmetic_comparison('=<'/2, Left, Right).
 
 %%% '>='/2
 %%% '>='(@evaluable, @evaluable)
@@ -612,7 +613,7 @@ eval_builtin_predicate('=<'/2, state(_, Subs), selected(ExprVar, top, Atom), sta
 %%% True if the first number is greater than or equal to the second one.
 eval_builtin_predicate('>='/2, state(_, Subs), selected(ExprVar, top, Atom), state(ExprVar, Subs)) :-
     Atom = term('>=', [Left, Right]),
-    arithmetic_comparison('>='/2, Left, Right).
+    arithmetic:arithmetic_comparison('>='/2, Left, Right).
 
 
 
@@ -626,7 +627,7 @@ eval_builtin_predicate('>='/2, state(_, Subs), selected(ExprVar, top, Atom), sta
 %%% Expression as an expression gives Result as a result.
 eval_builtin_predicate(is/2, state(_, Subs), selected(ExprVar, Var, Atom), state(ExprVar, Subs)) :-
     Atom = term(is, [Variable, Expression]),
-    arithmetic_evaluation('is'/2, Expression, Result),
+    arithmetic:arithmetic_evaluation('is'/2, Expression, Result),
     Var = term('~', [Variable, Result]).
 
 
