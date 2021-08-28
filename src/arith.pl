@@ -33,7 +33,7 @@
     POSSIBILITY OF SUCH DAMAGE.
 */
 
-:- module(arithmetic, [
+:- module(arith, [
 	arithmetic_evaluation/3,
 	arithmetic_comparison/3
 ]).

@@ -48,8 +48,6 @@
 	program_has_predicate/1,
 	query_consult/2,
 	sort_rules_by_id/0,
-	max_variable/3,
-	count_variables/2,
 	% lattices
 	lattice_tnorm/1,
 	lattice_tconorm/1,
@@ -71,7 +69,9 @@
 	% test cases (tuning)
 	testcases_consult/1,
 	fasill_testcase/2,
-	fasill_testcase_precondition/1
+	fasill_testcase_precondition/1,
+	% 
+	fresh_variable/1
 ]).
 
 :- use_module(parser).
@@ -288,57 +288,6 @@ sort_rules_by_id :-
 	( member(Rule, Sorted),
 		assertz(Rule),
 		fail ; true ).
-
-%!  count_variables(+Expression, ?Variables)
-%
-%   This predicate succeeds when Variables is a list of pairs (Var-N) where Var
-%   is a varaible and N is the number of occurrences of Var in the expression
-%   Expression.
-
-count_variables(Expr, Vars) :-
-	count_variables(Expr, [], Vars).
-count_variables(var(X), Vars, [X-1|Vars]) :-
-	\+member(X-_, Vars),
-	!.
-count_variables(var(X), Vars, [X-M|Vars2]) :-
-	!,
-	select(X-N, Vars, Vars2),
-	succ(N, M).
-count_variables(term(_, Xs), Vars, Vars2) :-
-	!,
-	count_variables(Xs, Vars, Vars2).
-count_variables([], Vars, Vars) :-
-	!.
-count_variables([X|Xs], Vars, Vars3) :-
-	!,
-	count_variables(X, Vars, Vars2),
-	count_variables(Xs, Vars2, Vars3).
-count_variables(_, Vars, Vars).
-
-%!  max_variable(+Expression, +Variable, ?Max)
-%
-%   This predicate succeeds when Max is the maximum natural number for wich 
-%   Variable{Max} occurs in the expression Expression.
-
-max_variable(Expr, Variable, Max) :-
-	max_variable(Expr, Variable, 0, Max).
-max_variable(var(V), Variable, N, Max) :-
-	atom(V),
-	atom_length(Variable, Length),
-	sub_atom(V, 0, Length, _, Variable),
-	!,
-	sub_atom(V, Length, _, 0, Rest),
-	atom_codes(Rest, Codes),
-	catch((number_codes(M, Codes), Max is max(N,M)), _, Max = N).
-max_variable(term(_, Xs), Variable, N, Max) :-
-	!,
-	max_variable(Xs, Variable, N, Max).
-max_variable([], _, N, N) :- !.
-max_variable([X|Xs], Variable, N, Max) :-
-	!,
-	max_variable(X, Variable, N, M),
-	max_variable(Xs, Variable, M, Max).
-max_variable(_, _, N, N).
 
 %!  compare_rule_id(?Delta, +Rule1, +Rule2)
 %
@@ -754,3 +703,23 @@ testcases_consult(Path) :-
 	( member(Test, Tests),
 		assertz(Test),
 		fail ; true ).
+
+% VARIABLES
+
+%!  current_fresh_variable_id(?Identifier)
+%
+%   This predicate stores the current identifier Identifier to be used in a
+%   fresh variable.
+:- dynamic current_fresh_variable_id/1.
+current_fresh_variable_id(0).
+
+%!  fresh_variable(-Variable)
+%
+%   This predicate updates the current variable identifier and returns a fresh
+%   variable Variable.
+
+fresh_variable(var('$'(N))) :-
+	current_fresh_variable_id(N),
+	retract(current_fresh_variable_id(_)),
+	succ(N, M),
+	asserta(current_fresh_variable_id(M)).

@@ -51,8 +51,7 @@
 	rename/3,
 	is_rename/2,
 	trace_derivation/1,
-	trace_level/1,
-	auto_fresh_variable_id/1
+	trace_level/1
 ]).
 
 :- use_module(substitution).
@@ -471,15 +470,16 @@ up_body(Expr, ExprUp) :-
 rename(X, Y) :-
 	substitution:empty_substitution(Sub),
 	rename(X, Y, Sub, _).
+
 rename(var('_'), var('_'), Sub, Sub) :-
 	!.
-rename(var(X), var(Y), Sub, Sub) :-
-	substitution:get_substitution(Sub, X, Y),
+rename(var(X), Var, Sub, Sub) :-
+	substitution:get_substitution(Sub, X, Var),
 	!.
-rename(var(X), var('$'(Id)), Sub0, Sub1) :- 
+rename(var(X), Var, Sub0, Sub1) :- 
 	!,
-	auto_fresh_variable_id(Id),
-	substitution:put_substitution(Sub0, X, '$'(Id), Sub1).
+	environment:fresh_variable(Var),
+	substitution:put_substitution(Sub0, X, Var, Sub1).
 rename(term(Name, Xs), term(Name, Ys), Sub0, Sub1) :-
 	!, 
 	rename(Xs, Ys, Sub0, Sub1).
@@ -504,17 +504,18 @@ rename(X, X, Sub, Sub).
 rename(V, X, Y) :-
 	substitution:empty_substitution(Sub),
 	rename(V, X, Y, Sub, _).
+
 rename(_, var('_'), var('_'), Sub, Sub) :-
 	!.
-rename(V, var(X), var(Y), Sub, Sub) :-
+rename(V, var(X), Var, Sub, Sub) :-
 	member(var(X), V),
-	substitution:get_substitution(Sub, X, Y),
+	substitution:get_substitution(Sub, X, Var),
 	!.
-rename(V, var(X), var('$'(Id)), Sub0, Sub1) :- 
+rename(V, var(X), Var, Sub0, Sub1) :- 
 	member(var(X), V),
 	!,
-	auto_fresh_variable_id(Id),
-	substitution:put_substitution(Sub0, X, '$'(Id), Sub1).
+	environment:fresh_variable(Var),
+	substitution:put_substitution(Sub0, X, Var, Sub1).
 rename(V, term(Name, Xs), term(Name, Ys), Sub0, Sub1) :-
 	!,
 	rename(V, Xs, Ys, Sub0, Sub1).
@@ -560,32 +561,3 @@ is_rename([X|Xs], [Y|Ys], Sub1, Sub3) :-
 	is_rename(Xs, Ys, Sub2, Sub3).
 is_rename(X, Y, Sub, Sub) :-
 	X == Y.
-
-% VARIABLES
-
-%!  current_fresh_variable_id(?Identifier)
-%
-%   This predicate stores the current identifier Identifier to be used in a
-%   fresh variable.
-:- dynamic(current_fresh_variable_id/1).
-?- retractall(current_fresh_variable_id(_)).
-current_fresh_variable_id(1).
-
-%!  auto_fresh_variable_id(?Identifier)
-%
-%   This predicate updates the current variable identifier Identifier and
-%   returns it.
-
-auto_fresh_variable_id(Id) :-
-	current_fresh_variable_id(Id),
-	retract(current_fresh_variable_id(_)),
-	N is Id+1,
-	assertz(current_fresh_variable_id(N)).
-
-%!  reset_fresh_variable_id
-%
-%   This predicate resets the current Identifier identifier to the first.
-
-reset_fresh_variable_id :-
-	retract(current_fresh_variable_id(_)),
-	assertz(current_fresh_variable_id(1)).

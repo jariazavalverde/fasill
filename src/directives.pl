@@ -75,13 +75,13 @@ eval_directive(term(set_fasill_flag, [Flag,Value])) :-
 	exceptions:throw_exception(Error),
 	!.
 % Type error (Flag must be an atom)
-eval_directive(term(set_fasill_flag, [Flag,Value])) :-
+eval_directive(term(set_fasill_flag, [Flag, _Value])) :-
 	\+term:fasill_atom(Flag),
 	exceptions:type_error(Flag, atom, set_fasill_flag/2, Error),
 	exceptions:throw_exception(Error),
 	!.
 % Domain error (Flag must be a valid flag)
-eval_directive(term(set_fasill_flag, [term(FlagName,[]),Value])) :-
+eval_directive(term(set_fasill_flag, [term(FlagName,[]), _Value])) :-
 	\+environment:current_fasill_flag(FlagName, _),
 	exceptions:domain_error(fasill_flag, set_fasill_flag/2, Error),
 	exceptions:throw_exception(Error),

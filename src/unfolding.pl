@@ -177,8 +177,7 @@ guards_unfold(R1, R2) :-
 	substitution:init_substitution(Body, Vars),
 	resolution:select_atom(Body, Expr, Replace, _Selected), !,
 	environment:similarity_tnorm(Tnorm),
-	resolution:auto_fresh_variable_id(VarId),
-	Var = var('$'(VarId)),
+	environment:fresh_variable(Var),
 	findall(
 		Guard,
 		( resolution:inference(unfolding/0, state(Body, Vars), state(Expr, Sub), _),

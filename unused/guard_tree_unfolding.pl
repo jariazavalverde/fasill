@@ -101,8 +101,7 @@ make_guard([Var-Value|T], [var(Var)|Guard1], [Value|Guard2]) :-
 %
 %
 append_fresh_variable(Term, Var, TermVar) :-
-	auto_fresh_variable_id(N),
-	Var = var('$'(N)),
+	environment:fresh_variable(Var),
 	similarity_tnorm(Tnorm),
 	select_atom(Term, TermVar, term(Tnorm, [Var, Atom]), Atom), !.
 

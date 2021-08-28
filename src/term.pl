@@ -34,11 +34,12 @@
 */
 
 :- module(term, [
-	fasill_term_variables/2,
+	% Prolog conversion
 	to_prolog/2,
 	to_prolog_list/2,
 	from_prolog/2,
 	from_prolog_list/2,
+	% FASILL type testing
 	fasill_atom/1,
 	fasill_float/1,
 	fasill_integer/1,
@@ -48,7 +49,11 @@
 	fasill_ground/1,
 	fasill_callable/1,
 	fasill_list/1,
-	fasill_connective/1
+	fasill_connective/1,
+	% variables
+	fasill_term_variables/2,
+	fasill_count_variables/2,
+	fasill_max_variable/3
 ]).
 
 :- use_module(library(assoc)).
@@ -74,28 +79,7 @@
       `term(p, [term(a,[]), var('X')])`).
 */
 
-%!  fasill_term_variables(+Term, ?Variables)
-%
-%   This predicate succeeds when Variables is a list made up by the variables
-%   of Term, in order of appearance and with repetition.
-
-fasill_term_variables(Term, Vars) :-
-	fasill_term_variables_dif(Term, Vars, []).
-
-% Variable
-fasill_term_variables_dif(var(X), [var(X)|Xs], Xs) :-
-	!.
-% Term
-fasill_term_variables_dif(term(_, Args), Vars, Xs) :-
-	!,
-	fasill_term_variables_dif(Args, Vars, Xs).
-% List
-fasill_term_variables_dif([H|T], Vars, Xs) :-
-	!,
-	fasill_term_variables_dif(H, Hvars, Tvars),
-	fasill_term_variables_dif(T, Tvars, Xs).
-% Other
-fasill_term_variables_dif(_, Xs, Xs).
+% PROLOG CONVERSION
 
 %!  to_prolog(+FASILL, ?Prolog)
 %
@@ -161,6 +145,8 @@ to_prolog_list(term('.',[H,S]), [H|T]) :-
 from_prolog_list([], term('[]', [])).
 from_prolog_list([H|T], term('.',[H,S])) :-
 	from_prolog_list(T, S).
+
+% FASILL TYPE TESTING
 
 %!  fasill_number(+Term)
 %
@@ -235,3 +221,84 @@ fasill_list(term('.',[_,T])) :-
 fasill_connective(term(Type,Arg)) :-
     (Type = '&' ; Type = '|' ; Type = '@'),
     (Arg = [] ; Arg = [_]).
+
+% VARIABLES
+
+%!  fasill_term_variables(+Term, ?Variables)
+%
+%   This predicate succeeds when Variables is a list made up by the variables
+%   of Term, in order of appearance and with repetition.
+
+fasill_term_variables(Term, Vars) :-
+	fasill_term_variables(Term, [], Vars).
+
+% Variable
+fasill_term_variables(var(X), Xs, [var(X)|Xs]) :-
+	!.
+% Term
+fasill_term_variables(term(_, Args), Xs, Vars) :-
+	!,
+	fasill_term_variables(Args, Xs, Vars).
+% List
+fasill_term_variables([H|T], Xs, Vars) :-
+	!,
+	fasill_term_variables(H, Xs, Ys),
+	fasill_term_variables(T, Ys, Vars).
+% Other
+fasill_term_variables(_, Xs, Xs).
+
+%!  fasill_count_variables(+Term, ?Variables)
+%
+%   This predicate succeeds when Variables is a list of pairs Var-N where Var
+%   is a variable and N is the number of occurrences of Var in the term Term.
+
+fasill_count_variables(Term, Vars) :-
+	fasill_count_variables(Term, [], Vars).
+
+% New variable
+fasill_count_variables(var(X), Vars, [X-1|Vars]) :-
+	\+member(X-_, Vars),
+	!.
+% Repeated variable
+fasill_count_variables(var(X), Vars, [X-M|Vars2]) :-
+	!,
+	select(X-N, Vars, Vars2),
+	succ(N, M).
+% Term
+fasill_count_variables(term(_, Xs), Vars, Vars2) :-
+	!,
+	fasill_count_variables(Xs, Vars, Vars2).
+% List
+fasill_count_variables([], Vars, Vars) :-
+	!.
+fasill_count_variables([X|Xs], Vars, Vars3) :-
+	!,
+	fasill_count_variables(X, Vars, Vars2),
+	fasill_count_variables(Xs, Vars2, Vars3).
+% Other
+fasill_count_variables(_, Vars, Vars).
+
+%!  max_variable(+Expression, +Variable, ?Max)
+%
+%   This predicate succeeds when Max is the maximum natural number for wich 
+%   Variable{Max} occurs in the expression Expression.
+
+fasill_max_variable(Expr, Variable, Max) :-
+	fasill_max_variable(Expr, Variable, 0, Max).
+fasill_max_variable(var(V), Variable, N, Max) :-
+	atom(V),
+	atom_length(Variable, Length),
+	sub_atom(V, 0, Length, _, Variable),
+	!,
+	sub_atom(V, Length, _, 0, Rest),
+	atom_codes(Rest, Codes),
+	catch((number_codes(M, Codes), Max is max(N,M)), _, Max = N).
+fasill_max_variable(term(_, Xs), Variable, N, Max) :-
+	!,
+	fasill_max_variable(Xs, Variable, N, Max).
+fasill_max_variable([], _, N, N) :- !.
+fasill_max_variable([X|Xs], Variable, N, Max) :-
+	!,
+	fasill_max_variable(X, Variable, N, M),
+	fasill_max_variable(Xs, Variable, M, Max).
+fasill_max_variable(_, _, N, N).
