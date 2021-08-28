@@ -40,7 +40,6 @@
 	set_fasill_flag/2,
 	% rules
 	fasill_rule/3,
-	fasill_testcase/2,
 	program_clause/2,
 	program_rule_id/2,
 	program_consult/1,
@@ -70,7 +69,7 @@
 	testcases_consult/1,
 	fasill_testcase/2,
 	fasill_testcase_precondition/1,
-	% 
+	% variables
 	fresh_variable/1
 ]).
 

@@ -66,15 +66,15 @@
     $R = A \leftarrow \mathcal{B}$ be a rule and $\langle A_l, C_l\rangle$ be
     the linearization of $A$, where $C_l = \{x_1 \sim y_1, \dots,  x_n \sim y_n}$,
     $lin(R) = A_l \leftarrow x_1 \sim y_1 \wedge \dots \wedge x_n \sim y_n
-	\wedge \mathcal{B}$. For a set $\Pi$ of rules, $lin(\Pi) = \{lin(R) :
-	R \in \Pi\}$.
+    \wedge \mathcal{B}$. For a set $\Pi$ of rules, $lin(\Pi) = \{lin(R) :
+    R \in \Pi\}$.
 
     Given a FASILL program $\mathcal{P} = \langle\Pi, \mathcal{R}, L\rangle$,
     where $\Pi$ is a set of rules, $\mathcal{R}$ is a similarity relation, and
     $L$ is a complete lattice. $Let \lambda \in L$ be a cut value. The set of
     rules which are similar to the rules in $lin(\Pi)$, for a level $lambda$,
     $\mathcal{K}_\lambda(\Pi) = \{H \leftarrow \alpha \wedge \mahtcal{B}: H'
-	\leftarrow \mathcal{B} \in lin(\Pi), \mathcal{R}(H,H') = \alpha \geq \lambda\}$
+    \leftarrow \mathcal{B} \in lin(\Pi), \mathcal{R}(H,H') = \alpha \geq \lambda\}$
     are reflecting the meaning induced by the similarity relation $\mathcal{R}$
     into the set of rules $\Pi$. Note that the concept of extended program,
     $\mathcal{K}_\lambda(\Pi)$, is a purely instrumental notion, which does not
@@ -102,6 +102,7 @@ linearize_rename(X, Y, Subs) :-
 	succ(N, M),
 	term:fasill_count_variables(X, Vars),
 	linearize_rename(X, Y, Vars, M, _, [], Subs).
+
 linearize_rename(var(X), var(Y), Vars, N, M, Subs, [Y/var(X)|Subs]) :-
 	X \== '_',
 	member(X-C, Vars),

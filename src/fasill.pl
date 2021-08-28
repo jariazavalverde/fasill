@@ -99,7 +99,7 @@ initialize(Args) :-
     ( member('-halt', Args) -> true ;
         tty_clear,
         writeln('FASILL (pre-alfa): http://dectau.uclm.es/fasill/'),
-        writeln('Copyright (C) 2018-2019 José Antonio Riaza Valverde'),
+        writeln('Copyright (C) 2018-2021 José Antonio Riaza Valverde'),
         writeln('DEC-TAU research group, University of Castilla-La Mancha (UCLM)'),
         writeln('Released under the BSD-3 Clause license') ),
     run_arguments(Args).
