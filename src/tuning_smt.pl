@@ -41,6 +41,7 @@
 :- use_module(tuning, [findall_symbolic_cons/1]).
 :- use_module(environment).
 :- use_module(resolution).
+:- use_module(term).
 
 /** <module> Tuning with SAT/SMT solvers
     This library provides predicates for tuning FASILL programs.
@@ -116,7 +117,7 @@ tuning_smt_answer([H|_], Substitution, Deviation) :-
 		atom_number(Arity, Arity_),
 		Value =.. [_,X],
 		(Con = td ->
-			from_prolog(X, Y) ;
+			term:from_prolog(X, Y) ;
 			(atomic_list_concat([_|X2], '_', X), atomic_list_concat(X2, '_', Y))
 		)
 	), Substitution).
