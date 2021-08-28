@@ -167,10 +167,10 @@ mgu(var(V), Term, OccursCheck, Sub, MGU) :-
 	mgu(TermSub, Term, OccursCheck, Sub, MGU).
 mgu(var(V), Term, OccursCheck, Sub0, MGU) :-
 	!,
-    (OccursCheck == true -> occurs_check(V, Term) ; true),
-    substitution:list_to_substitution([V-Term], Sub1),
-    substitution:compose(Sub0, Sub1, Sub2),
-    substitution:put_substitution(Sub2, V, Term, MGU).
+	(OccursCheck == true -> occurs_check(V, Term) ; true),
+	substitution:list_to_substitution([V-Term], Sub1),
+	substitution:compose(Sub0, Sub1, Sub2),
+	substitution:put_substitution(Sub2, V, Term, MGU).
 % Term ~ Variable
 mgu(Term, var(V), OccursCheck, Sub, MGU) :-
 	!,
@@ -188,10 +188,10 @@ mgu(term(X,Xs), term(X,Ys), OccursCheck, Sub, MGU) :-
 mgu([], [], _, Subs, Subs) :-
 	!.
 mgu([X|Xs], [Y|Ys], OccursCheck, Sub, WMGU) :- !,
-    mgu(X, Y, OccursCheck, Sub, SubXY),
-    substitution:apply(SubXY, Xs, Xs_),
-    substitution:apply(SubXY, Ys, Ys_),
-    mgu(Xs_, Ys_, OccursCheck, SubXY, WMGU).
+	mgu(X, Y, OccursCheck, Sub, SubXY),
+	substitution:apply(SubXY, Xs, Xs_),
+	substitution:apply(SubXY, Ys, Ys_),
+	mgu(Xs_, Ys_, OccursCheck, SubXY, WMGU).
 
 %!  unify(+ExpressionA, +ExpressionB, +OccursCheck, ?(W)MGU)
 %
