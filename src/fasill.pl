@@ -58,6 +58,7 @@
     * `:help` - print this message.
     * `:lattice(Path)` - change lattice from file Path.
     * `:license` - print license message.
+    * `:listing` - list the loaded rules.
 
     By default, FASILL incorporates a set of predefined lattices, and loads the
     lattice $([0,1], \leq)$ into the environment. You can change the current
@@ -196,6 +197,16 @@ run_command(term(':', [term(license,[])])) :-
 	close(Stream),
 	atom_chars(Atom, Chars),
 	writeln(Atom).
+% Listing rules
+run_command(term(':', [term(listing,[])])) :-
+	!,
+	environment:fasill_rule(Head, Body, Info),
+	member(id(Id), Info),
+	write(Id),
+	write(' '),
+	environment:fasill_print_rule(fasill_rule(Head, Body, Info)),
+	nl,
+	fail ; nl.
 % Unknown command
 run_command(term(':', [term(Name,Args)])) :-
 	length(Args, Arity),
