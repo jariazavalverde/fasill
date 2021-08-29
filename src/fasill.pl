@@ -78,7 +78,11 @@
 %
 %   This predicate succeeds when Path is the installation path of FASILL.
 
-fasill_installation_path('/usr/local/fasill/').
+:- dynamic fasill_installation_path/1.
+:-
+	prolog_load_context(directory, Dir),
+	directory_file_path(Dir, '..', FASILL),
+	asserta(fasill_installation_path(FASILL)).
 
 %!  main(+Arguments)
 %
@@ -93,7 +97,6 @@ main(Args) :-
 %   This predicate initializes the FASILL interpreter.
 
 initialize(Args) :-
-	run_command(term(':', [term(lattice,[term(library, [term(unit, [])])])])),
 	(member('-halt', Args) ->
 		true ;
 		writeln('FASILL (pre-alfa): http://dectau.uclm.es/fasill/'),
@@ -101,6 +104,7 @@ initialize(Args) :-
 		writeln('DEC-TAU research group, University of Castilla-La Mancha (UCLM)'),
 		writeln('Released under the BSD-3 Clause license'),
 		nl),
+	run_command(term(':', [term(lattice,[term(library, [term(unit, [])])])])),
 	run_arguments(Args).
 
 %!  interactive_mode
@@ -177,10 +181,10 @@ run_command(term(':', [term(lattice,[term(Path, [])])])) :-
 % Load library lattice
 run_command(term(':', [term(lattice,[term(library, [term(Lat, [])])])])) :-
 	!,
-	fasill_installation_path(Dir_),
-	atom_concat(Dir_, 'lattices/', Dir),
-	atom_concat(Dir, Lat, Path_),
-	atom_concat(Path_, '.lat.pl', Path),
+	fasill_installation_path(Dir),
+	directory_file_path(Dir, lattices, DirLat),
+	atom_concat(Lat, '.lat.pl', File),
+	directory_file_path(DirLat, File, Path),
 	run_command(term(':', [term(lattice,[term(Path, [])])])).
 % Show license
 run_command(term(':', [term(license,[])])) :-
