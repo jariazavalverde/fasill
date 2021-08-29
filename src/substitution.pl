@@ -160,6 +160,7 @@ apply(_, X, X).
 fasill_print_substitution([]) :-
 	!.
 fasill_print_substitution([V-X|Xs]) :-
+	write(', '),
 	write(V),
 	write('/'),
 	term:fasill_print_term(X),
