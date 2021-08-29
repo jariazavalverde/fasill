@@ -67,6 +67,8 @@ is_builtin_predicate(Name/Arity) :-
 		% consult files
 		consult/1,
 		consult_sim/1,
+		% transformations
+		unfold/1,
 		% control constructs
 		','/2,
 		';'/2,
@@ -147,6 +149,29 @@ eval_builtin_predicate(consult/1, state(_, Subs), selected(ExprVar, top, Term), 
 eval_builtin_predicate(consult_sim/1, state(_, Subs), selected(ExprVar, top, Term), state(ExprVar, Subs)) :-
 	Term = term(consult_sim, [term(Path, [])]),
 	similarity_consult(Path).
+
+%% TRANSFORMATIONS
+
+%%% unfold/1
+%%% unfold( +rule_id )
+%%%
+%%% Unfolding.
+%%% unfold(Id) unfolds the rule with identifier Id.
+eval_builtin_predicate(unfold/1, state(_, Subs), selected(ExprVar, top, Term), state(ExprVar, Subs)) :-
+	Term = term(_, [Id]),
+	(term:fasill_var(Id) ->
+		exceptions:instantiation_error(unfold/1, Error),
+		exceptions:throw_exception(Error) ;
+		true),
+	(\+term:fasill_atom(Id) ->
+		exceptions:type_error(atom, Id, unfold/1, Error),
+		exceptions:throw_exception(Error) ;
+		true),
+	Id = term(Rule, []),
+	((environment:fasill_rule(_, _, Info), member(id(Rule), Info)) ->
+		unfolding:unfold_by_id(Rule) ;
+		exceptions:existence_error(rule, Rule, unfold/1, Error),
+		exceptions:throw_exception(Error)).
 
 %% CONTROL CONSTRUCTS
 

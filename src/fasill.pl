@@ -211,10 +211,9 @@ run_command(term(':', [term(listing,[])])) :-
 	nl,
 	fail ; nl).
 % Unfold rule
-run_command(term(':', [term(unfold,[term(Id, [])])])) :-
+run_command(term(':', [term(unfold, [Id])])) :-
 	!,
-	unfolding:unfold_by_id(Id),
-	nl.
+	run_command(term(unfold, [Id])).
 % Unknown command
 run_command(term(':', [term(Name,Args)])) :-
 	length(Args, Arity),
