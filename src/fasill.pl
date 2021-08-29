@@ -44,6 +44,7 @@
 :- use_module(environment).
 :- use_module(exceptions).
 :- use_module(term).
+:- use_module(unfolding).
 
 /** <module> FASILL
     This library provides predicates for running the FASILL interpreter.
@@ -59,6 +60,7 @@
     * `:lattice(Path)` - change lattice from file Path.
     * `:license` - print license message.
     * `:listing` - list the loaded rules.
+    * `:unfold(Id)` - unfold the rule with identifier Id.
 
     By default, FASILL incorporates a set of predefined lattices, and loads the
     lattice $([0,1], \leq)$ into the environment. You can change the current
@@ -200,13 +202,19 @@ run_command(term(':', [term(license,[])])) :-
 % Listing rules
 run_command(term(':', [term(listing,[])])) :-
 	!,
-	environment:fasill_rule(Head, Body, Info),
+	(environment:fasill_rule(Head, Body, Info),
 	member(id(Id), Info),
+	write('('),
 	write(Id),
-	write(' '),
+	write(') '),
 	environment:fasill_print_rule(fasill_rule(Head, Body, Info)),
 	nl,
-	fail ; nl.
+	fail ; nl).
+% Unfold rule
+run_command(term(':', [term(unfold,[term(Id, [])])])) :-
+	!,
+	unfolding:unfold_by_id(Id),
+	nl.
 % Unknown command
 run_command(term(':', [term(Name,Args)])) :-
 	length(Args, Arity),
