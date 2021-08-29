@@ -577,6 +577,9 @@ fasill_print_fca(state(TD,Sub)) :-
 	write(', '),
 	substitution:fasill_print_substitution(Sub),
 	write('>').
+fasill_print_fca(exception(Error)) :-
+	write('uncaught exception in derivation: '),
+	term:fasill_print_term(Error).
 
 %!  fasill_print_trace(+Trace)
 % 
