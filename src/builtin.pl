@@ -774,7 +774,7 @@ eval_builtin_predicate(atom_length/2, state(_, Sub), selected(ExprVar, Var, Term
 	term:from_prolog(Y, Fy),
 	Var = term('&', [term('~',[Atom, Fx]), term('~',[Length, Fy])]).
 
-%!  atom_concat(?atom, ?atom +atom)
+%!  atom_concat(?atom, ?atom, +atom)
 %!  atom_concat(+atom, +atom, -atom)
 %
 %   Concatenate characters.
