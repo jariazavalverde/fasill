@@ -737,18 +737,26 @@ eval_builtin_predicate(ground/1, state(_, Subs), selected(ExprVar, top, Atom), s
 %   in the name of Atom is equal to Length. If Length is not instantiated,
 %   atom_length will calculate the length of Atom's name.
 
-eval_builtin_predicate(atom_length/2, state(_, Subs), selected(ExprVar, Var, Term), state(ExprVar, Subs)) :-
+eval_builtin_predicate(atom_length/2, state(_, Sub), selected(ExprVar, Var, Term), state(ExprVar, Sub)) :-
 	Term = term(atom_length, [Atom,Length]),
-	( fasill_var(Atom) -> instantiation_error(atom_length/2, Error), throw_exception(Error) ;
-		( \+fasill_atom(Atom) -> type_error(atom, Atom, atom_length/2, Error), throw_exception(Error) ;
-			( \+fasill_var(Length), \+fasill_integer(Length) -> type_error(integer, Length, atom_length/2, Error), throw_exception(Error) ;
-				term:to_prolog(Atom, X), term:to_prolog(Length, Y),
-				atom_length(X,Y),
-				term:from_prolog(X, Fx), term:from_prolog(Y, Fy),
-				Var = term('&', [term('~',[Atom, Fx]), term('~',[Length, Fy])])
-			)
-		)
-	).
+	(fasill_var(Atom) ->
+		exceptions:instantiation_error(atom_length/2, Error),
+		exceptions:throw_exception(Error) ;
+		true),
+	(\+fasill_atom(Atom) ->
+		exceptions:type_error(atom, Atom, atom_length/2, Error),
+		exceptions:throw_exception(Error) ;
+		true),
+	(\+fasill_var(Length), \+fasill_integer(Length) ->
+		exceptions:type_error(integer, Length, atom_length/2, Error),
+		exceptions:throw_exception(Error) ;
+		true),
+	term:to_prolog(Atom, X),
+	term:to_prolog(Length, Y),
+	atom_length(X, Y),
+	term:from_prolog(X, Fx),
+	term:from_prolog(Y, Fy),
+	Var = term('&', [term('~',[Atom, Fx]), term('~',[Length, Fy])]).
 
 %!  atom_concat(?atom, ?atom +atom)
 %!  atom_concat(+atom, +atom, -atom)
@@ -759,19 +767,36 @@ eval_builtin_predicate(atom_length/2, state(_, Subs), selected(ExprVar, Var, Ter
 %   the only argument instantiated, atom_concat/3 will obtain all possible
 %   decompositions of it.
 
-eval_builtin_predicate(atom_concat/3, state(_, Subs), selected(ExprVar, Var, Atom), state(ExprVar, Subs)) :-
+eval_builtin_predicate(atom_concat/3, state(_, Sub), selected(ExprVar, Var, Atom), state(ExprVar, Sub)) :-
 	Atom = term(atom_concat, [Start,End,Whole]),
-	( fasill_var(Whole), fasill_var(Start) -> instantiation_error(atom_concat/3, Error), throw_exception(Error) ;
-		( fasill_var(Whole), fasill_var(End) -> instantiation_error(atom_concat/3, Error), throw_exception(Error) ;
-			( \+fasill_var(Start), \+fasill_atom(Start) -> type_error(atom, Start, atom_concat/3, Error), throw_exception(Error) ;
-				( \+fasill_var(End), \+fasill_atom(End) -> type_error(atom, End, atom_concat/3, Error), throw_exception(Error) ;
-					( \+fasill_var(Whole), \+fasill_atom(Whole) -> type_error(atom, Whole, atom_concat/3, Error), throw_exception(Error) ;
-						term:to_prolog(Start, X), term:to_prolog(End, Y), term:to_prolog(Whole, Z),
-						atom_concat(X,Y,Z),
-						term:from_prolog(X, Fx), term:from_prolog(Y, Fy), term:from_prolog(Z, Fz),
-						Var = term('&', [term('~',[Start,Fx]), term('&',[term('~',[End,Fy]),term('~',[Whole,Fz])])])
-					)
-				)
-			)
-		)
-	).
+	(fasill_var(Whole), fasill_var(Start) ->
+		exceptions:instantiation_error(atom_concat/3, Error),
+		exceptions:throw_exception(Error) ;
+		true),
+	(fasill_var(Whole), fasill_var(End) ->
+		exceptions:instantiation_error(atom_concat/3, Error),
+		exceptions:throw_exception(Error) ;
+		true),
+	(\+fasill_var(Start), \+fasill_atom(Start) ->
+		exceptions:type_error(atom, Start, atom_concat/3, Error),
+		exceptions:throw_exception(Error) ;
+		true),
+	(\+fasill_var(End), \+fasill_atom(End) ->
+		exceptions:type_error(atom, End, atom_concat/3, Error),
+		exceptions:throw_exception(Error) ;
+		true),
+	(\+fasill_var(Whole), \+fasill_atom(Whole) ->
+		exceptions:type_error(atom, Whole, atom_concat/3, Error),
+		exceptions:throw_exception(Error) ;
+		true),
+	term:to_prolog(Start, X),
+	term:to_prolog(End, Y),
+	term:to_prolog(Whole, Z),
+	atom_concat(X, Y, Z),
+	term:from_prolog(X, Fx),
+	term:from_prolog(Y, Fy),
+	term:from_prolog(Z, Fz),
+	Var = term('&', [
+		term('~',[Start,Fx]), term('&',[
+			term('~',[End,Fy]),
+				term('~',[Whole,Fz])])]).
