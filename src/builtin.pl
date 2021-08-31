@@ -46,8 +46,6 @@
 :- use_module(resolution).
 :- use_module(term).
 
-:- discontiguous eval_builtin_predicate/4.
-
 /** <module> Built-in predicates
     This library provides predicates for running built-in predicates.
 
@@ -128,7 +126,12 @@ is_builtin_predicate(Name/Arity) :-
 %   step over the state State1 with selected atom Atom whose indicator is 
 %   Indicator.
 
-% CONSULT FILES
+:- discontiguous eval_builtin_predicate/4.
+
+/** <builtin> Loading FASILL source files
+    This section deals with loading FASILL source files. A FASILL source file
+    is a plain text file containing a FASILL program or similarity scheme.
+*/
 
 %!  consult(+atom)
 %
@@ -150,7 +153,10 @@ eval_builtin_predicate(consult_sim/1, state(_, Subs), selected(ExprVar, top, Ter
 	Term = term(consult_sim, [term(Path, [])]),
 	similarity_consult(Path).
 
-% TRANSFORMATIONS
+/** <builtin> Program transformations
+    This section deals with automatic program transformations such as unfolding
+    and tuning techniques.
+*/
 
 %!  unfold(+rule_id)
 %
@@ -168,12 +174,14 @@ eval_builtin_predicate(unfold/1, state(_, Subs), selected(ExprVar, top, Term), s
 		exceptions:throw_exception(Error) ;
 		true),
 	Id = term(Rule, []),
-	((environment:fasill_rule(_, _, Info), member(id(Rule), Info)) ->
+	(environment:fasill_rule(_, _, Info), member(id(Rule), Info) ->
 		unfolding:unfold_by_id(Rule) ;
 		exceptions:existence_error(rule, Rule, unfold/1, Error),
 		exceptions:throw_exception(Error)).
 
-% CONTROL CONSTRUCTS
+/** <builtin> Control constructs
+    The predicates of this section implement control structures.
+*/
 
 %!  ','(+callable_term, +callable_term)
 %
@@ -348,7 +356,10 @@ call_guards(N, term('->', [term('^', [Goal]), Body]), var(V), BodyU, Sub, SubS, 
 :- dynamic guards_last_id/1, guards_count/2.
 guards_last_id(0).
 
-% ALL SOLUTIONS
+/** <builtin> All solutions
+    The predicates of this section are convenient for collecting solutions to a
+    given goal.
+*/
 
 %!  findall(?term, +callable_term, ?list)
 %
@@ -397,7 +408,10 @@ eval_builtin_predicate(findall/4, state(_, Subs), selected(ExprVar, Var, Term), 
 		)
 	).
 
-% TERM UNIFICATION
+/** <builtin> Term unification
+    The predicates of this section implement weak unification and syntantic
+    unification.
+*/
 
 %!  '~'(@term, @term)
 %
@@ -468,7 +482,10 @@ eval_builtin_predicate(unify_with_occurs_check/2, state(_, Subs), selected(ExprV
 	apply(SubsUnification, ExprVar, ExprSubs),
 	compose(Subs, SubsUnification, Subs_).
 
-% TERM COMPARISON
+/** <builtin> Term comparison
+    Comparison of arbitrary FASILL terms. Terms are ordered in the so-called
+    "standard order" (dependent on the Prolog system on which FASILL is run). 
+*/
 
 %!  '=='(@term, @term)
 %
@@ -529,13 +546,17 @@ eval_builtin_predicate('@=<'/2, state(_, Subs), selected(ExprVar, top, Term), st
 %
 %   Term greater than or equal to.
 %   True if the first term is greater than or equal to the second one.
+
 eval_builtin_predicate('@>='/2, state(_, Subs), selected(ExprVar, top, Term), state(ExprVar, Subs)) :-
 	Term = term('@>=', [X,Y]),
 	(( X = var(X_), Y = var(Y_)) -> X_ @>= Y_ ;
 		( term:to_prolog(X, X_), term:to_prolog(Y, Y_), X_ @>= Y_ )
 	).
 
-% TERM CREATION AND DECOMPOSITION
+/** <builtin> Term creation and decomposition
+    The predicates of this section are convenient for analysing and
+    constructing terms.
+*/
 
 %!  '=..'(+nonvar, ?list)
 %!  '=..'(-nonvar, +list)
@@ -560,7 +581,9 @@ eval_builtin_predicate('=..'/2, state(_, Subs), selected(ExprVar, Expr, Atom), s
 		))
 	)).
 
-% ARITHMETIC COMPARISON
+/** <builtin> Arithmetic comparison
+    This section provides predicates for arithmetic comparison.
+*/
 
 %!  '<'(@evaluable, @evaluable)
 %
@@ -616,7 +639,9 @@ eval_builtin_predicate('>='/2, state(_, Subs), selected(ExprVar, top, Atom), sta
 	Atom = term('>=', [Left, Right]),
 	arith:arithmetic_comparison('>='/2, Left, Right).
 
-% ARITHMETIC EVALUATION
+/** <builtin> Arithmetic evaluation
+    This section provides predicates for arithmetic evaluation.
+*/
 
 %!  'is'(?term, @evaluable)
 %
@@ -629,7 +654,9 @@ eval_builtin_predicate(is/2, state(_, Subs), selected(ExprVar, Var, Atom), state
 	arith:arithmetic_evaluation('is'/2, Expression, Result),
 	Var = term('~', [Variable, Result]).
 
-% TYPE TESTING
+/** <builtin> Type testing
+    This section provides predicates for type testing.
+*/
 
 %!  atom(@term)
 %
@@ -673,8 +700,7 @@ eval_builtin_predicate(nonvar/1, state(_, Subs), selected(ExprVar, top, Atom), s
 eval_builtin_predicate(number/1, state(_, Subs), selected(ExprVar, top, Atom), state(ExprVar, Subs)) :-
 	Atom = term(number, [num(_)]).
 
-%!  float/1
-%   float(@term)
+%!  float(@term)
 %
 %   Check if float.
 %   float(X) is true if and only if X is a float.
@@ -692,8 +718,7 @@ eval_builtin_predicate(integer/1, state(_, Subs), selected(ExprVar, top, Atom), 
 	Atom = term(integer, [num(X)]),
 	integer(X).
 
-%!  ground/1
-%   ground(@term)
+%!  ground(@term)
 %
 %   Check if ground term.
 %   ground(X) is true if and only if X is a ground term.
@@ -701,7 +726,9 @@ eval_builtin_predicate(integer/1, state(_, Subs), selected(ExprVar, top, Atom), 
 eval_builtin_predicate(ground/1, state(_, Subs), selected(ExprVar, top, Atom), state(ExprVar, Subs)) :-
 	Atom = term(ground, [X]), fasill_ground(X).
 
-% ATOM PROCESSING
+/** <builtin> Atom processing
+    This section provides predicates for atom processing.
+*/
 
 %!  atom_length(+atom, ?integer)
 %
