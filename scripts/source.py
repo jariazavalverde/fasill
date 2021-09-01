@@ -1,10 +1,9 @@
-from sys import argv
+import sys
+import markdown
 import os
 
 class Predicate:
-	""" """
 	def __init__(self, templates, description):
-		""" """
 		self.templates = templates
 		self.description = description
 		if "(" in self.templates[0]:
@@ -14,42 +13,36 @@ class Predicate:
 			self.indicator = self.templates[0] + "/0"
 	
 	def html(self, slug):
-		""" """
-		html = "<div class=\"py-2 px-0\">"
-		html += "<h4 id=\"" + self.indicator + "\"><a href=\"/fasill/documentation/src/" + slug + "#" + self.indicator + "\">" + self.indicator + "</a></h4>"
+		html = "<div class=\"fasill-module-predicate\">"
+		html += "<h4 id=\"%s\"><a href=\"/fasill/documentation/src/%s#%s\">%s</a></h4>" % (self.indicator, slug, self.indicator, self.indicator)
 		for template in self.templates:
-			html += "<?php echo show_template(\"" + template + "\"); ?>"
-		html += "<p><?php echo show_description(\"" + self.description + "\"); ?></p>"
+			html += "<?php echo show_template(\"%s\"); ?>" % template
+		html += "<p class=\"fasill-module-predicate-description\">%s</p>" % self.description
 		html += "</div>"
 		return html
 
 class Module:
-	""" """
 	def __init__(self, name, description):
-		""" """
 		self.name = name
 		self.description = description
 		self.slug = name.replace(" ", "-").replace("/", "").lower()
 		self.predicates = []
 		
 	def add_predicate(self, predicate):
-		""" """
 		self.predicates.append(predicate)
 	
 	def html(self):
-		""" """
-		html = "<div class=\"container py-2 px-0\">"
-		html += "<h1 id=\"" + self.slug + "\">" + self.name + "</a></h1>"
-		html += "<p>" + self.description + "</p>"
+		html = "<div class=\"fasill-module\">"
+		html += "<h1 id=\"%s\">%s</h1>" % (self.slug, self.name)
+		html += "<div class=\"fasill-module-description\">%s</div>" % markdown.markdown(self.description)
 		for predicate in self.predicates:
 			html += predicate.html(self.slug)
 		html += "</div>"
 		return html
 
 def module(path):
-	""" """
 	mod = None
-	with open(path, "r") as f:
+	with open(path, "r", encoding="utf8") as f:
 		lines = f.readlines()
 		nb_lines = len(lines)
 		i = 0
@@ -59,12 +52,15 @@ def module(path):
 		name = lines[i][13:].replace("\n", "")
 		description = ""
 		i += 1
-		while lines[i][:2] != "*/":
-			description += lines[i][2:]
+		while lines[i].strip() != "*/":
+			if lines[i] == "" or lines[i].isspace():
+				description += "\n\r"
+			else:
+				description += lines[i].strip() + " "
 			i += 1
 		mod = Module(name, description)
 		while i < nb_lines:
-		# Start of a predicate
+			# Start of a predicate
 			while lines[i][:3] != "%! ":
 				i += 1
 				if i >= nb_lines:
@@ -84,9 +80,9 @@ def module(path):
 	return mod
 
 if __name__ == "__main__":
-	input = argv[1]
-	output = argv[2]
+	input = sys.argv[1]
+	output = sys.argv[2]
 	mod = module(input)
-	f = open(os.path.basename(input).replace(".pl", "") + ".php", "w")
+	f = open(os.path.join(output, os.path.basename(input).replace(".pl", "") + ".php"), "w", encoding="utf8")
 	f.write(mod.html())
 	f.close()
