@@ -33,20 +33,20 @@
     POSSIBILITY OF SUCH DAMAGE.
 */
 
-:- module(substitution, [
-	empty_substitution/1,
-	substitution_to_list/2,
-	list_to_substitution/2,
-	put_substitution/4,
-	get_substitution/3,
-	init_substitution/2,
-	apply/3,
-	compose/3,
-	fasill_print_substitution/1
+:- module(fasill_substitution, [
+    empty_substitution/1,
+    substitution_to_list/2,
+    list_to_substitution/2,
+    put_substitution/4,
+    get_substitution/3,
+    init_substitution/2,
+    apply/3,
+    compose/3,
+    fasill_print_substitution/1
 ]).
 
 :- use_module(library(assoc)).
-:- use_module(term).
+:- use_module(fasill_term).
 
 /** <module> Substitutions
     This library provides basic predicates for substitutions manipulation.
@@ -61,7 +61,7 @@
 %   This predicate succeeds when Substitution is an empty substitution.
 
 empty_substitution(Sub) :-
-	empty_assoc(Sub).
+    empty_assoc(Sub).
 
 %!  substitution_to_list(+Substitution, ?List)
 %
@@ -69,7 +69,7 @@ empty_substitution(Sub) :-
 %   pairs.
 
 substitution_to_list(Sub, List) :-
-	assoc_to_list(Sub, List).
+    assoc_to_list(Sub, List).
 
 %!  list_to_substitution(+List, ?Substitution)
 %
@@ -77,7 +77,7 @@ substitution_to_list(Sub, List) :-
 %   Substitution.
 
 list_to_substitution(List, Sub) :-
-	list_to_assoc(List, Sub).
+    list_to_assoc(List, Sub).
 
 %!  put_substitution(+SubstitutionIn, +Var, +Term, ?SubtitutionOut)
 %
@@ -85,14 +85,14 @@ list_to_substitution(List, Sub) :-
 %   SubstitutionIn, producing the new substitution SubtitutionOut.
 
 put_substitution(SubIn, Var, Term, SubOut) :-
-	put_assoc(Var, SubIn, Term, SubOut).
+    put_assoc(Var, SubIn, Term, SubOut).
 
 %!  get_substitution(+Substitution, +Var, ?Term)
 %
 %   This predicate succeeds if Var-Term is a binding in Substitution. 
 
 get_substitution(Sub, Var, Term) :-
-	get_assoc(Var, Sub, Term).
+    get_assoc(Var, Sub, Term).
 
 %!  init_substitution(+Goal, ?Substitution)
 %
@@ -100,24 +100,24 @@ get_substitution(Sub, Var, Term) :-
 %   the goal Goal, where each variable X in goal Goal is binded to itself (X/X).
 
 init_substitution(Goal, Sub) :-
-	empty_substitution(Id),
-	init_substitution(Goal, Id, Sub).
+    empty_substitution(Id),
+    init_substitution(Goal, Id, Sub).
 
 % Variable
 init_substitution(var(X), Sub0, Sub1) :-
-	!,
-	(get_substitution(Sub0, X, _) ->
-		Sub1 = Sub0 ;
-		put_substitution(Sub0, X, var(X), Sub1)).
+    !,
+    (get_substitution(Sub0, X, _) ->
+        Sub1 = Sub0 ;
+        put_substitution(Sub0, X, var(X), Sub1)).
 % Term
 init_substitution(term(_,Args), Sub0, Sub1) :-
-	!,
-	init_substitution(Args, Sub0, Sub1).
+    !,
+    init_substitution(Args, Sub0, Sub1).
 % List
 init_substitution([H|T], Sub0, Sub2) :-
-	!,
-	init_substitution(H, Sub0, Sub1),
-	init_substitution(T, Sub1, Sub2).
+    !,
+    init_substitution(H, Sub0, Sub1),
+    init_substitution(T, Sub1, Sub2).
 % Others
 init_substitution(_, Sub, Sub).
 
@@ -127,7 +127,7 @@ init_substitution(_, Sub, Sub).
 %   in SubstitutionOut.
 
 compose(Sub0, Sub1, Sub2) :-
-	map_assoc(apply(Sub1), Sub0, Sub2).
+    map_assoc(apply(Sub1), Sub0, Sub2).
 
 %!  apply(+Substitution, +ExpressionIn, ?ExpressionOut)
 %
@@ -135,20 +135,20 @@ compose(Sub0, Sub1, Sub2) :-
 % ExpressionIn. ExpressionOut is the resulting expression.
 
 apply(_, X, X) :-
-	var(X),
-	!.
+    var(X),
+    !.
 apply(Sub, term(T,Args), term(T,Args_)) :-
-	!,
-	apply(Sub, Args, Args_).
+    !,
+    apply(Sub, Args, Args_).
 apply(Sub, var(X), Y) :-
-	!,
-	(get_assoc(X, Sub, Y) ->
-		true ;
-		Y = var(X)).
+    !,
+    (get_assoc(X, Sub, Y) ->
+        true ;
+        Y = var(X)).
 apply(Sub, [X|Xs], [Y|Ys]) :-
-	!,
-	apply(Sub, X, Y),
-	apply(Sub, Xs, Ys).
+    !,
+    apply(Sub, X, Y),
+    apply(Sub, Xs, Ys).
 apply(_, X, X).
 
 %!  fasill_print_substitution(+Substitution)
@@ -158,23 +158,23 @@ apply(_, X, X).
 
 % Bindings
 fasill_print_substitution([]) :-
-	!.
+    !.
 fasill_print_substitution([V-X|Xs]) :-
-	write(', '),
-	write(V),
-	write('/'),
-	term:fasill_print_term(X),
-	fasill_print_substitution(Xs), !.
+    write(', '),
+    write(V),
+    write('/'),
+    fasill_term:fasill_print_term(X),
+    fasill_print_substitution(Xs), !.
 % Identity substitution
 fasill_print_substitution(Sub) :-
-	empty_substitution(Sub), !,
-	write('{}').
+    empty_substitution(Sub), !,
+    write('{}').
 % Non-empty substitution
 fasill_print_substitution(Sub) :-
-	substitution_to_list(Sub, [V-X|Xs]),
-	write('{'),
-	write(V),
-	write('/'),
-	term:fasill_print_term(X),
-	fasill_print_substitution(Xs),
-	write('}').
+    substitution_to_list(Sub, [V-X|Xs]),
+    write('{'),
+    write(V),
+    write('/'),
+    fasill_term:fasill_print_term(X),
+    fasill_print_substitution(Xs),
+    write('}').

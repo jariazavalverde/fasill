@@ -6,4 +6,4 @@ do
 	args+=("'$arg'")
 done
 args=`join_by , ${args[@]}`
-swipl -l "/usr/local/fasill/src/fasill.pl" -g "main([$args])"
+swipl -l "/usr/local/fasill/src/fasill.pl" -g "fasill([$args])"

@@ -33,22 +33,23 @@
     POSSIBILITY OF SUCH DAMAGE.
 */
 
-:- module(exceptions, [
-	% handle exceptions
-	throw_exception/1,
-	throw_warning/1,
-	clear_warnings/0,
-	% make errors
-	instantiation_error/2,
-	type_error/4,
-	evaluation_error/3,
-	existence_error/4,
-	domain_error/3,
-	syntax_error/4
+:- module(fasill_exceptions, [
+    % handle exceptions
+    throw_exception/1,
+    throw_warning/1,
+    clear_warnings/0,
+    % make errors
+    instantiation_error/2,
+    type_error/4,
+    evaluation_error/3,
+    existence_error/4,
+    domain_error/3,
+    syntax_error/4
 ]).
 
-:- use_module(environment).
-:- use_module(term).
+:- use_module(fasill_environment).
+:- use_module(fasill_inference).
+:- use_module(fasill_term).
 
 /** <module> Exceptions
     This library provides basic predicates for making and throwing errors.
@@ -84,22 +85,22 @@
 %
 %   This predicate throws the exception Exception.
 throw_exception(Exception) :-
-	resolution:retractall(check_success),
-	throw(Exception).
+    fasill_inference:retractall(check_success),
+    throw(Exception).
 
 %!  clear_warnings
 %
 %   This predicate clears all the current warning.
 
 clear_warnings :-
-	environment:retractall(fasill_warning(_)).
+    fasill_environment:retractall(fasill_warning(_)).
 
 %!  throw_warning(+Warning)
 %
 %   This predicate throws the warning +Warning.
 
 throw_warning(Warning) :-
-	environment:assertz(fasill_warning(Warning)).
+    fasill_environment:assertz(fasill_warning(Warning)).
 
 % MAKE ERRORS
 
@@ -111,7 +112,7 @@ throw_warning(Warning) :-
 %   required.
 
 instantiation_error(Indicator, term(error, [term(instantiation_error,[]), Indicator_])) :-
-	term:from_prolog(Indicator, Indicator_).
+    fasill_term:from_prolog(Indicator, Indicator_).
 
 %!  type_error(+Type, +Term, +Indicator, ?Error)
 %
@@ -121,8 +122,8 @@ instantiation_error(Indicator, term(error, [term(instantiation_error,[]), Indica
 %   not a variable.
 
 type_error(Type, Term, Indicator, term(error, [term(type_error, [Type_, Term]), Indicator_])) :-
-	term:from_prolog(Type, Type_),
-	term:from_prolog(Indicator, Indicator_).
+    fasill_term:from_prolog(Type, Type_),
+    fasill_term:from_prolog(Indicator, Indicator_).
 
 %!  evaluation_error(+Cause, +Indicator, ?Error)
 %
@@ -131,8 +132,8 @@ type_error(Type, Term, Indicator, term(error, [term(type_error, [Type_, Term]), 
 %   operands of an evaluable functor has an exceptional value. 
 
 evaluation_error(Cause, Indicator, term(error, [term(evaluation_error,[Cause_]), Indicator_])) :-
-	term:from_prolog(Cause, Cause_),
-	term:from_prolog(Indicator, Indicator_).
+    fasill_term:from_prolog(Cause, Cause_),
+    fasill_term:from_prolog(Indicator, Indicator_).
 
 %!  existence_error(+Cause, +Term, +Indicator, ?Error)
 %
@@ -141,9 +142,9 @@ evaluation_error(Cause, Indicator, term(error, [term(evaluation_error,[Cause_]),
 %   on which an operation is to be performed does not exist.
 
 existence_error(Cause, Term, Indicator, term(error, [term(existence_error,[Cause_,Term_]), Indicator_])) :-
-	term:from_prolog(Cause, Cause_),
-	term:from_prolog(Term, Term_),
-	term:from_prolog(Indicator, Indicator_).
+    fasill_term:from_prolog(Cause, Cause_),
+    fasill_term:from_prolog(Term, Term_),
+    fasill_term:from_prolog(Indicator, Indicator_).
 
 %!  domain_error(+Domain, +Indicator, ?Error)
 %
@@ -153,8 +154,8 @@ existence_error(Cause, Term, Indicator, term(error, [term(existence_error,[Cause
 %   procedure is defined. 
 
 domain_error(Domain, Indicator, term(error, [term(domain_error,[Domain_]), Indicator_])) :-
-	term:from_prolog(Domain, Domain_),
-	term:from_prolog(Indicator, Indicator_).
+    fasill_term:from_prolog(Domain, Domain_),
+    fasill_term:from_prolog(Indicator, Indicator_).
 
 %!  syntax_error(+Line, +Columns, +Message, ?Error)
 %
@@ -163,6 +164,6 @@ domain_error(Domain, Indicator, term(error, [term(domain_error,[Domain_]), Indic
 %   sequence of incorrect characters are being input as a read term.
 
 syntax_error(Line, Column, Message, term(error, [term(syntax_error,[Line_, Column_, Message_])])) :-
-	term:from_prolog(line(Line), Line_),
-	term:from_prolog(column(Column), Column_),
-	term:from_prolog(message(Message), Message_).
+    fasill_term:from_prolog(line(Line), Line_),
+    fasill_term:from_prolog(column(Column), Column_),
+    fasill_term:from_prolog(message(Message), Message_).

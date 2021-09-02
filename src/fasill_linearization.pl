@@ -33,23 +33,23 @@
     POSSIBILITY OF SUCH DAMAGE.
 */
 
-:- module(linearization, [
-	% linearization
-	linearize_head_rule/1,
-	linearize_head_rule/2,
-	linearize_head_rule_by_id/1,
-	linearize_head_rule_by_id/2,
-	linearize_head_program/0,
-	% extended program
-	extend_rule/1,
-	extend_rule/2,
-	extend_rule_by_id/1,
-	extend_rule_by_id/2,
-	extend_program/0
+:- module(fasill_linearization, [
+    % linearization
+    linearize_head_rule/1,
+    linearize_head_rule/2,
+    linearize_head_rule_by_id/1,
+    linearize_head_rule_by_id/2,
+    linearize_head_program/0,
+    % extended program
+    extend_rule/1,
+    extend_rule/2,
+    extend_rule_by_id/1,
+    extend_rule_by_id/2,
+    extend_program/0
 ]).
 
-:- use_module(environment).
-:- use_module(term).
+:- use_module(fasill_environment).
+:- use_module(fasill_term).
 
 /** <module> Linearization
     This library provides predicates for linearization of FASILL programs.
@@ -64,16 +64,16 @@
     $x_i \sim y_k$ (with $1 \leq k \leq n_i$). The operator "$s \sim t$" is
     asserting the similarity of two terms $s$ and $t$. Now, let
     $R = A \leftarrow \mathcal{B}$ be a rule and $\langle A_l, C_l\rangle$ be
-    the linearization of $A$, where $C_l = \{x_1 \sim y_1, \dots,  x_n \sim y_n}$,
+    the linearization of $A$, where $C_l = \{x_1 \sim y_1, \dots,  x_n \sim y_n\}$,
     $lin(R) = A_l \leftarrow x_1 \sim y_1 \wedge \dots \wedge x_n \sim y_n
     \wedge \mathcal{B}$. For a set $\Pi$ of rules, $lin(\Pi) = \{lin(R) :
     R \in \Pi\}$.
 
     Given a FASILL program $\mathcal{P} = \langle\Pi, \mathcal{R}, L\rangle$,
     where $\Pi$ is a set of rules, $\mathcal{R}$ is a similarity relation, and
-    $L$ is a complete lattice. $Let \lambda \in L$ be a cut value. The set of
-    rules which are similar to the rules in $lin(\Pi)$, for a level $lambda$,
-    $\mathcal{K}_\lambda(\Pi) = \{H \leftarrow \alpha \wedge \mahtcal{B}: H'
+    $L$ is a complete lattice. Let $\lambda \in L$ be a cut value. The set of
+    rules which are similar to the rules in $lin(\Pi)$, for a level $\lambda$,
+    $\mathcal{K}_\lambda(\Pi) = \{H \leftarrow \alpha \wedge \mathcal{B}: H'
     \leftarrow \mathcal{B} \in lin(\Pi), \mathcal{R}(H,H') = \alpha \geq \lambda\}$
     are reflecting the meaning induced by the similarity relation $\mathcal{R}$
     into the set of rules $\Pi$. Note that the concept of extended program,
@@ -82,11 +82,10 @@
 
     For more details see:
 
-    Julián-Iranzo, Pascual, Ginés Moreno, and Jaime Penabad. "Thresholded
-    semantic framework for a fully integrated fuzzy logic language." Journal of
-    logical and algebraic methods in programming 93 (2017): 42-67.
-
-    DOI: https://doi.org/10.1016/j.jlamp.2017.08.002
+    * Julián-Iranzo, Pascual, Ginés Moreno, and Jaime Penabad. "Thresholded
+      semantic framework for a fully integrated fuzzy logic language." Journal of
+      logical and algebraic methods in programming 93 (2017): 42-67.
+      [https://doi.org/10.1016/j.jlamp.2017.08.002](https://doi.org/10.1016/j.jlamp.2017.08.002)
 */
 
 % LINEARIZATION
@@ -98,27 +97,27 @@
 %   with fresh variables.
 
 linearize_rename(X, Y, Subs) :-
-	term:fasill_max_variable(X, 'V', N),
-	succ(N, M),
-	term:fasill_count_variables(X, Vars),
-	linearize_rename(X, Y, Vars, M, _, [], Subs).
+    fasill_term:fasill_max_variable(X, 'V', N),
+    succ(N, M),
+    fasill_term:fasill_count_variables(X, Vars),
+    linearize_rename(X, Y, Vars, M, _, [], Subs).
 
 linearize_rename(var(X), var(Y), Vars, N, M, Subs, [Y/var(X)|Subs]) :-
-	X \== '_',
-	member(X-C, Vars),
-	C > 1,
-	!,
-	succ(N, M),
-	atom_number(Atom, N),
-	atom_concat('V', Atom, Y).
+    X \== '_',
+    member(X-C, Vars),
+    C > 1,
+    !,
+    succ(N, M),
+    atom_number(Atom, N),
+    atom_concat('V', Atom, Y).
 linearize_rename(term(Name, Xs), term(Name, Ys), Vars, N, M, Subs, Subs_) :-
-	!,
-	linearize_rename(Xs, Ys, Vars, N, M, Subs, Subs_).
+    !,
+    linearize_rename(Xs, Ys, Vars, N, M, Subs, Subs_).
 linearize_rename([], [], _, N, N, Subs, Subs) :- !.
 linearize_rename([X|Xs], [Y|Ys], Vars, N, S, Subs, Subs3) :-
-	!,
-	linearize_rename(X, Y, Vars, N, M, Subs, Subs2),
-	linearize_rename(Xs, Ys, Vars, M, S, Subs2, Subs3).
+    !,
+    linearize_rename(X, Y, Vars, N, M, Subs, Subs2),
+    linearize_rename(Xs, Ys, Vars, M, S, Subs2, Subs3).
 linearize_rename(X, X, _, N, N, Subs, Subs).
 
 %!  linearize_substitution(?Substitution, ?Body)
@@ -129,7 +128,7 @@ linearize_rename(X, X, _, N, N, Subs, Subs).
 linearize_substitution([], empty).
 linearize_substitution([X/Y], term('~',[var(X), Y])).
 linearize_substitution([X/Y|Subs], term('&', [term('~',[var(X), Y]), LinSubs])) :-
-	linearize_substitution(Subs, LinSubs).
+    linearize_substitution(Subs, LinSubs).
 
 %!  linearize_head_rule(+Rule)
 %
@@ -138,10 +137,10 @@ linearize_substitution([X/Y|Subs], term('&', [term('~',[var(X), Y]), LinSubs])) 
 %   linearized rule.
 
 linearize_head_rule(R1) :-
-	linearize_head_rule(R1, R2),
-	environment:once(retract(R1)),
-	environment:assertz(R2),
-	environment:sort_rules_by_id.
+    linearize_head_rule(R1, R2),
+    fasill_environment:once(retract(R1)),
+    fasill_environment:assertz(R2),
+    fasill_environment:sort_rules_by_id.
 
 %!  linearize_head_rule(+Rule, ?Linearized)
 %
@@ -155,12 +154,12 @@ linearize_head_rule(R1, R2) :-
     linearize_substitution(Subs_, LinBody),
     (Body == empty ->
         (LinBody == empty ->
-			Body2 = empty ;
-			Body2 = body(LinBody)) ;
+            Body2 = empty ;
+            Body2 = body(LinBody)) ;
         (LinBody == empty ->
-			Body2 = Body ;
-			Body = body(Body_),
-			Body2 = body(term('&', [LinBody, Body_])))
+            Body2 = Body ;
+            Body = body(Body_),
+            Body2 = body(term('&', [LinBody, Body_])))
     ),
     atom_concat(Id, 'L', IdL),
     R2 = fasill_rule(head(Head2), Body2, [id(IdL)|Info]).
@@ -172,9 +171,9 @@ linearize_head_rule(R1, R2) :-
 %   new linearized rule.
 
 linearize_head_rule_by_id(Id) :-
-	environment:fasill_rule(Head, Body, Info),
-	member(id(Id), Info), !,
-	linearize_head_rule(fasill_rule(Head, Body, Info)).
+    fasill_environment:fasill_rule(Head, Body, Info),
+    member(id(Id), Info), !,
+    linearize_head_rule(fasill_rule(Head, Body, Info)).
 
 %!  linearize_head_rule_by_id(?Id, ?Linearized)
 %
@@ -182,7 +181,7 @@ linearize_head_rule_by_id(Id) :-
 %   Linearized is a linearized rule.
 
 linearize_head_rule_by_id(Id, Rule) :-
-    environment:fasill_rule(Head, Body, Info),
+    fasill_environment:fasill_rule(Head, Body, Info),
     member(id(Id), Info), !,
     linearize_head_rule(fasill_rule(Head, Body, Info), Rule).
 
@@ -193,9 +192,9 @@ linearize_head_rule_by_id(Id, Rule) :-
 %   new linearized rules.
 
 linearize_head_program :-
-	environment:fasill_rule(Head, Body, Info),
-	linearize_head_rule(fasill_rule(Head, Body, Info)),
-	fail ; true.
+    fasill_environment:fasill_rule(Head, Body, Info),
+    linearize_head_rule(fasill_rule(Head, Body, Info)),
+    fail ; true.
 
 % EXTENDED PROGRAM
 
@@ -206,34 +205,34 @@ linearize_head_program :-
 %   possible extended terms of a given term.
 
 extend_term(Term1, Term2, TD) :-
-	current_fasill_flag(lambda_unification, Lambda_),
-	(Lambda_ == bot ->
-		environment:lattice_call_bot(Lambda) ;
-		(Lambda_ == top -> 
-			environment:lattice_call_top(Lambda) ;
-			Lambda = Lambda_)
-	),
-	environment:lattice_call_top(Top),
-	extend_term(Term1, Term2, Lambda, Top, TD).
+    fasill_environment:current_fasill_flag(lambda_unification, Lambda_),
+    (Lambda_ == bot ->
+        fasill_environment:lattice_call_bot(Lambda) ;
+        (Lambda_ == top -> 
+            fasill_environment:lattice_call_top(Lambda) ;
+            Lambda = Lambda_)
+    ),
+    fasill_environment:lattice_call_top(Top),
+    extend_term(Term1, Term2, Lambda, Top, TD).
 extend_term(var(X), var(X), _, TD, TD).
 extend_term(num(X), num(X), _, TD, TD).
 extend_term(term(X, Xs), term(Y, Ys), Lambda, CurrentTD, TD) :-
-	length(Xs, Arity),
-	(	X = Y,
-		lattice_call_top(Sim)
-	;
-		environment:similarity_between(X, Y, Arity, Sim, _),
-		nonvar(Y),
-		X \== Y
-	),
-	environment:similarity_tnorm(Tnorm),
-	environment:lattice_call_connective(Tnorm, [CurrentTD, Sim], TDnorm),
-	environment:lattice_call_leq(Lambda, TDnorm),
-	extend_term(Xs, Ys, Lambda, TDnorm, TD).
+    length(Xs, Arity),
+    (	X = Y,
+        fasill_environment:lattice_call_top(Sim)
+    ;
+        fasill_environment:similarity_between(X, Y, Arity, Sim, _),
+        nonvar(Y),
+        X \== Y
+    ),
+    fasill_environment:similarity_tnorm(Tnorm),
+    fasill_environment:lattice_call_connective(Tnorm, [CurrentTD, Sim], TDnorm),
+    fasill_environment:lattice_call_leq(Lambda, TDnorm),
+    extend_term(Xs, Ys, Lambda, TDnorm, TD).
 extend_term([], [], _, TD, TD).
 extend_term([X|Xs], [Y|Ys], Lambda, TD1, TD3) :-
-	extend_term(X, Y, Lambda, TD1, TD2),
-	extend_term(Xs, Ys, Lambda, TD2, TD3).
+    extend_term(X, Y, Lambda, TD1, TD2),
+    extend_term(Xs, Ys, Lambda, TD2, TD3).
 
 %!  extend_rule(+Rule)
 %
@@ -242,11 +241,11 @@ extend_term([X|Xs], [Y|Ys], Lambda, TD1, TD3) :-
 %   rules.
 
 extend_rule(R1) :-
-	environment:retract(R1),
-	(	extend_rule(R1, R2),
-		environment:assertz(R2),
-		fail ; true ),
-	environment:sort_rules_by_id.
+    fasill_environment:retract(R1),
+    (	extend_rule(R1, R2),
+        fasill_environment:assertz(R2),
+        fail ; true ),
+    fasill_environment:sort_rules_by_id.
 
 %!  extend_rule(+Rule, ?Extended)
 %
@@ -254,21 +253,21 @@ extend_rule(R1) :-
 %   extended rule of Rule.
 
 extend_rule(R1, R2) :-
-	environment:lattice_call_top(Top),
-	linearize_head_rule(R1, Rl),
-	Rl = fasill_rule(head(HeadL), Body, [id(Id)|Info]),
-	extend_term(HeadL, HeadE, TD),
-	atom_concat(Id, ex, IdEx),
-	(Body == empty ->
-		(TD == Top ->
-			BodyE = empty ;
-			BodyE = body(TD)) ;
-		(TD == Top ->
-			BodyE = Body ;
-			Body = body(Body_),
-			BodyE = body(term('&', [TD, Body_])))
-	),
-	R2 = fasill_rule(head(HeadE), BodyE, [id(IdEx)|Info]).
+    fasill_environment:lattice_call_top(Top),
+    linearize_head_rule(R1, Rl),
+    Rl = fasill_rule(head(HeadL), Body, [id(Id)|Info]),
+    extend_term(HeadL, HeadE, TD),
+    atom_concat(Id, ex, IdEx),
+    (Body == empty ->
+        (TD == Top ->
+            BodyE = empty ;
+            BodyE = body(TD)) ;
+        (TD == Top ->
+            BodyE = Body ;
+            Body = body(Body_),
+            BodyE = body(term('&', [TD, Body_])))
+    ),
+    R2 = fasill_rule(head(HeadE), BodyE, [id(IdEx)|Info]).
 
 %!  extend_rule_by_id(?Id)
 %
@@ -277,10 +276,10 @@ extend_rule(R1, R2) :-
 %   extended rules.
 
 extend_rule_by_id(Id) :-
-	environment:fasill_rule(Head, Body, Info),
-	member(id(Id), Info),
-	!,
-	extend_rule(fasill_rule(Head, Body, Info)).
+    fasill_environment:fasill_rule(Head, Body, Info),
+    member(id(Id), Info),
+    !,
+    extend_rule(fasill_rule(Head, Body, Info)).
 
 %!  extend_rule_by_id(?Id, ?Extended)
 %
@@ -288,9 +287,9 @@ extend_rule_by_id(Id) :-
 %   Extended is a extended rule.
 
 extend_rule_by_id(Id, Rule) :-
-	environment:fasill_rule(Head, Body, Info),
-	member(id(Id), Info), !,
-	extend_rule(fasill_rule(Head, Body, Info), Rule).
+    fasill_environment:fasill_rule(Head, Body, Info),
+    member(id(Id), Info), !,
+    extend_rule(fasill_rule(Head, Body, Info), Rule).
 
 %!  extend_program
 %
@@ -299,7 +298,7 @@ extend_rule_by_id(Id, Rule) :-
 %   new extended rules.
 
 extend_program :-
-	linearize_head_program,
-	environment:fasill_rule(Head, Body, Info),
-	extend_rule(fasill_rule(Head, Body, Info)),
-	fail ; true.
+    linearize_head_program,
+    fasill_environment:fasill_rule(Head, Body, Info),
+    extend_rule(fasill_rule(Head, Body, Info)),
+    fail ; true.

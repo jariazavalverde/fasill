@@ -33,18 +33,18 @@
     POSSIBILITY OF SUCH DAMAGE.
 */
 
-:- module(directives, [
-	is_directive/1,
-	eval_directive/1
+:- module(fasill_directives, [
+    is_directive/1,
+    eval_directive/1
 ]).
 
-:- use_module(environment).
-:- use_module(exceptions).
-:- use_module(term).
+:- use_module(fasill_environment).
+:- use_module(fasill_exceptions).
+:- use_module(fasill_term).
 
 /** <module> Directives
     This library provides predicates for running FASILL directives.
-	
+    
     FASILL directives are annotations inserted in FASILL source files for the
     compiler.
 */
@@ -55,9 +55,9 @@
 %   FASILL. An indicator is a term of the form Name/Arity, where Name is an
 %   atom and Arity is a non-negative integer.
 is_directive(Name/Arity) :-
-	member(Name/Arity, [
-		set_fasill_flag/2
-	]).
+    member(Name/Arity, [
+        set_fasill_flag/2
+    ]).
 
 %!  eval_directive(+Directive)
 %
@@ -70,28 +70,28 @@ is_directive(Name/Arity) :-
 
 % Instantiation error
 eval_directive(term(set_fasill_flag, [Flag,Value])) :-
-	(\+term:fasill_ground(Flag) ; \+term:fasill_ground(Value)),
-	exceptions:instantiation_error(set_fasill_flag/2, Error),
-	exceptions:throw_exception(Error),
-	!.
+    (\+fasill_term:fasill_ground(Flag) ; \+fasill_term:fasill_ground(Value)),
+    fasill_exceptions:instantiation_error(set_fasill_flag/2, Error),
+    fasill_exceptions:throw_exception(Error),
+    !.
 % Type error (Flag must be an atom)
 eval_directive(term(set_fasill_flag, [Flag, _Value])) :-
-	\+term:fasill_atom(Flag),
-	exceptions:type_error(Flag, atom, set_fasill_flag/2, Error),
-	exceptions:throw_exception(Error),
-	!.
+    \+fasill_term:fasill_atom(Flag),
+    fasill_exceptions:type_error(Flag, atom, set_fasill_flag/2, Error),
+    fasill_exceptions:throw_exception(Error),
+    !.
 % Domain error (Flag must be a valid flag)
 eval_directive(term(set_fasill_flag, [term(FlagName,[]), _Value])) :-
-	\+environment:current_fasill_flag(FlagName, _),
-	exceptions:domain_error(fasill_flag, set_fasill_flag/2, Error),
-	exceptions:throw_exception(Error),
-	!.
+    \+fasill_environment:current_fasill_flag(FlagName, _),
+    fasill_exceptions:domain_error(fasill_flag, set_fasill_flag/2, Error),
+    fasill_exceptions:throw_exception(Error),
+    !.
 % Domain error (Value must be a valid flag value)
 eval_directive(term(set_fasill_flag, [term(FlagName,[]),Value])) :-
-	\+environment:is_fasill_flag_value(FlagName, Value),
-	exceptions:domain_error(flag_value+(FlagName,Value), set_fasill_flag/2, Error),
-	exceptions:throw_exception(Error),
-	!.
+    \+fasill_environment:is_fasill_flag_value(FlagName, Value),
+    fasill_exceptions:domain_error(flag_value+(FlagName,Value), set_fasill_flag/2, Error),
+    fasill_exceptions:throw_exception(Error),
+    !.
 % Ok
 eval_directive(term(set_fasill_flag, [term(FlagName,[]),Value])) :-
-	environment:set_fasill_flag(FlagName, Value).
+    fasill_environment:set_fasill_flag(FlagName, Value).

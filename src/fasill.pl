@@ -34,17 +34,16 @@
 */
 
 :- module(fasill, [
-	main/1,
-	initialize/1,
-	interactive_mode/0
+    fasill/0,
+    fasill/1
 ]).
 
-:- use_module(parser).
-:- use_module(resolution).
-:- use_module(environment).
-:- use_module(exceptions).
-:- use_module(term).
-:- use_module(unfolding).
+:- use_module(fasill_parser).
+:- use_module(fasill_inference).
+:- use_module(fasill_environment).
+:- use_module(fasill_exceptions).
+:- use_module(fasill_term).
+:- use_module(fasill_unfolding).
 
 /** <module> FASILL
     This library provides predicates for running the FASILL interpreter.
@@ -56,10 +55,15 @@
     A command is a FASILL term preceded by the character (:).
 
     * `:exit` - exit FASILL.
+
     * `:help` - print this message.
+
     * `:lattice(Path)` - change lattice from file Path.
+
     * `:license` - print license message.
+    
     * `:listing` - list the loaded rules.
+    
     * `:unfold(Id)` - unfold the rule with identifier Id.
 
     By default, FASILL incorporates a set of predefined lattices, and loads the
@@ -83,158 +87,163 @@
 
 :- dynamic fasill_installation_path/1.
 :-
-	prolog_load_context(directory, Dir),
-	directory_file_path(Dir, '..', FASILL),
-	asserta(fasill_installation_path(FASILL)).
+    prolog_load_context(directory, Dir),
+    directory_file_path(Dir, '..', FASILL),
+    asserta(fasill_installation_path(FASILL)).
 
-%!  main(+Arguments)
+%!  fasill
 %
-%   This predicate runs the FASILL interpreter.
+%   This predicate runs the FASILL interpreter with default options.
 
-main(Args) :-
-	initialize(Args),
-	interactive_mode.
+fasill :-
+    fasill([]).
 
-%!  initialize(+Arguments)
+%!  fasill(+Options)
 %
-%   This predicate initializes the FASILL interpreter.
+%   This predicate runs the FASILL interpreter with a list of options Options.
 
-initialize(Args) :-
-	(member('-halt', Args) ->
-		true ;
-		writeln('FASILL (pre-alfa): http://dectau.uclm.es/fasill/'),
-		writeln('Copyright (C) 2018-2021 José Antonio Riaza Valverde'),
-		writeln('DEC-TAU research group, University of Castilla-La Mancha (UCLM)'),
-		writeln('Released under the BSD-3 Clause license'),
-		nl),
-	run_command(term(':', [term(lattice,[term(library, [term(unit, [])])])])),
-	run_arguments(Args).
+fasill(Options) :-
+    (member('-quiet', Options) ->
+        true ;
+        writeln('FASILL (pre-alfa): http://dectau.uclm.es/fasill/'),
+        writeln('Copyright (C) 2018-2021 José Antonio Riaza Valverde'),
+        writeln('DEC-TAU research group, University of Castilla-La Mancha (UCLM)'),
+        writeln('Released under the BSD-3 Clause license'),
+        nl),
+    run_fasill_command(term(':', [term(lattice,[term(library, [term(unit, [])])])])),
+    run_fasill_arguments(Options),
+    fasill_loop.
 
-%!  interactive_mode
+%!  fasill_loop
 %
 %   This predicate runs the interactive mode of the FASILL interpreter.
 
-interactive_mode :-
-	write('fasill> '),
-	read_line_to_codes(user_input, Codes),
-	(	Codes = end_of_file, ! ;
-		atom_codes(Atom, Codes),
-		atom_chars(Atom, Chars),
-		catch(parse_query(Chars, Goal), Error, (
-			write('uncaught exception in goal: '),
-			term:fasill_print_term(Error),
-			nl, nl,
-			fail)),
-		run_command(Goal)
-	), !,
-	interactive_mode.
-interactive_mode :-
-	interactive_mode.
+fasill_loop :-
+    write('fasill> '),
+    read_line_to_codes(user_input, Codes),
+    (   Codes = end_of_file, ! ;
+        atom_codes(Atom, Codes),
+        atom_chars(Atom, Chars),
+        catch(parse_query(Chars, Goal), Error, (
+            write('uncaught exception in goal: '),
+            fasill_term:fasill_print_term(Error),
+            nl, nl,
+            fail)),
+        run_fasill_command(Goal)
+    ), !,
+    fasill_loop.
+fasill_loop :-
+    fasill_loop.
 
-%!  run_arguments(+Arguments)
+%!  run_fasill_arguments(+Options)
 %
-%   This predicate runs the list of arguments Arguments.
+%   This predicate runs the list of FASILL arguments Options.
 
-run_arguments([]) :-
-	!.
+% Empty arguments
+run_fasill_arguments([]) :-
+    !.
 % -lat $lattice
-run_arguments(['-lat',Lat|Args]) :-
-	!,
-	run_command(term(':', [term(lattice,[term(library, [term(Lat, [])])])])),
-	!,
-	run_arguments(Args).
+run_fasill_arguments(['-lat',Lat|Args]) :-
+    !,
+    run_fasill_command(term(':', [term(lattice,[term(library, [term(Lat, [])])])])),
+    run_fasill_arguments(Args).
 % -goal $goal
-run_arguments(['-goal',Atom|Args]) :- !,
-	atom_chars(Atom, Chars),
-	parse_query(Chars, Goal),
-	run_command(Goal),
-	run_arguments(Args).
+run_fasill_arguments(['-goal',Atom|Args]) :-
+    !,
+    atom_chars(Atom, Chars),
+    parse_query(Chars, Goal),
+    run_fasill_command(Goal),
+    run_fasill_arguments(Args).
+% -quiet
+run_fasill_arguments(['-quiet'|Args]) :-
+    !,
+    run_fasill_arguments(Args).
 % -halt
-run_arguments(['-halt'|_]) :-
-	halt.
+run_fasill_arguments(['-halt'|_]) :-
+    halt.
 % unknown command
-run_arguments(X) :-
+run_fasill_arguments(X) :-
     write('unknown command: '),
     writeln(X),
     halt.
 
-%!  run_command(+Command)
+%!  run_fasill_command(+Command)
 %
-%   This predicate runs the command Command.
+%   This predicate runs the FASILL command Command.
 
 % Exit
-run_command(term(':', [term(exit,[])])) :-
-	halt.
+run_fasill_command(term(':', [term(exit,[])])) :-
+    halt.
 % Help
-run_command(term(':', [term(help,[])])) :-
-	!,
-	writeln(':exit          exit FASILL.'),
-	writeln(':help          print this message.'),
-	writeln(':lattice(Path) change lattice from file Path.'),
-	writeln(':license       print license message.'),
-	nl.
+run_fasill_command(term(':', [term(help,[])])) :-
+    !,
+    writeln(':exit          exit FASILL.'),
+    writeln(':help          print this message.'),
+    writeln(':lattice(Path) change lattice from file Path.'),
+    writeln(':license       print license message.'),
+    nl.
 % Load lattice from file
-run_command(term(':', [term(lattice,[term(Path, [])])])) :-
-	!,
-	exists_file(Path) ->
-		environment:lattice_consult(Path) ;
-		exceptions:existence_error(source_sink, Path, top_level/0, Error),
-		term:fasill_print_term(Error),
-		nl, nl.
+run_fasill_command(term(':', [term(lattice,[term(Path, [])])])) :-
+    !,
+    exists_file(Path) ->
+        fasill_environment:lattice_consult(Path) ;
+        fasill_exceptions:existence_error(source_sink, Path, top_level/0, Error),
+        fasill_term:fasill_print_term(Error),
+        nl, nl.
 % Load library lattice
-run_command(term(':', [term(lattice,[term(library, [term(Lat, [])])])])) :-
-	!,
-	fasill_installation_path(Dir),
-	directory_file_path(Dir, lattices, DirLat),
-	atom_concat(Lat, '.lat.pl', File),
-	directory_file_path(DirLat, File, Path),
-	run_command(term(':', [term(lattice,[term(Path, [])])])).
+run_fasill_command(term(':', [term(lattice,[term(library, [term(Lat, [])])])])) :-
+    !,
+    fasill_installation_path(Dir),
+    directory_file_path(Dir, lattices, DirLat),
+    atom_concat(Lat, '.lat.pl', File),
+    directory_file_path(DirLat, File, Path),
+    run_fasill_command(term(':', [term(lattice,[term(Path, [])])])).
 % Show license
-run_command(term(':', [term(license,[])])) :-
-	!,
-	fasill_installation_path(Dir),
-	atom_concat(Dir, 'LICENSE', Path),
-	open(Path, read, Stream),
-	stream_to_list(Stream, Chars),
-	close(Stream),
-	atom_chars(Atom, Chars),
-	writeln(Atom).
+run_fasill_command(term(':', [term(license,[])])) :-
+    !,
+    fasill_installation_path(Dir),
+    atom_concat(Dir, 'LICENSE', Path),
+    open(Path, read, Stream),
+    stream_to_list(Stream, Chars),
+    close(Stream),
+    atom_chars(Atom, Chars),
+    writeln(Atom).
 % Listing rules
-run_command(term(':', [term(listing,[])])) :-
-	!,
-	(environment:fasill_rule(Head, Body, Info),
-	member(id(Id), Info),
-	write('('),
-	write(Id),
-	write(') '),
-	environment:fasill_print_rule(fasill_rule(Head, Body, Info)),
-	nl,
-	fail ; nl).
+run_fasill_command(term(':', [term(listing,[])])) :-
+    !,
+    (fasill_environment:fasill_rule(Head, Body, Info),
+    member(id(Id), Info),
+    write('('),
+    write(Id),
+    write(') '),
+    fasill_environment:fasill_print_rule(fasill_rule(Head, Body, Info)),
+    nl,
+    fail ; nl).
 % Unfold rule
-run_command(term(':', [term(unfold, [Id])])) :-
-	!,
-	run_command(term(unfold, [Id])).
+run_fasill_command(term(':', [term(unfold, [Id])])) :-
+    !,
+    run_fasill_command(term(unfold, [Id])).
 % Unknown command
-run_command(term(':', [term(Name,Args)])) :-
-	length(Args, Arity),
-	exceptions:existence_error(command, Name/Arity, top_level/0, Error),
-	term:fasill_print_term(Error),
-	nl, nl.
+run_fasill_command(term(':', [term(Name,Args)])) :-
+    length(Args, Arity),
+    fasill_exceptions:existence_error(command, Name/Arity, top_level/0, Error),
+    fasill_term:fasill_print_term(Error),
+    nl, nl.
 % Query goal
-run_command(Goal) :-
-	catch((
-		resolution:query(Goal, SFCA),
-		resolution:fasill_print_fca(SFCA),
-		(SFCA \= exception(_) ->
-			true ;
-			nl, fail),
-		write(' '),
-		get_single_char(Code),
-		(Code = 59 ->
-			writeln(';'),
-			fail ;
-			writeln('.'))),
-		Error, write(Error)),
-	nl, !.
-run_command(_) :-
-	nl.
+run_fasill_command(Goal) :-
+    catch((
+        fasill_inference:query(Goal, SFCA),
+        fasill_inference:fasill_print_fca(SFCA),
+        (SFCA \= exception(_) ->
+            true ;
+            nl, fail),
+        write(' '),
+        get_single_char(Code),
+        (Code = 59 ->
+            writeln(';'),
+            fail ;
+            writeln('.'))),
+        Error, write(Error)),
+    nl, !.
+run_fasill_command(_) :-
+    nl.

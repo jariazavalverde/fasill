@@ -33,38 +33,38 @@
     POSSIBILITY OF SUCH DAMAGE.
 */
 
-:- module(resolution, [
-	query/2,
-	select_atom/4,
-	select_expression/4,
-	interpretable/1,
-	derivation/4,
-	inference/4,
-	simplification_step/4,
-	operational_step/4,
-	interpretive_step/4,
-	short_interpretive_step/4,
-	long_interpretive_step/4,
-	failure_step/3,
-	up_body/2,
-	rename/2,
-	rename/3,
-	is_rename/2,
-	trace_derivation/1,
-	trace_level/1,
-	fasill_print_fca/1,
-	fasill_print_trace/1
+:- module(fasill_inference, [
+    query/2,
+    select_atom/4,
+    select_expression/4,
+    interpretable/1,
+    derivation/4,
+    inference/4,
+    simplification_step/4,
+    operational_step/4,
+    interpretive_step/4,
+    short_interpretive_step/4,
+    long_interpretive_step/4,
+    failure_step/3,
+    up_body/2,
+    rename/2,
+    rename/3,
+    is_rename/2,
+    trace_derivation/1,
+    trace_level/1,
+    fasill_print_fca/1,
+    fasill_print_trace/1
 ]).
 
-:- use_module(substitution).
-:- use_module(unification).
-:- use_module(environment).
-:- use_module(exceptions).
-:- use_module(builtin).
-:- use_module(term).
+:- use_module(fasill_substitution).
+:- use_module(fasill_unification).
+:- use_module(fasill_environment).
+:- use_module(fasill_exceptions).
+:- use_module(fasill_builtin).
+:- use_module(fasill_term).
 
-/** <module> Resolution
-    This library provides predicates for resolution.
+/** <module> Inference
+    This library provides predicates for inference.
 
     The procedural semantics of FASILL is defined in a stepwise manner. First,
     an operational stage is introduced which proceeds similarly to SLD
@@ -79,11 +79,11 @@
 %   answer.
 
 is_fuzzy_computed_answer(X) :-
-	environment:current_fasill_flag(symbolic, term(false, [])), !,
-	environment:lattice_call_member(X).
+    fasill_environment:current_fasill_flag(symbolic, term(false, [])), !,
+    fasill_environment:lattice_call_member(X).
 is_fuzzy_computed_answer(X) :-
-	interpretable(X),
-	\+select_expression(X, _, _, _).
+    interpretable(X),
+    \+select_expression(X, _, _, _).
 
 %!  select_atom(+Expression, ?ExprVar, ?Var, ?Atom)
 %
@@ -92,19 +92,19 @@ is_fuzzy_computed_answer(X) :-
 %   atom Atom.
 
 select_atom(term(Term, Args), term(Term, Args_), Var, Atom) :-
-	functor(Term, Op, _),
-	member(Op, ['@','&','|','#@','#&','#|','#/','#?']),
-	!,
-	select_atom(Args, Args_, Var, Atom).
+    functor(Term, Op, _),
+    member(Op, ['@','&','|','#@','#&','#|','#/','#?']),
+    !,
+    select_atom(Args, Args_, Var, Atom).
 select_atom(term(Term, Args), Var, Var, term(Term, Args)) :-
-	\+functor(Term, '#', 1),
-	\+environment:lattice_call_member(term(Term, Args)),
-	!.
+    \+functor(Term, '#', 1),
+    \+fasill_environment:lattice_call_member(term(Term, Args)),
+    !.
 select_atom([Term|Args], [Term_|Args], Var, Atom) :-
-	select_atom(Term, Term_, Var, Atom),
-	!.
+    select_atom(Term, Term_, Var, Atom),
+    !.
 select_atom([Term|Args], [Term|Args_], Var, Atom) :-
-	select_atom(Args, Args_, Var, Atom).
+    select_atom(Args, Args_, Var, Atom).
 
 %!  select_expression(+Expression, ?ExprVar, ?Var, ?Atom)
 %
@@ -113,28 +113,28 @@ select_atom([Term|Args], [Term|Args_], Var, Atom) :-
 %   instead of the atom Atom.
 
 select_expression(top, Var, Var, top) :-
-	!.
+    !.
 select_expression(bot, Var, Var, bot) :-
-	!.
+    !.
 select_expression(term(Term, Args), Var, Var, term(Term, Args)) :-
-	functor(Term, Op, _),
-	once(member(Op, ['@','&','|'])),
-	environment:maplist(lattice_call_member, Args),
-	!.
+    functor(Term, Op, _),
+    once(member(Op, ['@','&','|'])),
+    fasill_environment:maplist(lattice_call_member, Args),
+    !.
 select_expression(term(Term, Args), term(Term, Args_), Var, Expr) :-
-	select_expression(Args, Args_, Var, Expr).
+    select_expression(Args, Args_, Var, Expr).
 select_expression(sup(X, Y), Var, Var, sup(X, Y)) :-
-    environment:lattice_call_member(X),
-    environment:lattice_call_member(Y),
-	!.
+    fasill_environment:lattice_call_member(X),
+    fasill_environment:lattice_call_member(Y),
+    !.
 select_expression(sup(X, Y), ExprVar, Var, Atom) :-
-	select_expression([X,Y], ExprVar, Var, Atom),
-	!.
+    select_expression([X,Y], ExprVar, Var, Atom),
+    !.
 select_expression([Term|Args], [Term_|Args], Var, Atom) :-
-	select_expression(Term, Term_, Var, Atom),
-	!.
+    select_expression(Term, Term_, Var, Atom),
+    !.
 select_expression([Term|Args], [Term|Args_], Var, Atom) :-
-	select_expression(Args, Args_, Var, Atom).
+    select_expression(Args, Args_, Var, Atom).
 
 %!  select_simplifiable(+Expression, ?ExprVar, ?Var, ?Atom)
 %
@@ -144,20 +144,20 @@ select_expression([Term|Args], [Term|Args_], Var, Atom) :-
 
 select_simplifiable(term(Term, [X,Y]), Var, Var, term(Term, [X,Y])) :-
     functor(Term, '&', _),
-    environment:lattice_call_bot(Bot),
+    fasill_environment:lattice_call_bot(Bot),
     once((X == Bot ; X == bot ; Y == Bot ; Y == bot)),
-	!.
+    !.
 select_simplifiable(term(Term, Args), term(Term, Args_), Var, Expr) :-
     select_simplifiable(Args, Args_, Var, Expr),
-	!.
+    !.
 select_simplifiable(sup(X, Y), ExprVar, Var, Atom) :-
-	select_simplifiable([X,Y], ExprVar, Var, Atom),
-	!.
+    select_simplifiable([X,Y], ExprVar, Var, Atom),
+    !.
 select_simplifiable([Term|Args], [Term_|Args], Var, Atom) :-
-	select_simplifiable(Term, Term_, Var, Atom),
-	!.
+    select_simplifiable(Term, Term_, Var, Atom),
+    !.
 select_simplifiable([Term|Args], [Term|Args_], Var, Atom) :-
-	select_simplifiable(Args, Args_, Var, Atom).
+    select_simplifiable(Args, Args_, Var, Atom).
 
 %!  interpretable(+Expression)
 %
@@ -165,7 +165,7 @@ select_simplifiable([Term|Args], [Term|Args_], Var, Atom) :-
 %   (i.e., there is no atoms in the expression).
 
 interpretable(Expr) :-
-	\+select_atom(Expr, _, _, _).
+    \+select_atom(Expr, _, _, _).
 
 %!  query(+Goal, ?Answer)
 %
@@ -175,16 +175,16 @@ interpretable(Expr) :-
 
 :- dynamic check_success/0, trace_derivation/1, trace_level/1.
 query(Goal, Answer) :-
-	retractall(check_success),
-	retractall(trace_derivation),
-	retractall(trace_level(_)),
-	assertz(trace_level(0)),
-	substitution:init_substitution(Goal, Vars),
-	State = state(Goal, Vars),
-	(environment:current_fasill_flag(trace, term(true,[])) ->
-		assertz(trace_derivation(trace(0, 'GOAL', State))) ;
-		true),
-	derivation(top_level/0, State, Answer, _).
+    retractall(check_success),
+    retractall(trace_derivation),
+    retractall(trace_level(_)),
+    assertz(trace_level(0)),
+    fasill_substitution:init_substitution(Goal, Vars),
+    State = state(Goal, Vars),
+    (fasill_environment:current_fasill_flag(trace, term(true,[])) ->
+        assertz(trace_derivation(trace(0, 'GOAL', State))) ;
+        true),
+    derivation(top_level/0, State, Answer, _).
 
 %!  derivation(+From, +State1, ?State2, ?Info)
 %
@@ -193,8 +193,8 @@ query(Goal, Answer) :-
 %   each step.
 
 derivation(From, State1, State2, Info) :-
-	environment:current_fasill_flag(depth_limit, num(Depth)),
-	derivation(Depth, From, State1, State2, 0, _, Info).
+    fasill_environment:current_fasill_flag(depth_limit, num(Depth)),
+    derivation(Depth, From, State1, State2, 0, _, Info).
 
 %!  derivation(+DepthLimit, +From, +State1, ?State2, +CurrentDepth, ?ResultDepth, ?Info)
 %
@@ -203,35 +203,35 @@ derivation(From, State1, State2, Info) :-
 %   each step.
 
 derivation(Depth, _, State, State, N, Depth, []) :-
-	Depth > 0,
-	N >= Depth,
-	!.
+    Depth > 0,
+    N >= Depth,
+    !.
 derivation(_, _, exception(Error), exception(Error), N, N, []) :-
-	!.
+    !.
 derivation(_, _, state(Goal,Subs), State, N, N, []) :-
-	is_fuzzy_computed_answer(Goal),
-	!,
-	environment:lattice_call_bot(Bot),
-	(Bot == Goal ->
-		environment:current_fasill_flag(failure_steps, term(true, [])) ;
-		true),
-	State = state(Goal, Subs).
+    is_fuzzy_computed_answer(Goal),
+    !,
+    fasill_environment:lattice_call_bot(Bot),
+    (Bot == Goal ->
+        fasill_environment:current_fasill_flag(failure_steps, term(true, [])) ;
+        true),
+    State = state(Goal, Subs).
 derivation(Depth, From, State, State_, N, P, [X|Xs]) :-
-	(trace_level(Level) ->
-		Level_ is Level+1 ;
-		Level_ = false),
-	catch(
-		inference(From, State, State1, X),
-		Error,
-		(State1 = exception(Error), !)),
-	(environment:current_fasill_flag(trace, term(true,[])), State1 \= exception(_) ->
-		assertz(trace_derivation(trace(Level_, X, State1))) ;
-		true),
-	(Level_\= false ->
-		retractall(trace_level(_)), assertz(trace_level(Level_)) ;
-		true),
-	succ(N, M),
-	derivation(Depth, From, State1, State_, M, P, Xs).
+    (trace_level(Level) ->
+        Level_ is Level+1 ;
+        Level_ = false),
+    catch(
+        inference(From, State, State1, X),
+        Error,
+        (State1 = exception(Error), !)),
+    (fasill_environment:current_fasill_flag(trace, term(true,[])), State1 \= exception(_) ->
+        assertz(trace_derivation(trace(Level_, X, State1))) ;
+        true),
+    (Level_\= false ->
+        retractall(trace_level(_)), assertz(trace_level(Level_)) ;
+        true),
+    succ(N, M),
+    derivation(Depth, From, State1, State_, M, P, Xs).
 
 %!  inference(+From, +State1, ?State2, ?Info)
 %
@@ -240,9 +240,9 @@ derivation(Depth, From, State, State_, N, P, [X|Xs]) :-
 %   used in the derivation.
 
 inference(From, State, State_, Info) :-
-    environment:current_fasill_flag(simplification_steps, term(true,[])),
+    fasill_environment:current_fasill_flag(simplification_steps, term(true,[])),
     simplification_step(From, State, State_, Info),
-	!.
+    !.
 inference(From, State, State_, Info) :-
     operational_step(From, State, State_, Info).
 inference(From, state(Goal,Subs), State_, Info) :-
@@ -271,8 +271,8 @@ operational_step(_, State1, State2, Info) :-
 %   used in the derivation.
 
 simplification_step(_From, state(Goal,Subs), state(Goal2,Subs), 'IS*') :-
-    environment:lattice_call_bot(Bot),
-    environment:lattice_call_top(Top),
+    fasill_environment:lattice_call_bot(Bot),
+    fasill_environment:lattice_call_top(Top),
     deep_simplify(Bot, Top, Goal, Goal2),
     Goal \== Goal2.
 
@@ -283,41 +283,41 @@ simplification_step(_From, state(Goal,Subs), state(Goal2,Subs), 'IS*') :-
 %   used in the derivation.
 
 success_step(From, state(Goal,Subs), state(Goal_,Subs_), Name2/Arity) :-
-	select_atom(Goal, ExprVar, Var, Expr),
-	Expr = term(Name, Args),
-	length(Args, Arity),
-	(Name = Name2 ; 
-		(environment:current_fasill_flag(weak_unification, term(true, [])) -> 
-			environment:lattice_call_bot(Bot),
-			environment:similarity_between(Name, Name2, Arity, Sim, _),
-			Name \= Name2, Sim \== Bot)
-	),
-	% Builtin predicate
-	(builtin:is_builtin_predicate(Name2/Arity) -> (
-		builtin:eval_builtin_predicate(Name2/Arity, state(Goal,Subs), selected(ExprVar, Var, Expr), state(Goal_,Subs_))
-	) ; (
-		% User-defined predicate
-		(environment:program_has_predicate(Name2/Arity) -> (
-			environment:lattice_tnorm(Tnorm),
-			environment:lattice_call_top(Top),
-			environment:program_clause(Name2/Arity, fasill_rule(head(Head), Body, _)),
-			rename([Head,Body], [HeadR,BodyR]),
-			unification:unify(Expr, HeadR, _, state(TD, SubsExpr)),
-			(BodyR = empty ->
-				Var = TD ;
-				(	BodyR = body(Body_),
-					(TD == Top ->
-						Var = Body_ ;
-						Var = term('&'(Tnorm), [TD,Body_])))),
-			substitution:apply(SubsExpr, ExprVar, Goal_),
-			substitution:compose(Subs, SubsExpr, Subs_)
-		) ; (
-			% Undefined predicate
-			exceptions:existence_error(procedure, Name/Arity, From, Error),
-			retractall(check_success),
-			exceptions:throw_exception(Error)
-		))
-	)).
+    select_atom(Goal, ExprVar, Var, Expr),
+    Expr = term(Name, Args),
+    length(Args, Arity),
+    (Name = Name2 ; 
+        (fasill_environment:current_fasill_flag(weak_unification, term(true, [])) -> 
+            fasill_environment:lattice_call_bot(Bot),
+            fasill_environment:similarity_between(Name, Name2, Arity, Sim, _),
+            Name \= Name2, Sim \== Bot)
+    ),
+    % Builtin predicate
+    (fasill_builtin:is_builtin_predicate(Name2/Arity) -> (
+        fasill_builtin:eval_builtin_predicate(Name2/Arity, state(Goal,Subs), selected(ExprVar, Var, Expr), state(Goal_,Subs_))
+    ) ; (
+        % User-defined predicate
+        (fasill_environment:program_has_predicate(Name2/Arity) -> (
+            fasill_environment:lattice_tnorm(Tnorm),
+            fasill_environment:lattice_call_top(Top),
+            fasill_environment:program_clause(Name2/Arity, fasill_rule(head(Head), Body, _)),
+            rename([Head,Body], [HeadR,BodyR]),
+            fasill_unification:unify(Expr, HeadR, _, state(TD, SubsExpr)),
+            (BodyR = empty ->
+                Var = TD ;
+                (	BodyR = body(Body_),
+                    (TD == Top ->
+                        Var = Body_ ;
+                        Var = term('&'(Tnorm), [TD,Body_])))),
+            fasill_substitution:apply(SubsExpr, ExprVar, Goal_),
+            fasill_substitution:compose(Subs, SubsExpr, Subs_)
+        ) ; (
+            % Undefined predicate
+            fasill_exceptions:existence_error(procedure, Name/Arity, From, Error),
+            retractall(check_success),
+            fasill_exceptions:throw_exception(Error)
+        ))
+    )).
 
 %!  failure_step(+State1, ?State2, ?Info)
 %
@@ -326,9 +326,9 @@ success_step(From, state(Goal,Subs), state(Goal_,Subs_), Name2/Arity) :-
 %   failure.
 
 failure_step(state(Goal,Subs), state(Goal_,Subs), 'FS') :-
-	environment:current_fasill_flag(failure_steps, term(true, [])),
-	environment:lattice_call_bot(Bot),
-	select_atom(Goal, Goal_, Bot, _).
+    fasill_environment:current_fasill_flag(failure_steps, term(true, [])),
+    fasill_environment:lattice_call_bot(Bot),
+    select_atom(Goal, Goal_, Bot, _).
 
 %!  short_interpretive_step(+From, +State1, ?State2, ?Info)
 %
@@ -338,10 +338,10 @@ failure_step(state(Goal,Subs), state(Goal_,Subs), 'FS') :-
 %   perform admissible steps.
 
 short_interpretive_step(From, state(Goal,Subs), state(TD,Subs), 'IS') :-
-	deep_interpret(Goal,TD) ->
-		true ;
-		type_error(truth_degree, Goal, From, Error),
-		throw_exception(Error).
+    deep_interpret(Goal,TD) ->
+        true ;
+        fasill_exceptions:type_error(truth_degree, Goal, From, Error),
+        fasill_exceptions:throw_exception(Error).
 
 %!  long_interpretive_step(+From, +State1, ?State2, ?Info)
 %
@@ -351,10 +351,10 @@ short_interpretive_step(From, state(Goal,Subs), state(TD,Subs), 'IS') :-
 % steps.
 
 long_interpretive_step(From, state(Goal,Subs), state(Goal_,Subs), 'is') :-
-	select_expression(Goal, Goal_, Var, Expr) ->
-		interpret(Expr, Var) ;
-		type_error(truth_degree, Goal, From, Error),
-		throw_exception(Error).
+    select_expression(Goal, Goal_, Var, Expr) ->
+        interpret(Expr, Var) ;
+        fasill_exceptions:type_error(truth_degree, Goal, From, Error),
+        fasill_exceptions:throw_exception(Error).
 
 %!  interpretive_step(+From, +State1, ?State2, ?Info)
 %
@@ -364,11 +364,11 @@ long_interpretive_step(From, state(Goal,Subs), state(Goal_,Subs), 'is') :-
 %   admissible steps.
 
 interpretive_step(From, State1, State2, Info) :-
-	environment:current_fasill_flag(interpretive_steps, term(short, [])),
-	!,
-	short_interpretive_step(From, State1, State2, Info).
+    fasill_environment:current_fasill_flag(interpretive_steps, term(short, [])),
+    !,
+    short_interpretive_step(From, State1, State2, Info).
 interpretive_step(From, State1, State2, Info) :-
-	long_interpretive_step(From, State1, State2, Info).
+    long_interpretive_step(From, State1, State2, Info).
 
 %!  interpret(+Expression, ?Result)
 % 
@@ -376,16 +376,16 @@ interpretive_step(From, State1, State2, Info) :-
 %   Result is the resulting expression.
 
 interpret(bot, Bot) :-
-	!,
-	environment:lattice_call_bot(Bot).
+    !,
+    fasill_environment:lattice_call_bot(Bot).
 interpret(top, Top) :-
-	!,
-	environment:lattice_call_top(Top).
+    !,
+    fasill_environment:lattice_call_top(Top).
 interpret(sup(X, Y), Z) :-
-	!,
-	environment:lattice_call_supremum(X, Y, Z).
+    !,
+    fasill_environment:lattice_call_supremum(X, Y, Z).
 interpret(term(Op, Args), Result) :-
-	environment:lattice_call_connective(Op, Args, Result).
+    fasill_environment:lattice_call_connective(Op, Args, Result).
 
 %!  deep_interpret(+Expression, ?Result)
 % 
@@ -393,23 +393,23 @@ interpret(term(Op, Args), Result) :-
 %   Result is the resulting expression.
 
 deep_interpret(X, X) :-
-	environment:lattice_call_member(X),
-	!.
+    fasill_environment:lattice_call_member(X),
+    !.
 deep_interpret(bot, Bot) :-
-	!,
-	environment:lattice_call_bot(Bot).
+    !,
+    fasill_environment:lattice_call_bot(Bot).
 deep_interpret(top, Top) :-
-	!,
-	environment:lattice_call_top(Top).
+    !,
+    fasill_environment:lattice_call_top(Top).
 deep_interpret(sup(X, Y), Z) :-
-	!,
-	environment:lattice_call_supremum(X, Y, Z).
+    !,
+    fasill_environment:lattice_call_supremum(X, Y, Z).
 deep_interpret(term(Op, Args), Result) :-
-	Op =.. [F|_],
-	once(member(F, ['&','|','@','#&','#|','#@','#?'])),
-	maplist(deep_interpret, Args, Args2),
-	catch((environment:lattice_call_connective(Op, Args2, Result) ; Result = term(Op, Args2)), _, Result = term(Op, Args2)),
-	!.
+    Op =.. [F|_],
+    once(member(F, ['&','|','@','#&','#|','#@','#?'])),
+    maplist(deep_interpret, Args, Args2),
+    catch((fasill_environment:lattice_call_connective(Op, Args2, Result) ; Result = term(Op, Args2)), _, Result = term(Op, Args2)),
+    !.
 deep_interpret(X, X).
 
 %!  deep_simplify(+Bot, +Top, +Expression, ?Result)
@@ -418,36 +418,36 @@ deep_interpret(X, X).
 %   Result is the simplified expression.
 
 deep_simplify(Bot, Top, term(Op, [X,Y]), Result) :- 
-	Op =.. [F|_],
-	once(member(F, ['&','#&'])),
-	deep_simplify(Bot, Top, X, X2),
-	((X2 == Bot ; X2 == bot) ->
-		Result = Bot ;
-		((X2 == Top ; X2 == top) ->
-			deep_simplify(Bot, Top, Y, Result) ;
-			deep_simplify(Bot, Top, Y, Y2),
-			((Y2 == Bot ; Y2 == bot) ->
-				Result = Bot ;
-				((Y2 == Top ; Y2 == top) ->
-					Result = X2 ;
-					Result = term(Op, [X2,Y2]))))),
-	!.
+    Op =.. [F|_],
+    once(member(F, ['&','#&'])),
+    deep_simplify(Bot, Top, X, X2),
+    ((X2 == Bot ; X2 == bot) ->
+        Result = Bot ;
+        ((X2 == Top ; X2 == top) ->
+            deep_simplify(Bot, Top, Y, Result) ;
+            deep_simplify(Bot, Top, Y, Y2),
+            ((Y2 == Bot ; Y2 == bot) ->
+                Result = Bot ;
+                ((Y2 == Top ; Y2 == top) ->
+                    Result = X2 ;
+                    Result = term(Op, [X2,Y2]))))),
+    !.
 deep_simplify(Bot, Top, term(Op, [X,Y]), Result) :- 
-	Op =.. [F|_],
-	once(member(F, ['|','#|'])),
-	deep_simplify(Bot, Top, X, X2),
-	deep_simplify(Bot, Top, Y, Y2),
-	((X2 == Bot ; X2 == bot) ->
-		Result = Y2 ;
-		((Y2 == Bot ; Y2 == bot) ->
-			Result = X2 ;
-			Result = term(Op, [X2,Y2]))),
-	!.
+    Op =.. [F|_],
+    once(member(F, ['|','#|'])),
+    deep_simplify(Bot, Top, X, X2),
+    deep_simplify(Bot, Top, Y, Y2),
+    ((X2 == Bot ; X2 == bot) ->
+        Result = Y2 ;
+        ((Y2 == Bot ; Y2 == bot) ->
+            Result = X2 ;
+            Result = term(Op, [X2,Y2]))),
+    !.
 deep_simplify(Bot, Top, term(Op, Args), term(Op, Args2)) :- 
-	Op =.. [F|_],
-	once(member(F, ['@','#@','#?'])),
-	maplist(deep_simplify(Bot, Top), Args, Args2),
-	!.
+    Op =.. [F|_],
+    once(member(F, ['@','#@','#?'])),
+    maplist(deep_simplify(Bot, Top), Args, Args2),
+    !.
 deep_simplify(_, _, X, X).
 
 %!  up_body(+Expression, ?ExpressionUp)
@@ -457,11 +457,11 @@ deep_simplify(_, _, X, X).
 %   by the top of the current lattice.
 
 up_body(Expr, ExprUp) :-
-	select_atom(Expr, ExprTop, top, _),
-	!,
-	up_body(ExprTop, ExprUp).
+    select_atom(Expr, ExprTop, top, _),
+    !,
+    up_body(ExprTop, ExprUp).
 up_body(Expr, ExprUp) :-
-	deep_interpret(Expr, ExprUp).
+    deep_interpret(Expr, ExprUp).
 
 %!  rename(+Expression, ?Renamed)
 %
@@ -470,31 +470,31 @@ up_body(Expr, ExprUp) :-
 %   with fresh variables.
 
 rename(X, Y) :-
-	substitution:empty_substitution(Sub),
-	rename(X, Y, Sub, _).
+    fasill_substitution:empty_substitution(Sub),
+    rename(X, Y, Sub, _).
 
 rename(var('_'), var('_'), Sub, Sub) :-
-	!.
+    !.
 rename(var(X), Var, Sub, Sub) :-
-	substitution:get_substitution(Sub, X, Var),
-	!.
+    fasill_substitution:get_substitution(Sub, X, Var),
+    !.
 rename(var(X), Var, Sub0, Sub1) :- 
-	!,
-	environment:fresh_variable(Var),
-	substitution:put_substitution(Sub0, X, Var, Sub1).
+    !,
+    fasill_environment:fresh_variable(Var),
+    fasill_substitution:put_substitution(Sub0, X, Var, Sub1).
 rename(term(Name, Xs), term(Name, Ys), Sub0, Sub1) :-
-	!, 
-	rename(Xs, Ys, Sub0, Sub1).
+    !, 
+    rename(Xs, Ys, Sub0, Sub1).
 rename([], [], Sub, Sub) :- !.
 rename([X|Xs], [Y|Ys], Sub0, Sub3) :-
-	!, rename(X, Y, Sub0, Sub2),
-	rename(Xs, Ys, Sub2, Sub3).
+    !, rename(X, Y, Sub0, Sub2),
+    rename(Xs, Ys, Sub2, Sub3).
 rename(X, Y, Sub0, Sub1) :-
-	compound(X),
-	!,
-	X =.. [Name|Args],
-	rename(Args, Args_, Sub0, Sub1),
-	Y =.. [Name|Args_].
+    compound(X),
+    !,
+    X =.. [Name|Args],
+    rename(Args, Args_, Sub0, Sub1),
+    Y =.. [Name|Args_].
 rename(X, X, Sub, Sub).
 
 %!  rename(+Variables, +Expression, ?Renamed)
@@ -504,35 +504,35 @@ rename(X, X, Sub, Sub).
 %   fresh variables.
 
 rename(V, X, Y) :-
-	substitution:empty_substitution(Sub),
-	rename(V, X, Y, Sub, _).
+    fasill_substitution:empty_substitution(Sub),
+    rename(V, X, Y, Sub, _).
 
 rename(_, var('_'), var('_'), Sub, Sub) :-
-	!.
+    !.
 rename(V, var(X), Var, Sub, Sub) :-
-	member(var(X), V),
-	substitution:get_substitution(Sub, X, Var),
-	!.
+    member(var(X), V),
+    fasill_substitution:get_substitution(Sub, X, Var),
+    !.
 rename(V, var(X), Var, Sub0, Sub1) :- 
-	member(var(X), V),
-	!,
-	environment:fresh_variable(Var),
-	substitution:put_substitution(Sub0, X, Var, Sub1).
+    member(var(X), V),
+    !,
+    fasill_environment:fresh_variable(Var),
+    fasill_substitution:put_substitution(Sub0, X, Var, Sub1).
 rename(V, term(Name, Xs), term(Name, Ys), Sub0, Sub1) :-
-	!,
-	rename(V, Xs, Ys, Sub0, Sub1).
+    !,
+    rename(V, Xs, Ys, Sub0, Sub1).
 rename(_, [], [], Sub, Sub) :-
-	!.
+    !.
 rename(V, [X|Xs], [Y|Ys], Sub0, Sub3) :-
-	!,
-	rename(V, X, Y, Sub0, Sub2),
-	rename(V, Xs, Ys, Sub2, Sub3).
+    !,
+    rename(V, X, Y, Sub0, Sub2),
+    rename(V, Xs, Ys, Sub2, Sub3).
 rename(V, X, Y, Sub0, Sub1) :-
-	compound(X),
-	!,
-	X =.. [Name|Args],
-	rename(V, Args, Args_, Sub0, Sub1),
-	Y =.. [Name|Args_].
+    compound(X),
+    !,
+    X =.. [Name|Args],
+    rename(V, Args, Args_, Sub0, Sub1),
+    Y =.. [Name|Args_].
 rename(_, X, X, Sub, Sub).
 
 %!  is_rename(+Term1, +Term2)
@@ -540,29 +540,29 @@ rename(_, X, X, Sub, Sub).
 %   This predicate succeeds when Term2 is a renamed version of Term1.
 
 is_rename(X, Y) :-
-	substitution:empty_substitution(Sub),
-	is_rename(X, Y, Sub, _).
+    fasill_substitution:empty_substitution(Sub),
+    is_rename(X, Y, Sub, _).
 is_rename(var(X), var(Y), Sub1, Sub3) :-
-	!,
-	(\+substitution:get_substitution(Sub1, X, _),
-		substitution:put_substitution(Sub1, X, Y, Sub2) ;
-		substitution:get_substitution(Sub1, X, Y),
-		Sub2 = Sub1),
-	(\+substitution:get_substitution(Sub2, Y, _),
-		substitution:put_substitution(Sub2, Y, X, Sub3) ;
-		substitution:get_substitution(Sub2, Y, X),
-		Sub3 = Sub2).
+    !,
+    (\+fasill_substitution:get_substitution(Sub1, X, _),
+        fasill_substitution:put_substitution(Sub1, X, Y, Sub2) ;
+        fasill_substitution:get_substitution(Sub1, X, Y),
+        Sub2 = Sub1),
+    (\+fasill_substitution:get_substitution(Sub2, Y, _),
+        fasill_substitution:put_substitution(Sub2, Y, X, Sub3) ;
+        fasill_substitution:get_substitution(Sub2, Y, X),
+        Sub3 = Sub2).
 is_rename(term(Name, Args1), term(Name, Args2), Sub1, Sub2) :-
-	!,
-	is_rename(Args1, Args2, Sub1, Sub2).
+    !,
+    is_rename(Args1, Args2, Sub1, Sub2).
 is_rename([], [], Sub, Sub) :-
-	!.
+    !.
 is_rename([X|Xs], [Y|Ys], Sub1, Sub3) :-
-	!,
-	is_rename(X, Y, Sub1, Sub2),
-	is_rename(Xs, Ys, Sub2, Sub3).
+    !,
+    is_rename(X, Y, Sub1, Sub2),
+    is_rename(Xs, Ys, Sub2, Sub3).
 is_rename(X, Y, Sub, Sub) :-
-	X == Y.
+    X == Y.
 
 %!  fasill_print_fca(+State)
 % 
@@ -570,29 +570,29 @@ is_rename(X, Y, Sub, Sub) :-
 %   standard output.
 
 fasill_print_fca(state(TD,Sub)) :-
-	nonvar(TD),
-	nonvar(Sub),
-	write('<'),
-	term:fasill_print_term(TD),
-	write(', '),
-	substitution:fasill_print_substitution(Sub),
-	write('>').
+    nonvar(TD),
+    nonvar(Sub),
+    write('<'),
+    fasill_term:fasill_print_term(TD),
+    write(', '),
+    fasill_substitution:fasill_print_substitution(Sub),
+    write('>').
 fasill_print_fca(exception(Error)) :-
-	write('uncaught exception in derivation: '),
-	term:fasill_print_term(Error).
+    write('uncaught exception in derivation: '),
+    fasill_term:fasill_print_term(Error).
 
 %!  fasill_print_trace(+Trace)
 % 
 %   This predicate writes a FASILL trace Trace for the standard output.
 
 fasill_print_trace(level(0)) :-
-	!.
+    !.
 fasill_print_trace(level(N)) :-
-	succ(M, N), !,
-	write('  '), 
-	fasill_print_trace(level(M)).
+    succ(M, N), !,
+    write('  '), 
+    fasill_print_trace(level(M)).
 fasill_print_trace(trace(Level, Info, State)) :-
-	fasill_print_trace(level(Level)),
-	write(Info),
-	write(' '),
-	fasill_print_fca(State).
+    fasill_print_trace(level(Level)),
+    write(Info),
+    write(' '),
+    fasill_print_fca(State).

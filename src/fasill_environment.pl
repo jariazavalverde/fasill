@@ -33,56 +33,56 @@
     POSSIBILITY OF SUCH DAMAGE.
 */
 
-:- module(environment, [
-	% flags
-	current_fasill_flag/2,
-	is_fasill_flag_value/2,
-	set_fasill_flag/2,
-	% rules
-	fasill_rule/3,
-	program_clause/2,
-	program_rule_id/2,
-	program_consult/1,
-	program_import_prolog/1,
-	program_has_predicate/1,
-	query_consult/2,
-	sort_rules_by_id/0,
-	fasill_print_rule/1,
-	% lattices
-	lattice_tnorm/1,
-	lattice_tconorm/1,
-	lattice_call_bot/1,
-	lattice_call_top/1,
-	lattice_call_member/1,
-	lattice_call_members/1,
-	lattice_call_members/2,
-	lattice_call_exclude/1,
-	lattice_call_leq/2,
-	lattice_call_distance/3,
-	lattice_call_connective/3,
-	lattice_reduce_connective/3,
-	lattice_consult/1,
-	% similarities
-	similarity_tnorm/1,
-	similarity_between/5,
-	similarity_consult/1,
-	% test cases (tuning)
-	testcases_consult/1,
-	fasill_testcase/2,
-	fasill_testcase_precondition/1,
-	% variables
-	fresh_variable/1
+:- module(fasill_environment, [
+    % flags
+    current_fasill_flag/2,
+    is_fasill_flag_value/2,
+    set_fasill_flag/2,
+    % rules
+    fasill_rule/3,
+    program_clause/2,
+    program_rule_id/2,
+    program_consult/1,
+    program_import_prolog/1,
+    program_has_predicate/1,
+    query_consult/2,
+    sort_rules_by_id/0,
+    fasill_print_rule/1,
+    % lattices
+    lattice_tnorm/1,
+    lattice_tconorm/1,
+    lattice_call_bot/1,
+    lattice_call_top/1,
+    lattice_call_member/1,
+    lattice_call_members/1,
+    lattice_call_members/2,
+    lattice_call_exclude/1,
+    lattice_call_leq/2,
+    lattice_call_distance/3,
+    lattice_call_connective/3,
+    lattice_reduce_connective/3,
+    lattice_consult/1,
+    % similarities
+    similarity_tnorm/1,
+    similarity_between/5,
+    similarity_consult/1,
+    % test cases (tuning)
+    testcases_consult/1,
+    fasill_testcase/2,
+    fasill_testcase_precondition/1,
+    % variables
+    fresh_variable/1
 ]).
 
-:- use_module(parser).
-:- use_module(exceptions).
-:- use_module(resolution).
-:- use_module(term).
+:- use_module(fasill_parser).
+:- use_module(fasill_exceptions).
+:- use_module(fasill_inference).
+:- use_module(fasill_term).
 
 /** <module> Environment
-    This library provides predicates for environment manipulation (consulting,
+    This library provides predicates for environment manipulation (consulting
     programs, lattices and similarity relations).
-	
+    
     A FASILL program is a tuple $\langle\Pi, \mathcal{R}, L\rangle$ where $\Pi$
     is a set of rules, $\mathcal{R}$ is a similarity relation between the
     elements of the signature $\Sigma$ of $\Pi$, and $L$ is a complete lattice.
@@ -109,18 +109,18 @@
 % DYNAMIC
 
 :- dynamic
-	fasill_flag/3,
-	fasill_rule/3,
-	fasill_testcase/2,
-	fasill_testcase_precondition/1,
-	fasill_predicate/1,
-	fasill_lattice_tnorm/1,
-	fasill_similarity_tnorm/1,
-	fasill_similarity_tconorm/1,
-	fasill_similarity/4,
-	fasill_warning/1,
-	current_lattice_top/1,
-	current_lattice_bot/1.
+    fasill_flag/3,
+    fasill_rule/3,
+    fasill_testcase/2,
+    fasill_testcase_precondition/1,
+    fasill_predicate/1,
+    fasill_lattice_tnorm/1,
+    fasill_similarity_tnorm/1,
+    fasill_similarity_tconorm/1,
+    fasill_similarity/4,
+    fasill_warning/1,
+    current_lattice_top/1,
+    current_lattice_bot/1.
 
 % FLAGS
 
@@ -149,7 +149,7 @@ fasill_flag(operators, [term(false,[]), term(true,[])], term(true,[])).
 %   current value of the flag in the environment.
 
 current_fasill_flag(Flag, Value) :-
-	fasill_flag(Flag, _, Value).
+    fasill_flag(Flag, _, Value).
 
 %!  is_fasill_flag_value(+Flag, +Value)
 %
@@ -157,18 +157,18 @@ current_fasill_flag(Flag, Value) :-
 %   value for the flag.
 
 is_fasill_flag_value(Flag, Value) :-
-	atomic(Flag), nonvar(Value),
-	fasill_flag(Flag, Values, _),
-	is_list(Values),
-	!,
-	member(Value, Values),
-	!.
+    atomic(Flag), nonvar(Value),
+    fasill_flag(Flag, Values, _),
+    is_list(Values),
+    !,
+    member(Value, Values),
+    !.
 is_fasill_flag_value(Flag, Value) :-
-	atomic(Flag), nonvar(Value),
-	fasill_flag(Flag, td, _),
-	!,
-	(Value == bot ; Value == top ; lattice_call_member(Value)),
-	!.
+    atomic(Flag), nonvar(Value),
+    fasill_flag(Flag, td, _),
+    !,
+    (Value == bot ; Value == top ; lattice_call_member(Value)),
+    !.
 
 %!  set_fasill_flag(+Flag, +Value)
 %
@@ -177,11 +177,11 @@ is_fasill_flag_value(Flag, Value) :-
 %   current value for the flag.
 
 set_fasill_flag(Flag, Value) :-
-	atomic(Flag), nonvar(Value),
-	is_fasill_flag_value(Flag, Value),
-	fasill_flag(Flag, Values, _),
-	retractall(fasill_flag(Flag, _, _)),
-	assertz(fasill_flag(Flag, Values, Value)).
+    atomic(Flag), nonvar(Value),
+    is_fasill_flag_value(Flag, Value),
+    fasill_flag(Flag, Values, _),
+    retractall(fasill_flag(Flag, _, _)),
+    assertz(fasill_flag(Flag, Values, Value)).
 
 % RULES MANIPULATION
 
@@ -191,8 +191,8 @@ set_fasill_flag(Flag, Value) :-
 %   whose indicator is Indicator.
 
 program_clause(Name/Arity, fasill_rule(head(term(Name, Args)), Body, Info)) :-
-	fasill_rule(head(term(Name, Args)), Body, Info),
-	length(Args, Arity).
+    fasill_rule(head(term(Name, Args)), Body, Info),
+    length(Args, Arity).
 
 %!  program_rule_id(+Rule, ?Id)
 %
@@ -206,17 +206,17 @@ program_rule_id(fasill_rule(_,_,Info), Id) :- member(id(Id), Info).
 %   environment. This predicate cleans the previous rules.
 
 program_consult(Path) :-
-	retractall(fasill_rule(_,_,_)),
-	retractall(fasill_predicate(_)),
-	file_program(Path, Rules),
-	(   member(Rule, Rules),
-		assertz(Rule),
-		Rule = fasill_rule(head(term(Name,Args)),_,_),
-		length(Args,Arity),
-		(catch(fasill_predicate(Name/Arity), _, fail) ->
-			true ;
-			assertz(fasill_predicate(Name/Arity))),
-		fail ; true).
+    retractall(fasill_rule(_,_,_)),
+    retractall(fasill_predicate(_)),
+    fasill_parser:file_program(Path, Rules),
+    (   member(Rule, Rules),
+        assertz(Rule),
+        Rule = fasill_rule(head(term(Name,Args)),_,_),
+        length(Args,Arity),
+        (catch(fasill_predicate(Name/Arity), _, fail) ->
+            true ;
+            assertz(fasill_predicate(Name/Arity))),
+        fail ; true).
 
 %!  program_import_prolog(+Path)
 %
@@ -227,30 +227,30 @@ program_consult(Path) :-
 last_prolog_id(0).
 
 program_import_prolog(Path) :-
-	set_prolog_flag(double_quotes, atom),
-	open(Path, read, Stream),
-	once(program_import_prolog_(Stream)).
+    set_prolog_flag(double_quotes, atom),
+    open(Path, read, Stream),
+    once(program_import_prolog_(Stream)).
 program_import_prolog_(Stream) :-
-	read(Stream, PrologTerm),
-	PrologTerm \= end_of_file,
-	from_prolog(PrologTerm, FasillTerm),
-	(FasillTerm = term(':-', [Head,Body_]) ->
-		Body = body(Body_) ;
-		Head = FasillTerm, Body = empty),
-	last_prolog_id(N),
-	succ(N, M),
-	retractall(last_prolog_id(_)),
-	asserta(last_prolog_id(M)),
-	atom_number(A, N),
-	atom_concat('Pr', A, Id),
-	Rule = fasill_rule(head(Head), Body, [id(Id), syntax(prolog)]),
-	Head = term(Name, Args),
-	assertz(Rule),
-	length(Args, Arity),
-	(catch(fasill_predicate(Name/Arity), _, fail) ->
-		true ;
-		assertz(fasill_predicate(Name/Arity))),
-	program_import_prolog_(Stream).
+    read(Stream, PrologTerm),
+    PrologTerm \= end_of_file,
+    from_prolog(PrologTerm, FasillTerm),
+    (FasillTerm = term(':-', [Head,Body_]) ->
+        Body = body(Body_) ;
+        Head = FasillTerm, Body = empty),
+    last_prolog_id(N),
+    succ(N, M),
+    retractall(last_prolog_id(_)),
+    asserta(last_prolog_id(M)),
+    atom_number(A, N),
+    atom_concat('Pr', A, Id),
+    Rule = fasill_rule(head(Head), Body, [id(Id), syntax(prolog)]),
+    Head = term(Name, Args),
+    assertz(Rule),
+    length(Args, Arity),
+    (catch(fasill_predicate(Name/Arity), _, fail) ->
+        true ;
+        assertz(fasill_predicate(Name/Arity))),
+    program_import_prolog_(Stream).
 program_import_prolog_(Stream) :-
     close(Stream).
 
@@ -260,8 +260,8 @@ program_import_prolog_(Stream) :-
 %   environment and runs it.
 
 query_consult(Path, State) :-
-	file_query(Path, Query),
-	query(Query, State).
+    fasill_parser:file_query(Path, Query),
+    fasill_inference:query(Query, State).
 
 %!  program_has_predicate(?Indicator)
 %
@@ -269,12 +269,12 @@ query_consult(Path, State) :-
 %   asserted in the program loaded in the current environment.
 
 program_has_predicate(Name/Arity) :-
-	(fasill_predicate(Name/Arity) ;
-	lattice_call_bot(Bot),
-	similarity_between(Name, Other, Arity, TD, _),
-	TD \= Bot,
-	fasill_predicate(Other/Arity)),
-	!.
+    (fasill_predicate(Name/Arity) ;
+    lattice_call_bot(Bot),
+    similarity_between(Name, Other, Arity, TD, _),
+    TD \= Bot,
+    fasill_predicate(Other/Arity)),
+    !.
 
 %!  sort_rules_by_id
 %
@@ -282,12 +282,12 @@ program_has_predicate(Name/Arity) :-
 %   asserts them ordered by the identifier.
 
 sort_rules_by_id :-
-	findall(fasill_rule(X,Y,Z), fasill_rule(X,Y,Z), Rules),
-	predsort(compare_rule_id, Rules, Sorted),
-	retractall(fasill_rule(_,_,_)),
-	( member(Rule, Sorted),
-		assertz(Rule),
-		fail ; true ).
+    findall(fasill_rule(X,Y,Z), fasill_rule(X,Y,Z), Rules),
+    predsort(compare_rule_id, Rules, Sorted),
+    retractall(fasill_rule(_,_,_)),
+    ( member(Rule, Sorted),
+        assertz(Rule),
+        fail ; true ).
 
 %!  fasill_print_rule(+Rule)
 % 
@@ -295,16 +295,16 @@ sort_rules_by_id :-
 
 % Fact
 fasill_print_rule(fasill_rule(head(Head), empty, _Info)) :-
-	fasill_print_term(Head),
-	write('.'), !.
+    fasill_print_term(Head),
+    write('.'), !.
 % Rule
 fasill_print_rule(fasill_rule(head(Head), body(Body), Info)) :-
-	fasill_print_term(Head),
-	(member(syntax(fasill), Info) ->
-		write(' <- ') ;
-		write(' :- ')),
-	fasill_print_term(Body),
-	write('.'), !.
+    fasill_print_term(Head),
+    (member(syntax(fasill), Info) ->
+        write(' <- ') ;
+        write(' :- ')),
+    fasill_print_term(Body),
+    write('.'), !.
 
 %!  compare_rule_id(?Delta, +Rule1, +Rule2)
 %
@@ -312,13 +312,13 @@ fasill_print_rule(fasill_rule(head(Head), body(Body), Info)) :-
 %   rules Rule1 and Rule2, compared by their identifiers.
 
 compare_rule_id(Delta, X, Y) :-
-	X = fasill_rule(_,_,[id(IdX)|_]),
-	Y = fasill_rule(_,_,[id(IdY)|_]),
-	atomic_list_concat(Xs, '-', IdX),
-	atomic_list_concat(Ys, '-', IdY),
-	maplist(atom_number, Xs, Xs_),
-	maplist(atom_number, Ys, Ys_),
-	compare(Delta, Xs_, Ys_).
+    X = fasill_rule(_,_,[id(IdX)|_]),
+    Y = fasill_rule(_,_,[id(IdY)|_]),
+    atomic_list_concat(Xs, '-', IdX),
+    atomic_list_concat(Ys, '-', IdY),
+    maplist(atom_number, Xs, Xs_),
+    maplist(atom_number, Ys, Ys_),
+    compare(Delta, Xs_, Ys_).
 
 % LATTICES
 
@@ -328,16 +328,16 @@ compare_rule_id(Delta, X, Y) :-
 %   environment.
 
 lattice_tnorm(Tnorm) :-
-	catch(tnorm(Tnorm), _, fail),
-	!.
+    catch(tnorm(Tnorm), _, fail),
+    !.
 lattice_tnorm(Tnorm) :-
-	current_predicate(Name/3),
-	atom_concat(and_, Tnorm, Name),
-	!.
+    current_predicate(Name/3),
+    atom_concat(and_, Tnorm, Name),
+    !.
 lattice_tnorm(Tnorm) :-
-	atom_concat(and_, Tnorm, Name),
-	existence_error(procedure, Name/3, lattice/0, Error),
-	throw_exception(Error).
+    atom_concat(and_, Tnorm, Name),
+    fasill_exceptions:existence_error(procedure, Name/3, lattice/0, Error),
+    fasill_exceptions:throw_exception(Error).
 
 %!  lattice_tconorm(?Tconorm)
 %
@@ -345,16 +345,16 @@ lattice_tnorm(Tnorm) :-
 %   the environment.
 
 lattice_tconorm(Tconorm) :-
-	catch(tconorm(Tconorm), _, fail),
-	!.
+    catch(tconorm(Tconorm), _, fail),
+    !.
 lattice_tconorm(Tconorm) :-
-	current_predicate(Name/3),
-	atom_concat(or_, Tconorm, Name),
-	!.
+    current_predicate(Name/3),
+    atom_concat(or_, Tconorm, Name),
+    !.
 lattice_tconorm(Tconorm) :-
-	atom_concat(or_, Tconorm, Name),
-	existence_error(procedure, Name/3, lattice/0, Error),
-	throw_exception(Error).
+    atom_concat(or_, Tconorm, Name),
+    fasill_exceptions:existence_error(procedure, Name/3, lattice/0, Error),
+    fasill_exceptions:throw_exception(Error).
 
 %!  lattice_call_bot(-Bot)
 %
@@ -364,17 +364,17 @@ lattice_tconorm(Tconorm) :-
 :- dynamic(current_lattice_bot/1).
 
 lattice_call_bot(Bot) :-
-	current_lattice_bot(Bot),
-	!.
+    current_lattice_bot(Bot),
+    !.
 lattice_call_bot(Bot) :-
-	current_predicate(bot/1),
-	!,
-	bot(Prolog),
-	term:from_prolog(Prolog, Bot),
-	asserta(current_lattice_bot(Bot)).
+    current_predicate(bot/1),
+    !,
+    bot(Prolog),
+    fasill_term:from_prolog(Prolog, Bot),
+    asserta(current_lattice_bot(Bot)).
 lattice_call_bot(_) :-
-	exceptions:existence_error(procedure, bot/1, lattice/0, Error),
-	exceptions:throw_exception(Error).
+    fasill_exceptions:existence_error(procedure, bot/1, lattice/0, Error),
+    fasill_exceptions:throw_exception(Error).
 
 %!  lattice_call_top(-Top)
 %
@@ -384,17 +384,17 @@ lattice_call_bot(_) :-
 :- dynamic(current_lattice_top/1).
 
 lattice_call_top(Top) :-
-	current_lattice_top(Top),
-	!.
+    current_lattice_top(Top),
+    !.
 lattice_call_top(Top) :-
-	current_predicate(top/1),
-	!,
-	top(Prolog),
-	term:from_prolog(Prolog, Top),
-	asserta(current_lattice_top(Top)).
+    current_predicate(top/1),
+    !,
+    top(Prolog),
+    fasill_term:from_prolog(Prolog, Top),
+    asserta(current_lattice_top(Top)).
 lattice_call_top(_) :-
-	exceptions:existence_error(procedure, top/1, lattice/0, Error),
-	exceptions:throw_exception(Error).
+    fasill_exceptions:existence_error(procedure, top/1, lattice/0, Error),
+    fasill_exceptions:throw_exception(Error).
 
 %!  lattice_call_member(+Member)
 %
@@ -402,16 +402,16 @@ lattice_call_top(_) :-
 %   the environment.
 
 lattice_call_member(var(_)) :-
-	!,
-	fail.
+    !,
+    fail.
 lattice_call_member(Member) :-
-	current_predicate(member/1),
-	!,
-	term:to_prolog(Member, Prolog),
-	member(Prolog).
+    current_predicate(member/1),
+    !,
+    fasill_term:to_prolog(Member, Prolog),
+    member(Prolog).
 lattice_call_member(_) :-
-	exceptions:existence_error(procedure, member/1, lattice/0, Error),
-	exceptions:throw_exception(Error).
+    fasill_exceptions:existence_error(procedure, member/1, lattice/0, Error),
+    fasill_exceptions:throw_exception(Error).
 
 %!  lattice_call_members(-Members)
 %
@@ -419,13 +419,13 @@ lattice_call_member(_) :-
 %   loaded into the environment.
 
 lattice_call_members(Members) :-
-	current_predicate(members/1),
-	!,
-	members(Prolog),
-	term:maplist(from_prolog, Prolog, Members).
+    current_predicate(members/1),
+    !,
+    members(Prolog),
+    fasill_term:maplist(from_prolog, Prolog, Members).
 lattice_call_members(_) :-
-	exceptions:existence_error(procedure, members/1, lattice/0, Error),
-	exceptions:throw_exception(Error).
+    fasill_exceptions:existence_error(procedure, members/1, lattice/0, Error),
+    fasill_exceptions:throw_exception(Error).
 
 %!  lattice_call_members(+Constant, -Members)
 %
@@ -433,12 +433,12 @@ lattice_call_members(_) :-
 %   constant Constant in the lattice loaded into the environment.
 
 lattice_call_members(Constant, Members) :-
-	current_predicate(members/2),
-	members(Constant, Prolog),
-	term:maplist(from_prolog, Prolog, Members),
-	!.
+    current_predicate(members/2),
+    members(Constant, Prolog),
+    fasill_term:maplist(from_prolog, Prolog, Members),
+    !.
 lattice_call_members(_, Members) :-
-	lattice_call_members(Members).
+    lattice_call_members(Members).
 
 %!  lattice_call_exclude(+Exclude)
 %
@@ -446,9 +446,9 @@ lattice_call_members(_, Members) :-
 %   (for tuning) in the lattice loaded into the environment.
 
 lattice_call_exclude(Exclude) :-
-	current_predicate(exclude/1),
-	exclude(Exclude),
-	!.
+    current_predicate(exclude/1),
+    exclude(Exclude),
+    !.
 
 %!  lattice_call_leq(+Member1, +Member2)
 %
@@ -456,14 +456,14 @@ lattice_call_exclude(Exclude) :-
 %   lattice loaded into the environment.
 
 lattice_call_leq(Member1, Member2) :-
-	current_predicate(leq/2),
-	!,
-	term:to_prolog(Member1, Prolog1),
-	term:to_prolog(Member2, Prolog2),
-	leq(Prolog1, Prolog2).
+    current_predicate(leq/2),
+    !,
+    fasill_term:to_prolog(Member1, Prolog1),
+    fasill_term:to_prolog(Member2, Prolog2),
+    leq(Prolog1, Prolog2).
 lattice_call_leq(_, _) :-
-    exceptions:existence_error(procedure, leq/2, lattice/0, Error),
-    exceptions:throw_exception(Error).
+    fasill_exceptions:existence_error(procedure, leq/2, lattice/0, Error),
+    fasill_exceptions:throw_exception(Error).
 
 %!  lattice_call_supremum(+Member1, +Member2, -Supremum)
 %
@@ -471,15 +471,15 @@ lattice_call_leq(_, _) :-
 %   loaded into the environment, and Supremum is the supremum of both.
 
 lattice_call_supremum(Member1, Member2, Supremum) :-
-	current_predicate(supremum/3),
-	!,
-	term:to_prolog(Member1, Prolog1),
-	term:to_prolog(Member2, Prolog2),
-	supremum(Prolog1, Prolog2, Prolog3),
-	term:from_prolog(Prolog3, Supremum).
+    current_predicate(supremum/3),
+    !,
+    fasill_term:to_prolog(Member1, Prolog1),
+    fasill_term:to_prolog(Member2, Prolog2),
+    supremum(Prolog1, Prolog2, Prolog3),
+    fasill_term:from_prolog(Prolog3, Supremum).
 lattice_call_supremum(_, _, _) :-
-	exceptions:existence_error(procedure, supremum/3, lattice/0, Error),
-	exceptions:throw_exception(Error).
+    fasill_exceptions:existence_error(procedure, supremum/3, lattice/0, Error),
+    fasill_exceptions:throw_exception(Error).
 
 %!  lattice_call_distance(+Member1, +Member2, -Distance)
 %
@@ -487,17 +487,17 @@ lattice_call_supremum(_, _, _) :-
 %   loaded into the environment, and Distance is the distace between them.
 
 lattice_call_distance(Member1, Member2, Distance) :-
-	current_predicate(distance/3),
-	!,
-	lattice_call_member(Member1),
-	lattice_call_member(Member2),
-	term:to_prolog(Member1, Prolog1),
-	term:to_prolog(Member2, Prolog2),
-	distance(Prolog1, Prolog2, Prolog3),
-	term:from_prolog(Prolog3, Distance).
+    current_predicate(distance/3),
+    !,
+    lattice_call_member(Member1),
+    lattice_call_member(Member2),
+    fasill_term:to_prolog(Member1, Prolog1),
+    fasill_term:to_prolog(Member2, Prolog2),
+    distance(Prolog1, Prolog2, Prolog3),
+    fasill_term:from_prolog(Prolog3, Distance).
 lattice_call_distance(_, _, _) :-
-	exceptions:existence_error(procedure, distance/3, lattice/0, Error),
-	exceptions:throw_exception(Error).
+    fasill_exceptions:existence_error(procedure, distance/3, lattice/0, Error),
+    fasill_exceptions:throw_exception(Error).
 
 %!  lattice_call_connective(+Name, +Arguments, ?Result)
 %
@@ -506,37 +506,37 @@ lattice_call_distance(_, _, _) :-
 %   environment.
 
 lattice_call_connective('&', Args, Result) :-
-	!,
-	lattice_tnorm(Name),
-	lattice_call_connective('&'(Name), Args, Result).
+    !,
+    lattice_tnorm(Name),
+    lattice_call_connective('&'(Name), Args, Result).
 lattice_call_connective('|', Args, Result) :-
-	!,
-	lattice_tconorm(Name),
-	lattice_call_connective('|'(Name), Args, Result).
+    !,
+    lattice_tconorm(Name),
+    lattice_call_connective('|'(Name), Args, Result).
 lattice_call_connective(Op, Args, Result) :-
-	Op =.. [Type,Name],
-	!,
-	(   Type = '&', Pre = 'and_' ;
-		Type = '|', Pre = 'or_' ;
-		Type = '@', Pre = 'agr_'
-	),
-	atom_concat(Pre, Name, Name_),
-	lattice_call_connective2(Name_, Args, Result).
+    Op =.. [Type,Name],
+    !,
+    (   Type = '&', Pre = 'and_' ;
+        Type = '|', Pre = 'or_' ;
+        Type = '@', Pre = 'agr_'
+    ),
+    atom_concat(Pre, Name, Name_),
+    lattice_call_connective2(Name_, Args, Result).
 lattice_call_connective(Op, Args, Result) :-
-	lattice_call_connective2(Op, Args, Result).
+    lattice_call_connective2(Op, Args, Result).
 lattice_call_connective2(Name, Args, Result) :-
-	length(Args, Arity),
-	Arity_ is Arity + 1,
-	(current_predicate(Name/Arity_) ->
-		true ;
-		exceptions:existence_error(procedure, Name/Arity_, lattice/0, Error),
-		exceptions:throw_exception(Error)),
-	term:maplist(to_prolog, Args, Args_),
-	append(Args_, [Prolog], ArgsCall),
-	Call =.. [Name|ArgsCall],
-	call(environment:Call),
-	term:from_prolog(Prolog, Result),
-	!.
+    length(Args, Arity),
+    Arity_ is Arity + 1,
+    (current_predicate(Name/Arity_) ->
+        true ;
+        fasill_exceptions:existence_error(procedure, Name/Arity_, lattice/0, Error),
+        fasill_exceptions:throw_exception(Error)),
+    fasill_term:maplist(to_prolog, Args, Args_),
+    append(Args_, [Prolog], ArgsCall),
+    Call =.. [Name|ArgsCall],
+    fasill_environment:call(Call),
+    fasill_term:from_prolog(Prolog, Result),
+    !.
 
 %!  lattice_reduce_connective(+Name, +TDs, ?Result)
 %
@@ -545,13 +545,13 @@ lattice_call_connective2(Name, Args, Result) :-
 %   lattice in the current environment.
 
 lattice_reduce_connective(_, [X], X) :-
-	!.
+    !.
 lattice_reduce_connective(Op, [H|T], Result) :-
-	!,
-	lattice_reduce_connective(Op, T, Result_),
-	lattice_call_connective(Op, [H,Result_], Result).
+    !,
+    lattice_reduce_connective(Op, T, Result_),
+    lattice_call_connective(Op, [H,Result_], Result).
 lattice_reduce_connective(_, [], Bot) :-
-	lattice_call_bot(Bot).
+    lattice_call_bot(Bot).
 
 %!  lattice_consult(+Path)
 %
@@ -559,24 +559,24 @@ lattice_reduce_connective(_, [], Bot) :-
 %   This predicate cleans the previous lattice.
 
 lattice_consult(Path) :-
-	abolish(member/1),
-	abolish(members/1),
-	abolish(distance/3),
-	abolish(bot/1),
-	abolish(top/1),
-	abolish(leq/2),
-	abolish(tnorm/1),
-	abolish(tconorm/1),
-	abolish(exclude/1),
-	retractall(current_lattice_top(_)),
-	retractall(current_lattice_bot(_)),
-	( current_predicate(X/3),
-		( atom_concat(and_, _, X) ;
-		atom_concat(agr_, _, X) ;
-		atom_concat(or_, _, X) ),
-		abolish(X/3), fail ; true
-	),
-	consult(Path).
+    abolish(member/1),
+    abolish(members/1),
+    abolish(distance/3),
+    abolish(bot/1),
+    abolish(top/1),
+    abolish(leq/2),
+    abolish(tnorm/1),
+    abolish(tconorm/1),
+    abolish(exclude/1),
+    retractall(current_lattice_top(_)),
+    retractall(current_lattice_bot(_)),
+    ( current_predicate(X/3),
+        ( atom_concat(and_, _, X) ;
+        atom_concat(agr_, _, X) ;
+        atom_concat(or_, _, X) ),
+        abolish(X/3), fail ; true
+    ),
+    consult(Path).
 
 % SIMILARITY RELATIONS
 
@@ -586,9 +586,9 @@ lattice_consult(Path) :-
 %   environment.
 
 similarity_tnorm(Tnorm) :-
-	fasill_similarity_tnorm(Tnorm), !.
+    fasill_similarity_tnorm(Tnorm), !.
 similarity_tnorm('&'(Tnorm)) :-
-	lattice_tnorm(Tnorm).
+    lattice_tnorm(Tnorm).
 
 %!  similarity_tconorm(?Tconorm)
 %
@@ -596,9 +596,9 @@ similarity_tnorm('&'(Tnorm)) :-
 %   the environment.
 
 similarity_tconorm(Tconorm) :-
-	fasill_similarity_tconorm(Tconorm), !.
+    fasill_similarity_tconorm(Tconorm), !.
 similarity_tconorm('|'(Tconorm)) :-
-	lattice_tconorm(Tconorm).
+    lattice_tconorm(Tconorm).
 
 %!  similarity_between(?AtomA, ?AtomB, ?Arity, ?TD, ?Sym)
 %
@@ -606,10 +606,10 @@ similarity_tconorm('|'(Tconorm)) :-
 %   truth degree TD, using the current similarity relation in the environment.
 
 similarity_between(AtomA, AtomB, Arity, TD, Sym) :-
-	fasill_similarity(AtomA/Arity, AtomB/Arity, TD, Sym).
+    fasill_similarity(AtomA/Arity, AtomB/Arity, TD, Sym).
 similarity_between(AtomA, AtomB, Arity, Bot, no) :-
-	\+fasill_similarity(AtomA/Arity, AtomB/Arity, _, _),
-	lattice_call_bot(Bot).
+    \+fasill_similarity(AtomA/Arity, AtomB/Arity, _, _),
+    lattice_call_bot(Bot).
 
 %!  similarity_retract
 %
@@ -617,9 +617,9 @@ similarity_between(AtomA, AtomB, Arity, Bot, no) :-
 %   current environment.
 
 similarity_retract :-
-	retractall(fasill_similarity(_, _, _, _)),
-	retractall(fasill_similarity_tnorm(_)),
-	retractall(fasill_similarity_tconorm(_)).
+    retractall(fasill_similarity(_, _, _, _)),
+    retractall(fasill_similarity_tnorm(_)),
+    retractall(fasill_similarity_tconorm(_)).
 
 %!  similarity_consult(+Path)
 %
@@ -627,12 +627,12 @@ similarity_retract :-
 %   environment. This predicate cleans the previous similarity relations.
 
 similarity_consult(Path) :-
-	similarity_retract,
-	file_similarity(Path, Equations),
-	(   member(Eq, Equations),
-		assertz(Eq),
-		fail ; true),
-	similarity_closure.
+    similarity_retract,
+    fasill_parser:file_similarity(Path, Equations),
+    (   member(Eq, Equations),
+        assertz(Eq),
+        fail ; true),
+    similarity_closure.
 
 %!  similarity_closure
 %
@@ -640,71 +640,71 @@ similarity_consult(Path) :-
 %   the similarity scheme asserted into the current environment.
 
 similarity_closure :-
-	setof(Atom/Arity, Atom2^TD^Sym^(
-		similarity_between(Atom, Atom2, Arity, TD, Sym);
-		similarity_between(Atom2, Atom, Arity, TD, Sym)
-	), Dom),
-	findall(sim(Atom1,Atom2,Arity,TD,Sym), similarity_between(Atom1,Atom2,Arity,TD,Sym), Scheme),
-	similarity_tnorm(Tnorm),
-	lattice_call_bot(Bot),
-	lattice_call_top(Top),
-	similarity_retract,
-	(similarity_closure_check_equations(Dom, Scheme), false ; true),
-	(similarity_closure_reflexive(Dom, Scheme, Tnorm, Bot, Top), false ; true),
-	(similarity_closure_symmetric(Dom, Scheme, Tnorm, Bot, Top), false ; true),
-	(similarity_closure_transitive(Dom, Scheme, Tnorm, Bot, Top), false ; true),
-	assertz(fasill_similarity_tnorm(Tnorm)).
+    setof(Atom/Arity, Atom2^TD^Sym^(
+        similarity_between(Atom, Atom2, Arity, TD, Sym);
+        similarity_between(Atom2, Atom, Arity, TD, Sym)
+    ), Dom),
+    findall(sim(Atom1,Atom2,Arity,TD,Sym), similarity_between(Atom1,Atom2,Arity,TD,Sym), Scheme),
+    similarity_tnorm(Tnorm),
+    lattice_call_bot(Bot),
+    lattice_call_top(Top),
+    similarity_retract,
+    (similarity_closure_check_equations(Dom, Scheme), false ; true),
+    (similarity_closure_reflexive(Dom, Scheme, Tnorm, Bot, Top), false ; true),
+    (similarity_closure_symmetric(Dom, Scheme, Tnorm, Bot, Top), false ; true),
+    (similarity_closure_transitive(Dom, Scheme, Tnorm, Bot, Top), false ; true),
+    assertz(fasill_similarity_tnorm(Tnorm)).
 
 similarity_closure_check_equations(Dom, Scheme) :-
-	member(X/Arity, Dom),
-	member(Y/Arity, Dom),
-	X @< Y,
-	setof(TD, Sym^(
-		member(sim(X,Y,Arity,TD,Sym), Scheme);
-		member(sim(Y,X,Arity,TD,Sym), Scheme)
-	), Set),
-	length(Set, Length),
-	from_prolog_list(Set, FSet),
-	(Length > 1 ->
-		exceptions:throw_warning(term(warning, [term(conflicting_equations, [term('/', [term(X, []), num(Arity)]), term('/', [term(Y, []), num(Arity)]), FSet])]))).
+    member(X/Arity, Dom),
+    member(Y/Arity, Dom),
+    X @< Y,
+    setof(TD, Sym^(
+        member(sim(X,Y,Arity,TD,Sym), Scheme);
+        member(sim(Y,X,Arity,TD,Sym), Scheme)
+    ), Set),
+    length(Set, Length),
+    from_prolog_list(Set, FSet),
+    (Length > 1 ->
+        fasill_exceptions:throw_warning(term(warning, [term(conflicting_equations, [term('/', [term(X, []), num(Arity)]), term('/', [term(Y, []), num(Arity)]), FSet])]))).
 
 similarity_closure_reflexive(Dom, _, _, _, Top) :-
-	member(X/Arity, Dom),
-	assertz(fasill_similarity(X/Arity,X/Arity,Top,no)).
+    member(X/Arity, Dom),
+    assertz(fasill_similarity(X/Arity,X/Arity,Top,no)).
 
 similarity_closure_symmetric(Dom, Scheme, _, _, _) :-
-	member(X/Arity, Dom),
-	member(Y/Arity, Dom),
-	\+(fasill_similarity(X/Arity,Y/Arity,_,_)),
-	once(member(sim(X,Y,Arity,TD,Sym), Scheme) ; member(sim(Y,X,Arity,TD,Sym), Scheme)),
-	assertz(fasill_similarity(X/Arity,Y/Arity,TD,Sym)),
-	assertz(fasill_similarity(Y/Arity,X/Arity,TD,Sym)).
+    member(X/Arity, Dom),
+    member(Y/Arity, Dom),
+    \+(fasill_similarity(X/Arity,Y/Arity,_,_)),
+    once(member(sim(X,Y,Arity,TD,Sym), Scheme) ; member(sim(Y,X,Arity,TD,Sym), Scheme)),
+    assertz(fasill_similarity(X/Arity,Y/Arity,TD,Sym)),
+    assertz(fasill_similarity(Y/Arity,X/Arity,TD,Sym)).
 
 similarity_closure_transitive(Dom, _, Tnorm, Bot, Top) :-
-	member(Y/Arity, Dom),
-	member(X/Arity, Dom), X \= Y,
-	member(Z/Arity, Dom), Z \= Y, X \= Z,
-	once(fasill_similarity(X/Arity,Z/Arity,TDxz,Sxz) ; (TDxz = Bot, Sxz = no)),
-	once(fasill_similarity(X/Arity,Y/Arity,TDxy,Sxy)),
-	once(fasill_similarity(Y/Arity,Z/Arity,TDyz,Syz)),
-	(TDxy == Top -> TDy = TDyz, Sy = Syz ;
-		(TDyz == Top -> TDy = TDxy, Sy = Sxy ;
-			((Sxy == no, Syz == no, Tnorm = '&'(_)) ->
-				(lattice_call_connective(Tnorm, [TDxy,TDyz], TDy), Sy = no) ;
-				(TDy = term(Tnorm, [TDxy, TDyz]), Sy = yes)
-			)
-		)
-	),
-	(TDxz == Bot -> TD = TDy, S = Sy ;
-		(TDy == Bot -> TD = TDxz, S = Sxz ;
-			((Sxz == no, Sy == no, Tnorm = '&'(_)) ->
-				(lattice_call_supremum(TDxz, TDy, TD), S = no) ;
-				(TD = sup(TDxz, TDy), S = yes)
-			)
-		)
-	),
-	retractall(fasill_similarity(X/Arity,Z/Arity,_,_)),
-	assertz(fasill_similarity(X/Arity,Z/Arity,TD,S)).
+    member(Y/Arity, Dom),
+    member(X/Arity, Dom), X \= Y,
+    member(Z/Arity, Dom), Z \= Y, X \= Z,
+    once(fasill_similarity(X/Arity,Z/Arity,TDxz,Sxz) ; (TDxz = Bot, Sxz = no)),
+    once(fasill_similarity(X/Arity,Y/Arity,TDxy,Sxy)),
+    once(fasill_similarity(Y/Arity,Z/Arity,TDyz,Syz)),
+    (TDxy == Top -> TDy = TDyz, Sy = Syz ;
+        (TDyz == Top -> TDy = TDxy, Sy = Sxy ;
+            ((Sxy == no, Syz == no, Tnorm = '&'(_)) ->
+                (lattice_call_connective(Tnorm, [TDxy,TDyz], TDy), Sy = no) ;
+                (TDy = term(Tnorm, [TDxy, TDyz]), Sy = yes)
+            )
+        )
+    ),
+    (TDxz == Bot -> TD = TDy, S = Sy ;
+        (TDy == Bot -> TD = TDxz, S = Sxz ;
+            ((Sxz == no, Sy == no, Tnorm = '&'(_)) ->
+                (lattice_call_supremum(TDxz, TDy, TD), S = no) ;
+                (TD = sup(TDxz, TDy), S = yes)
+            )
+        )
+    ),
+    retractall(fasill_similarity(X/Arity,Z/Arity,_,_)),
+    assertz(fasill_similarity(X/Arity,Z/Arity,TD,S)).
 
 % TEST CASES
 
@@ -714,12 +714,12 @@ similarity_closure_transitive(Dom, _, Tnorm, Bot, Top) :-
 %   the environment. This predicate cleans the previous test cases.
 
 testcases_consult(Path) :-
-	retractall(fasill_testcase(_,_)),
-	retractall(fasill_testcase_precondition(_)),
-	file_testcases(Path, Tests),
-	( member(Test, Tests),
-		assertz(Test),
-		fail ; true ).
+    retractall(fasill_testcase(_,_)),
+    retractall(fasill_testcase_precondition(_)),
+    file_testcases(Path, Tests),
+    ( member(Test, Tests),
+        assertz(Test),
+        fail ; true ).
 
 % VARIABLES
 
@@ -736,7 +736,7 @@ current_fresh_variable_id(0).
 %   variable Variable.
 
 fresh_variable(var('$'(N))) :-
-	current_fresh_variable_id(N),
-	retract(current_fresh_variable_id(_)),
-	succ(N, M),
-	asserta(current_fresh_variable_id(M)).
+    current_fresh_variable_id(N),
+    retract(current_fresh_variable_id(_)),
+    succ(N, M),
+    asserta(current_fresh_variable_id(M)).

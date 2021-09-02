@@ -3,6 +3,7 @@ import markdown
 import os
 
 class Predicate:
+
 	def __init__(self, templates, description):
 		self.templates = templates
 		self.description = description
@@ -22,6 +23,7 @@ class Predicate:
 		return html
 
 class Module:
+
 	def __init__(self, name, description):
 		self.name = name
 		self.description = description
@@ -32,9 +34,10 @@ class Module:
 		self.predicates.append(predicate)
 	
 	def html(self):
+		md = markdown.Markdown(extensions=['mdx_math'], extension_configs={'mdx_math': {'enable_dollar_delimiter': True}})
 		html = "<div class=\"fasill-module\">"
 		html += "<h1 id=\"%s\">%s</h1>" % (self.slug, self.name)
-		html += "<div class=\"fasill-module-description\">%s</div>" % markdown.markdown(self.description)
+		html += "<div class=\"fasill-module-description\">%s</div>" % md.convert(self.description)
 		for predicate in self.predicates:
 			html += predicate.html(self.slug)
 		html += "</div>"

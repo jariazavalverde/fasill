@@ -33,13 +33,13 @@
     POSSIBILITY OF SUCH DAMAGE.
 */
 
-:- module(arith, [
-	arithmetic_evaluation/3,
-	arithmetic_comparison/3
+:- module(fasill_arithmetic, [
+    arithmetic_evaluation/3,
+    arithmetic_comparison/3
 ]).
 
-:- use_module(exceptions).
-:- use_module(term).
+:- use_module(fasill_exceptions).
+:- use_module(fasill_term).
 
 /** <module> Arithmetic
     This library provides basic predicates for arithmetic comparison and
@@ -47,7 +47,7 @@
 
     The general arithmetic predicates all handle expressions. An expression is
     either a number or a function. The arguments of a function are expressions.
-	FASILL defines the following numeric types:
+    FASILL defines the following numeric types:
 
     * `integer`: depending on the Prolog system on which FASILL is executed,
        integers can be bounded or not. The type of integer support can be
@@ -65,29 +65,29 @@
 %   there is any problem.
 
 arithmetic_evaluation(Indicator, var(_), _) :-
-	!,
-	exceptions:instantiation_error(Indicator, Error),
-	exceptions:throw_exception(Error).
+    !,
+    fasill_exceptions:instantiation_error(Indicator, Error),
+    fasill_exceptions:throw_exception(Error).
 arithmetic_evaluation(_, num(X), num(X)) :-
-	!.
+    !.
 arithmetic_evaluation(Indicator, term(Op,Args), Result) :-
-	catch(
-		(   maplist(arithmetic_evaluation(Indicator), Args, Args_),
-			maplist(arithmetic_type, Args_, Types),
-			term:maplist(to_prolog, Args_, Prolog),
-			arithmetic_op(Op, Prolog, Types, Result),
-			!
-		), Error,
-		(Error = type(Type, From) ->
-			(term:from_prolog(From, From_),
-			exceptions:type_error(Type, From_, Indicator, Exception),
-			exceptions:throw_exception(Exception)) ;
-			(Error = evaluation(Cause) ->
-				(exceptions:evaluation_error(Cause, Indicator, Exception),
-				exceptions:throw_exception(Exception)) ;
-				(Error = exception(Exception) ->
-					exceptions:throw_exception(Exception) ;
-					exceptions:throw_exception(Error))))).
+    catch(
+        (   maplist(arithmetic_evaluation(Indicator), Args, Args_),
+            maplist(arithmetic_type, Args_, Types),
+            fasill_term:maplist(to_prolog, Args_, Prolog),
+            arithmetic_op(Op, Prolog, Types, Result),
+            !
+        ), Error,
+        (Error = type(Type, From) ->
+            (fasill_term:from_prolog(From, From_),
+            fasill_exceptions:type_error(Type, From_, Indicator, Exception),
+            fasill_exceptions:throw_exception(Exception)) ;
+            (Error = evaluation(Cause) ->
+                (fasill_exceptions:evaluation_error(Cause, Indicator, Exception),
+                fasill_exceptions:throw_exception(Exception)) ;
+                (Error = exception(Exception) ->
+                    fasill_exceptions:throw_exception(Exception) ;
+                    fasill_exceptions:throw_exception(Error))))).
 
 %!  arithmetic_comparison(+Op, +Expression1, +Expression2)
 %
@@ -95,11 +95,11 @@ arithmetic_evaluation(Indicator, term(Op,Args), Result) :-
 %   evaluated as much as possible, fulfill the ordering relation Op.
 
 arithmetic_comparison(Name/2, Expr1, Expr2) :-
-	arithmetic_evaluation(Name/2, Expr1, Result1),
-	arithmetic_evaluation(Name/2, Expr2, Result2),
-	term:to_prolog(Result1, Result1_),
-	term:to_prolog(Result2, Result2_),
-	call(Name, Result1_, Result2_).
+    arithmetic_evaluation(Name/2, Expr1, Result1),
+    arithmetic_evaluation(Name/2, Expr2, Result2),
+    fasill_term:to_prolog(Result1, Result1_),
+    fasill_term:to_prolog(Result2, Result2_),
+    call(Name, Result1_, Result2_).
 
 %!  arithmetic_type(+Number, ?Type)
 %
@@ -107,9 +107,9 @@ arithmetic_comparison(Name/2, Expr1, Expr2) :-
 %   `float`).
 
 arithmetic_type(num(X), integer) :-
-	integer(X).
+    integer(X).
 arithmetic_type(num(X), float) :-
-	float(X).
+    float(X).
 
 %!  arithmetic_op(+Operator, +Arguments, +Types, ?Result)
 %
@@ -118,168 +118,168 @@ arithmetic_type(num(X), float) :-
 
 % Pi (constant)
 arithmetic_op(pi, [], _, num(Z)) :-
-	Z is pi.
+    Z is pi.
 % E (constant)
 arithmetic_op(e, [], _, num(Z)) :-
-	Z is e.
+    Z is e.
 % Addition
 arithmetic_op('+', [X,Y], _, num(Z)) :-
-	Z is X+Y.
+    Z is X+Y.
 % Subtraction
 arithmetic_op('-', [X,Y], _, num(Z)) :-
-	Z is X-Y.
+    Z is X-Y.
 % Multiplication
 arithmetic_op('*', [X,Y], _, num(Z)) :-
-	Z is X*Y.
+    Z is X*Y.
 % Exponentiation
 arithmetic_op('**', [X,Y], _, num(Z)) :-
-	Z is float(X**Y).
+    Z is float(X**Y).
 % Division
 arithmetic_op('/', [_,0], _, _) :-
-	!,
-	throw(evaluation(zero_division)).
+    !,
+    throw(evaluation(zero_division)).
 arithmetic_op('/', [_,0.0], _, _) :-
-	!,
-	throw(evaluation(zero_division)).
+    !,
+    throw(evaluation(zero_division)).
 arithmetic_op('/', [X,Y], _, num(Z)) :-
-	Z is float(X/Y).
+    Z is float(X/Y).
 % Integer division
 arithmetic_op('//', [X,_], [float,_], _) :-
-	throw(type(integer, X)).
+    throw(type(integer, X)).
 arithmetic_op('//', [_,Y], [_,float], _) :-
-	throw(type(integer, Y)).
+    throw(type(integer, Y)).
 arithmetic_op('//', [_,0], _, _) :-
-	!,
-	throw(evaluation(zero_division)).
+    !,
+    throw(evaluation(zero_division)).
 arithmetic_op('//', [_,0.0], _, _) :-
-	!,
-	throw(evaluation(zero_division)).
+    !,
+    throw(evaluation(zero_division)).
 arithmetic_op('//', [X,Y], _, num(Z)) :-
-	Z is X//Y.
+    Z is X//Y.
 % Unary addition
 arithmetic_op('+', [X], _, num(Z)) :-
-	Z is X.
+    Z is X.
 % Negation
 arithmetic_op('-', [X], _, num(Z)) :-
-	Z is -X.
+    Z is -X.
 % Exp
 arithmetic_op(exp, [X], _, num(Z)) :-
-	Z is exp(X).
+    Z is exp(X).
 % Square root
 arithmetic_op(sqrt, [X], _, num(Z)) :-
-	Z is sqrt(X).
+    Z is sqrt(X).
 % Logarithm
 arithmetic_op(log, [X], _, num(Z)) :-
-	X =< 0 ->
-		throw(evaluation(undefined)) ;
-		Z is log(X).
+    X =< 0 ->
+        throw(evaluation(undefined)) ;
+        Z is log(X).
 % Trigonometric functions
 arithmetic_op(sin, [X], _, num(Z)) :-
-	Z is sin(X).
+    Z is sin(X).
 arithmetic_op(cos, [X], _, num(Z)) :-
-	Z is cos(X).
+    Z is cos(X).
 arithmetic_op(tan, [X], _, num(Z)) :-
-	Z is tan(X).
+    Z is tan(X).
 arithmetic_op(asin, [X], _, num(Z)) :-
-	Z is asin(X).
+    Z is asin(X).
 arithmetic_op(acos, [X], _, num(Z)) :-
-	Z is acos(X).
+    Z is acos(X).
 arithmetic_op(atan, [X], _, num(Z)) :-
-	Z is atan(X).
+    Z is atan(X).
 % Sign
 arithmetic_op(sign, [X], _, num(Z)) :-
-	Z is sign(X).
+    Z is sign(X).
 % Float
 arithmetic_op(float, [X], _, num(Z)) :-
-	Z is float(X).
+    Z is float(X).
 % Floor
 arithmetic_op(floor, [X], [integer], _) :-
-	throw(type(float, X)).
+    throw(type(float, X)).
 arithmetic_op(floor, [X], _, num(Z)) :-
-	Z is floor(X).
+    Z is floor(X).
 % Round
 arithmetic_op(round, [X], [integer], _) :-
-	throw(type(float, X)).
+    throw(type(float, X)).
 arithmetic_op(round, [X], _, num(Z)) :-
-	Z is round(X).
+    Z is round(X).
 % Truncate
 arithmetic_op(truncate, [X], [integer], _) :-
-	throw(type(float, X)).
+    throw(type(float, X)).
 arithmetic_op(truncate, [X], _, num(Z)) :-
-	Z is truncate(X).
+    Z is truncate(X).
 % Ceiling
 arithmetic_op(ceiling, [X], [integer], _) :-
-	throw(type(float, X)).
+    throw(type(float, X)).
 arithmetic_op(ceiling, [X], _, num(Z)) :-
-	Z is ceiling(X).
+    Z is ceiling(X).
 % Integer part
 arithmetic_op(float_integer_part, [X], [integer], _) :-
-	throw(type(float, X)).
+    throw(type(float, X)).
 arithmetic_op(float_integer_part, [X], _, num(Z)) :-
-	Z is float_integer_part(X).
+    Z is float_integer_part(X).
 % Fractional part
 arithmetic_op(float_fractional_part, [X], [integer], _) :-
-	throw(type(float, X)).
+    throw(type(float, X)).
 arithmetic_op(float_fractional_part, [X], _, num(Z)) :-
-	Z is float_fractional_part(X).
+    Z is float_fractional_part(X).
 % Absolute value
 arithmetic_op(abs, [X], _, num(Z)) :-
-	Z is abs(X).
+    Z is abs(X).
 % Remainder
 arithmetic_op(rem, [X,_], [float,_], _) :-
-	throw(type(integer, X)).
+    throw(type(integer, X)).
 arithmetic_op(rem, [_,Y], [_,float], _) :-
-	throw(type(integer, Y)).
+    throw(type(integer, Y)).
 arithmetic_op(rem, [_,0], _, _) :-
-	!,
-	throw(evaluation(zero_division)).
+    !,
+    throw(evaluation(zero_division)).
 arithmetic_op(rem, [X,Y], _, num(Z)) :-
-	Z is rem(X,Y).
+    Z is rem(X,Y).
 % Modulus
 arithmetic_op(mod, [X,_], [float,_], _) :-
-	throw(type(integer, X)).
+    throw(type(integer, X)).
 arithmetic_op(mod, [_,Y], [_,float], _) :-
-	throw(type(integer, Y)).
+    throw(type(integer, Y)).
 arithmetic_op(mod, [_,0], _, _) :-
-	!,
-	throw(evaluation(zero_division)).
+    !,
+    throw(evaluation(zero_division)).
 arithmetic_op(mod, [X,Y], _, num(Z)) :-
-	Z is mod(X,Y).
+    Z is mod(X,Y).
 % Minimum
 arithmetic_op(min, [X,Y], _, num(Z)) :-
-	Z is min(X,Y).
+    Z is min(X,Y).
 % Maximum
 arithmetic_op(max, [X,Y], _, num(Z)) :-
-	Z is max(X,Y).
+    Z is max(X,Y).
 % Bitwise operators
 arithmetic_op('<<', [X,_], [float,_], _) :-
-	throw(type(integer, X)).
+    throw(type(integer, X)).
 arithmetic_op('<<', [_,Y], [_,float], _) :-
-	throw(type(integer, Y)).
+    throw(type(integer, Y)).
 arithmetic_op('<<', [X,Y], _, num(Z)) :-
-	Z is X << Y.
+    Z is X << Y.
 arithmetic_op('>>', [X,_], [float,_], _) :-
-	throw(type(integer, X)).
+    throw(type(integer, X)).
 arithmetic_op('>>', [_,Y], [_,float], _) :-
-	throw(type(integer, Y)).
+    throw(type(integer, Y)).
 arithmetic_op('>>', [X,Y], _, num(Z)) :-
-	Z is X >> Y.
+    Z is X >> Y.
 arithmetic_op('\\/', [X,_], [float,_], _) :-
-	throw(type(integer, X)).
+    throw(type(integer, X)).
 arithmetic_op('\\/', [_,Y], [_,float], _) :-
-	throw(type(integer, Y)).
+    throw(type(integer, Y)).
 arithmetic_op('\\/', [X,Y], _, num(Z)) :-
-	Z is '\\/'(X,Y).
+    Z is '\\/'(X,Y).
 arithmetic_op('/\\', [X,_], [float,_], _) :-
-	throw(type(integer, X)).
+    throw(type(integer, X)).
 arithmetic_op('/\\', [_,Y], [_,float], _) :-
-	throw(type(integer, Y)).
+    throw(type(integer, Y)).
 arithmetic_op('/\\', [X,Y], _, num(Z)) :-	
-	Z is '/\\'(X,Y).
+    Z is '/\\'(X,Y).
 arithmetic_op('\\', [X], [float], _) :-
-	throw(type(integer, X)).
+    throw(type(integer, X)).
 arithmetic_op('\\', [X], _, num(Z)) :-
-	Z is '\\'(X).
+    Z is '\\'(X).
 arithmetic_op(Op, Args, _, _) :-
-	length(Args, Length),
-	throw(type(evaluable, Op/Length)).
+    length(Args, Length),
+    throw(type(evaluable, Op/Length)).

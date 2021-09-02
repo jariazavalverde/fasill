@@ -33,29 +33,19 @@
     POSSIBILITY OF SUCH DAMAGE.
 */
 
-:- module(tuning_smt, [
-	tuning_smt/4
+:- module(fasill_tuning_smt, [
+    tuning_smt/4
 ]).
 
 :- use_module(library(smtlib)).
-:- use_module(tuning, [findall_symbolic_cons/1]).
-:- use_module(environment).
-:- use_module(resolution).
-:- use_module(term).
+:- use_module(fasill_tuning, [findall_symbolic_cons/1]).
+:- use_module(fasill_environment).
+:- use_module(fasill_inference).
+:- use_module(fasill_term).
 
 /** <module> Tuning with SAT/SMT solvers
-    This library provides predicates for tuning FASILL programs.
-    
-    Typically, a programmer has a model in mind where some parameters have a
-    clear value. For instance, the truth value of a rule might be statistically
-    determined and, thus, its value is easy to obtain. In other cases, though,
-    the most appropriate values and/or connectives depend on subjective notions
-    and, thus, programmers do not know how to obtain these values. In a typical
-    scenario, we have an extensive set of expected computed answers (i.e., test
-    cases), so the programmer can follow a "try and test" strategy.
-    Unfortunately, this is a tedious and time consuming operation. Actually, it
-    might even be impractical when the program should correctly model a large
-    number of test cases.
+    This library provides predicates for tuning FASILL programs using SAT/SMT
+    solvers.
 
     In order to increase the performance of the original tuning techniques, we
     make use of the powerful and well-known SAT/SMT solver Z3:
@@ -73,11 +63,10 @@
 
     For more details see:
 
-    Riaza, José A., and Ginés Moreno. "Using SAT/SMT solvers for efficiently
-    tuning fuzzy logic programs." 2020 IEEE International Conference on Fuzzy
-    Systems (FUZZ-IEEE). IEEE, 2020.
-
-    DOI: https://doi.org/10.1109/FUZZ48607.2020.9177798
+    * Riaza, José A., and Ginés Moreno. "Using SAT/SMT solvers for efficiently
+      tuning fuzzy logic programs." 2020 IEEE International Conference on Fuzzy
+      Systems (FUZZ-IEEE). IEEE, 2020.
+      [https://doi.org/10.1109/FUZZ48607.2020.9177798](https://doi.org/10.1109/FUZZ48607.2020.9177798)
 */
 
 %!  tuning_smt(+Domain, +LatFile, ?Substitution, ?Deviation)
@@ -88,20 +77,20 @@
 %   corresponding Prolog lattice.
 
 tuning_smt(Domain, LatFile, Substitution, Deviation) :-
-	smtlib_read_script(LatFile, list(Lattice)),
-	findall_symbolic_cons(Cons),
-	tuning_smt_decl_const(Domain, Cons, Declarations),
-	(member([reserved('define-fun'), symbol('lat!member')|_], Lattice) ->
-		tuning_smt_members(Cons, Members);
-		Members = []),
-	tuning_smt_minimize(Minimize),
-	tuning_theory_options(Domain, TheoryOpts),
-	GetModel = [[reserved('check-sat')], [reserved('get-model')]],
-	append([Lattice, Declarations, Members, Minimize, TheoryOpts, GetModel], Script),
-	smtlib_write_to_file('.tuning.smt2', list(Script)),
-	shell('z3 -smt2 .tuning.smt2 > .result.tuning.smt2', _),
-	smtlib_read_expressions('.result.tuning.smt2', Z3answer),
-	tuning_smt_answer(Z3answer, Substitution, Deviation).
+    smtlib_read_script(LatFile, list(Lattice)),
+    findall_symbolic_cons(Cons),
+    tuning_smt_decl_const(Domain, Cons, Declarations),
+    (member([reserved('define-fun'), symbol('lat!member')|_], Lattice) ->
+        tuning_smt_members(Cons, Members);
+        Members = []),
+    tuning_smt_minimize(Minimize),
+    tuning_theory_options(Domain, TheoryOpts),
+    GetModel = [[reserved('check-sat')], [reserved('get-model')]],
+    append([Lattice, Declarations, Members, Minimize, TheoryOpts, GetModel], Script),
+    smtlib_write_to_file('.tuning.smt2', list(Script)),
+    shell('z3 -smt2 .tuning.smt2 > .result.tuning.smt2', _),
+    smtlib_read_expressions('.result.tuning.smt2', Z3answer),
+    tuning_smt_answer(Z3answer, Substitution, Deviation).
 
 %!  tuning_smt_answer(+Z3answer, ?Substitution, ?Deviation)
 %
@@ -110,19 +99,19 @@ tuning_smt(Domain, LatFile, Substitution, Deviation) :-
 %   deviation Deviation.
 
 tuning_smt_answer([H|_], Substitution, Deviation) :-
-	member([reserved('define-fun'), symbol('deviation!'), [], symbol('Real'), decimal(Deviation)|_], H), !,
-	findall(sym(Con,Name,Arity_)/val(Con,Y,Arity_), (
-		member([reserved('define-fun'), symbol(Symbol), [], symbol(_), Value|_], H),
-		atomic_list_concat(['sym', Con, Arity, Name], '!', Symbol),
-		atom_number(Arity, Arity_),
-		Value =.. [_,X],
-		(Con = td ->
-			term:from_prolog(X, Y) ;
-			(atomic_list_concat([_|X2], '_', X), atomic_list_concat(X2, '_', Y))
-		)
-	), Substitution).
+    member([reserved('define-fun'), symbol('deviation!'), [], symbol('Real'), decimal(Deviation)|_], H), !,
+    findall(sym(Con,Name,Arity_)/val(Con,Y,Arity_), (
+        member([reserved('define-fun'), symbol(Symbol), [], symbol(_), Value|_], H),
+        atomic_list_concat(['sym', Con, Arity, Name], '!', Symbol),
+        atom_number(Arity, Arity_),
+        Value =.. [_,X],
+        (Con = td ->
+            fasill_term:from_prolog(X, Y) ;
+            (atomic_list_concat([_|X2], '_', X), atomic_list_concat(X2, '_', Y))
+        )
+    ), Substitution).
 tuning_smt_answer([_|T], Substitution, Deviation) :-
-	tuning_smt_answer(T, Substitution, Deviation).
+    tuning_smt_answer(T, Substitution, Deviation).
 
 %!  tuning_smt_decl_const(+Domain, +FASILL, ?SMTLIB)
 %
@@ -131,18 +120,18 @@ tuning_smt_answer([_|T], Substitution, Deviation) :-
 
 tuning_smt_decl_const(_, [], [[reserved('declare-const'), symbol('deviation!'), symbol('Real')]]) :- !.
 tuning_smt_decl_const(Domain, [X|Xs], [Y|Ys]) :-
-	!,
-	tuning_smt_decl_const(Domain, X, Y),
-	tuning_smt_decl_const(Domain, Xs, Ys).
+    !,
+    tuning_smt_decl_const(Domain, X, Y),
+    tuning_smt_decl_const(Domain, Xs, Ys).
 tuning_smt_decl_const(Domain, sym(td,Name,0), [reserved('declare-const'), symbol(Sym), symbol(Domain)]) :- !,
-	atom_concat('sym!td!0!', Name, Sym).
+    atom_concat('sym!td!0!', Name, Sym).
 tuning_smt_decl_const(_, sym(Type,Name,Arity), [reserved('declare-const'), symbol(Sym), symbol('String')]) :- !,
-	atom_number(Arity_, Arity),
-	atom_concat('sym!', Type, LatType),
-	atom_concat(LatType, '!', LatType_),
-	atom_concat(LatType_, Arity_, LatTypeArity),
-	atom_concat(LatTypeArity, '!', LatTypeArity_),  
-	atom_concat(LatTypeArity_, Name, Sym).
+    atom_number(Arity_, Arity),
+    atom_concat('sym!', Type, LatType),
+    atom_concat(LatType, '!', LatType_),
+    atom_concat(LatType_, Arity_, LatTypeArity),
+    atom_concat(LatTypeArity, '!', LatTypeArity_),  
+    atom_concat(LatTypeArity_, Name, Sym).
 
 %!  tuning_smt_members(+Constants, ?Members)
 %
@@ -151,21 +140,21 @@ tuning_smt_decl_const(_, sym(Type,Name,Arity), [reserved('declare-const'), symbo
 %   in SMT-LIB.
 
 tuning_smt_members([], []) :-
-	!.
+    !.
 tuning_smt_members([sym(td,Name,0)|Cons], [[reserved('assert'), [symbol('lat!member'), symbol(Sym)]]|Members]) :-
-	!,
-	atom_concat('sym!td!0!', Name, Sym),
-	tuning_smt_members(Cons, Members).
+    !,
+    atom_concat('sym!td!0!', Name, Sym),
+    tuning_smt_members(Cons, Members).
 tuning_smt_members([sym(Type,Name,Arity)|Cons], [[reserved('assert'), [symbol(Dom), symbol(Sym)]]|Members]) :-
-	!,
-	atom_concat('sym!', Type, SymType),
-	atom_concat(SymType, '!', SymType_),
-	atom_number(Arity_, Arity),
-	atom_concat(SymType_, Arity_, SymTypeArity),
-	atom_concat('dom!', SymTypeArity, Dom),
-	atom_concat(SymTypeArity, '!', SymTypeArity_),
-	atom_concat(SymTypeArity_, Name, Sym),
-	tuning_smt_members(Cons, Members).
+    !,
+    atom_concat('sym!', Type, SymType),
+    atom_concat(SymType, '!', SymType_),
+    atom_number(Arity_, Arity),
+    atom_concat(SymType_, Arity_, SymTypeArity),
+    atom_concat('dom!', SymTypeArity, Dom),
+    atom_concat(SymTypeArity, '!', SymTypeArity_),
+    atom_concat(SymTypeArity_, Name, Sym),
+    tuning_smt_members(Cons, Members).
 
 %!  tuning_smt(?Minimize)
 %
@@ -173,14 +162,14 @@ tuning_smt_members([sym(Type,Name,Arity)|Cons], [[reserved('assert'), [symbol(Do
 %   tests cases w.r.t. the expected truth degrees.
 
 tuning_smt_minimize([Assert, Minimize]) :-
-	findall([symbol('lat!distance'), TD_, SMT], (
-		fasill_testcase(TD, Goal),
-		(query(Goal, state(SFCA, _)) -> true ; lattice_call_bot(SFCA)),
-		sfca_to_smtlib(TD, TD_),
-		sfca_to_smtlib(SFCA, SMT)
-	), Distances),
-	Assert = [reserved(assert), [symbol(=), symbol('deviation!'), [symbol(+)|Distances]]],
-	Minimize = [reserved(minimize), symbol('deviation!')].
+    findall([symbol('lat!distance'), TD_, SMT], (
+        fasill_testcase(TD, Goal),
+        (query(Goal, state(SFCA, _)) -> true ; lattice_call_bot(SFCA)),
+        sfca_to_smtlib(TD, TD_),
+        sfca_to_smtlib(SFCA, SMT)
+    ), Distances),
+    Assert = [reserved(assert), [symbol(=), symbol('deviation!'), [symbol(+)|Distances]]],
+    Minimize = [reserved(minimize), symbol('deviation!')].
 
 %!  testcase_to_smtlib(+SFCA, ?SMTLIB)
 %
@@ -189,45 +178,45 @@ tuning_smt_minimize([Assert, Minimize]) :-
 %   SMT-LIB format.
 
 sfca_to_smtlib(num(X), numeral(X)) :-
-	integer(X),
-	!.
+    integer(X),
+    !.
 sfca_to_smtlib(num(X), decimal(Y)) :-
-	float(X),
-	Y is ceil(X*100)/100,
-	!.
+    float(X),
+    Y is ceil(X*100)/100,
+    !.
 sfca_to_smtlib(term('#'(X),[]), symbol(Y)) :-
-	atom_concat('sym!td!0!', X, Y),
-	!.
+    atom_concat('sym!td!0!', X, Y),
+    !.
 sfca_to_smtlib(term(X,[]), symbol(X)) :-
-	atomic(X),
-	!.
+    atomic(X),
+    !.
 sfca_to_smtlib(term(X,Xs), [symbol(Con2),symbol(Name4)|Xs2]) :-
-	X =.. [Op,Name],
-	member((Op,Pre), [('#&','and!'), ('#|','or!'), ('#@','agr!')]),
-	!,
-	length(Xs, Length),
-	atom_number(Atom, Length),
-	atom_concat(Pre, Atom, Con),
-	atom_concat('call!sym!', Con, Con2),
-	atom_concat('sym!', Con, Name2),
-	atom_concat(Name2, '!', Name3),
-	atom_concat(Name3, Name, Name4),
-	maplist(sfca_to_smtlib, Xs, Xs2).
+    X =.. [Op,Name],
+    member((Op,Pre), [('#&','and!'), ('#|','or!'), ('#@','agr!')]),
+    !,
+    length(Xs, Length),
+    atom_number(Atom, Length),
+    atom_concat(Pre, Atom, Con),
+    atom_concat('call!sym!', Con, Con2),
+    atom_concat('sym!', Con, Name2),
+    atom_concat(Name2, '!', Name3),
+    atom_concat(Name3, Name, Name4),
+    maplist(sfca_to_smtlib, Xs, Xs2).
 sfca_to_smtlib(term(X,Xs), [symbol(Con)|Xs2]) :-
-	( (X = '&', Op = '&', lattice_tnorm(Name)) ;
-		(X = '|', Op = '|', lattice_tconorm(Name)) ;
-		X =.. [Op,Name] ),
-	!,
-	member((Op,Pre), [
-		('&','lat!and!'), ('|','lat!or!'), ('@','lat!agr!'), ('#','sym!td!')
-	]),
-	!,
-	atom_concat(Pre, Name, Fun),
-	length(Xs, Length),
-	atom_number(Atom, Length),
-	atom_concat(Fun, '!', Fun_),
-	atom_concat(Fun_, Atom, Con),
-	maplist(sfca_to_smtlib, Xs, Xs2).
+    ( (X = '&', Op = '&', lattice_tnorm(Name)) ;
+        (X = '|', Op = '|', lattice_tconorm(Name)) ;
+        X =.. [Op,Name] ),
+    !,
+    member((Op,Pre), [
+        ('&','lat!and!'), ('|','lat!or!'), ('@','lat!agr!'), ('#','sym!td!')
+    ]),
+    !,
+    atom_concat(Pre, Name, Fun),
+    length(Xs, Length),
+    atom_number(Atom, Length),
+    atom_concat(Fun, '!', Fun_),
+    atom_concat(Fun_, Atom, Con),
+    maplist(sfca_to_smtlib, Xs, Xs2).
 sfca_to_smtlib(term(X,[]), symbol(X)).
 
 %!  tuning_theory_options(+Theory, -Options)
