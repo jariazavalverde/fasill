@@ -62,9 +62,22 @@
     Unfolding is a well-known, widely used, semantics-preserving program
     transformation operation which is able to improve programs, generating more
     efficient code. The unfolding transformation traditionally considered in
-    pure logic programming consists in the replacement of a program clause C by
-    the set of clauses obtained after applying a computation step in all its
-    possible forms on the body of C.
+    pure logic programming consists in the replacement of a program clause $C$
+    by the set of clauses obtained after applying a computation step in all its
+    possible forms on the body of $C$.
+
+    Let $\mathcal{P} = \langle\Pi,\mathcal{R},L\rangle$ be a FASILL program and
+    let $R: A\leftarrow \mathcal{B} \in \Pi$ be a program rule with no empty
+    body. Then, the classic unfolding of rule $R$ in program $\mathcal{P}$ is
+    the new program $\mathcal{P}'= \langle\Pi', \mathcal{R}, L\rangle,
+    \Pi' = (\Pi - \{R\}) \cup \{A\sigma\leftarrow \mathcal{B}' ~|~
+    \langle\mathcal{B};id\rangle \leadsto\ \langle\mathcal{B}';\sigma\rangle\}$.
+
+    In logic programming, classic unfolding preserves the computed answers and
+    it leads to shorter derivations. However, in FASILL the classic unfolding
+    may lose fca's when failure steps are involved, for some goals subsumed by
+    the head of the unfolded rule. Furthermore, it may lead to wrong fca's when
+    similarities are involved.
 */
 
 % CLASSIC UNFOLDING
