@@ -18,7 +18,7 @@ class Predicate:
 		html += "<h4 id=\"%s\"><a href=\"/fasill/documentation/src/%s#%s\">%s</a></h4>" % (self.indicator, slug, self.indicator, self.indicator)
 		for template in self.templates:
 			html += "<?php echo show_template(\"%s\"); ?>" % template
-		html += "<p class=\"fasill-module-predicate-description\">%s</p>" % self.description
+		html += "<p class=\"fasill-module-predicate-description\">%s</p>" % markdown.markdown(self.description)
 		html += "</div>"
 		return html
 

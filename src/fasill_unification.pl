@@ -54,14 +54,80 @@
     $\lambda$ for $\mathcal{E}_1$ and $\mathcal{E}_2$ with respect to
     $\mathcal{R}$ if its unification degree
     $\hat{\mathcal{R}}(\mathcal{E}_1\theta, \mathcal{E}_2\theta) \geq \lambda$.
-    
     Note that our algorithm uses a different notion of unification state, where
     an extra component accumulates an approximation degree. The unification of
     the expressions $\mathcal{E}_1$ and $\mathcal{E}_2$ is obtained by a state
     transformation sequence starting from an initial state
-    $\langle\{\mathcal{E}_1 \sim \mathcal{E}_2\}, id, \alpha_0\rangle$,
+    $\langle\{\mathcal{E}_1 \approx \mathcal{E}_2\}, id, \alpha_0\rangle$,
     where $id$ is the identity substitution and $\alpha_0 = \top$ is the
-    supremum of the lattice $(L, \leq)$.
+    supremum of the lattice $(L, \leq)$. The thresholded similarity-based
+    unification relation, "$\Rightarrow_\lambda$", is defined as the smallest
+    relation derived by the following set of transition rules (where
+    $\mathcal{V}ar(t)$ denotes the set of variables of a given term $t$):
+
+    $$
+    \frac
+        {\langle\{f(t_1,\dots,t_n) \approx g(s_1,\dots,s_n)\} \cup E,
+        \theta, v_1\rangle, \mathcal{R}(f, g) \wedge v_1 = v_2 \geq \lambda,
+        v_2 \geq \bot}
+        {\langle\{t_1 \approx s_1, \dots, t_n \approx s_n\} \cup E, \theta,
+        v_2\rangle}1
+    \\ \ \\
+    \frac
+        {\langle\{X \approx X\} \cup E, \theta, v_1\rangle}
+        {\langle E, \theta, v_1\rangle}2
+    \ \ \
+    \frac
+        {\langle\{X \approx t\} \cup E, \theta, v_1\rangle, X \not\in
+        \mathcal{V}ar(t)}
+        {\langle (E)\{X/t\}, \theta\{X/t\}, v_1\rangle}3
+    \\ \ \\
+    \frac
+        {\langle\{t \approx X\} \cup E, \theta, v_1\rangle}
+        {\langle\{X \approx t\} \cup E, \theta, v_1\rangle}4
+    \ \ \
+    \frac
+        {\langle\{X \approx t\} \cup E, \theta, v_1\rangle, X \in
+        \mathcal{V}ar(t)}
+        {\langle Fail, \theta, v_1\rangle}5
+    \\ \ \\
+    \frac
+        {\langle\{f(t_1,\dots,t_n) \approx g(s_1,\dots,s_n)\} \cup E, \theta,
+        v_1\rangle, \mathcal{R}(f, g) \wedge v_1 = v_2 \not\geq \lambda \ or \
+        v_2 = \bot}
+        {\langle Fail, \theta, v_1\rangle}6
+    $$
+
+    In addition to a different notion of unification state, which uses an extra
+    component to accumulate the approximation  degree obtained so far, our
+    algorithm diverges from the classical algorithm of Martelli and Montanari in
+    what concerns the rules 1 (Term Decomposition) and 6 (Failure Rule). Rule 1
+    is triggered when the value $v_2$, resulting from the composition of the
+    approximation degree, $\mathcal{R}(f, g)$, of the symbols at the root in the
+    terms to be unified and the accumulated approximation degree $v_1$, is equal
+    or greater than $\lambda$ and, also, greater than $\bot$ (the last condition
+    deals with the case where $\mathcal{R}(f, g) \geq \lambda$ and
+    $\lambda = \bot$). Otherwise, Rule 6 is triggered and the unification
+    process ends with failure. Usually, given two expressions $\mathcal{E}_1$
+    and $\mathcal{E}_2$, if there is a successful transition sequence,
+    $\langle\{\mathcal{E}_1 \approx \mathcal{E}_2\}, id, \top\rangle
+    \Rightarrow_\lambda^* \langle\emptyset, \theta, v\rangle$, then we write
+    that $wmgu^\lambda_\mathcal{R}(\mathcal{E}_1, \mathcal{E}_2) = \langle
+    \theta, v\rangle$, being $\theta$ the $\lambda$-wmgu of $\mathcal{E}_1$ and
+    $\mathcal{E}_2$, and $v \geq \lambda$ is their unification degree.
+    
+    In the particular case where $\lambda = \bot$, no thresholding effects are
+    achieved by our weak unification algorithm for supporting the basic
+    (non-thresholded yet) operational semantics of FASILL. In the FASILL system,
+    the user can set the cut value $\lambda$ by modifying the value of the flag
+    `lambda_unification` (whose value is $\bot$ by default).
+
+    For more details see:
+
+    * Julián-Iranzo, Pascual, Ginés Moreno, and Jaime Penabad. "Thresholded
+      semantic framework for a fully integrated fuzzy logic language." Journal of
+      logical and algebraic methods in programming 93 (2017): 42-67.
+      [https://doi.org/10.1016/j.jlamp.2017.08.002](https://doi.org/10.1016/j.jlamp.2017.08.002)
 */
 
 %!  lambda_wmgu(+ExpressionA, +ExpressionB, +Threshold, +OccursCheck, ?WMGU)
