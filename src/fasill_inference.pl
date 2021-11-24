@@ -194,7 +194,10 @@ query(Goal, Answer) :-
 
 derivation(From, State1, State2, Info) :-
     fasill_environment:current_fasill_flag(depth_limit, num(Depth)),
-    derivation(Depth, From, State1, State2, 0, _, Info).
+    catch(
+        derivation(Depth, From, State1, State2, 0, _, Info),
+        exception(Error),
+        (State2 = exception(Error), Info = [])).
 
 %!  derivation(+DepthLimit, +From, +State1, ?State2, +CurrentDepth, ?ResultDepth, ?Info)
 %
@@ -207,6 +210,7 @@ derivation(Depth, _, State, State, N, Depth, []) :-
     N >= Depth,
     !.
 derivation(_, _, exception(Error), exception(Error), N, N, []) :-
+    throw(exception(Error)),
     !.
 derivation(_, _, state(Goal,Subs), State, N, N, []) :-
     is_fuzzy_computed_answer(Goal),
@@ -328,7 +332,8 @@ success_step(From, state(Goal,Subs), state(Goal_,Subs_), Name2/Arity) :-
 failure_step(state(Goal,Subs), state(Goal_,Subs), 'FS') :-
     fasill_environment:current_fasill_flag(failure_steps, term(true, [])),
     fasill_environment:lattice_call_bot(Bot),
-    select_atom(Goal, Goal_, Bot, _).
+    select_atom(Goal, Goal_, Bot, Atom),
+    Atom \= term('+', [_]).
 
 %!  short_interpretive_step(+From, +State1, ?State2, ?Info)
 %

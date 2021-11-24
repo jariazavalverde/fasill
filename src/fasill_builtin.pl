@@ -76,6 +76,7 @@ is_builtin_predicate(Name/Arity) :-
         top/0,
         bot/0,
         truth_degree/2,
+        '+'/1,
         guards/1,
         % all solutions
         findall/3,
@@ -316,6 +317,29 @@ eval_builtin_predicate(truth_degree/2, state(_, Subs), selected(ExprVar, Var, Te
     (State = state(TD_,Subs_) ->
         Var = term('~',[TD,TD_]) ;
         State = exception(Error),
+        fasill_exceptions:throw_exception(Error)).
+
+%!  +(+callable_term)
+%
+%   Goal that must succeed.
+%   +(Goal) is true if and only if Goal represents a goal which is true. If
+%   goal fails, the derivation fails instead of performing a failure step.
+
+eval_builtin_predicate('+'/1, state(_, Subs), selected(ExprVar, Goal_, Atom), state(ExprVar, Subs_)) :-
+    Atom = term('+', [Goal]),
+    (fasill_term:fasill_var(Goal) ->
+        fasill_exceptions:instantiation_error('+'/1, Error),
+        fasill_exceptions:throw_exception(Error) ;
+        true),
+    (\+fasill_term:fasill_callable(Goal) ->
+        fasill_exceptions:type_error(callable, Goal, '+'/1, Error),
+        fasill_exceptions:throw_exception(Error) ;
+        true),
+    fasill_inference:derivation('+'/1, state(Goal,Subs), State, _),
+    (State = state(Goal_,Subs_) ->
+        \+fasill_environment:lattice_call_bot(Goal_) ;
+        State = exception(Error),
+        !,
         fasill_exceptions:throw_exception(Error)).
 
 %!  guards(on(+Guards, -TD))
