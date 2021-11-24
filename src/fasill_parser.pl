@@ -412,7 +412,7 @@ grammar_expression(Priority, T, P1) -->
         ({Specifier = yfx} -> grammar_expression2(Priority, term(Op, [Left,Right]), T, P0, P1) ; {T = term(Op, [Left,Right]), P1 = P0}), !
     ; {T = Left, P1 = Pe} ).
 %%%%%% yfx
-grammar_expression2(Priority, Left, T, P0, P2) -->
+grammar_expression2(Priority, Left, T, _P0, P2) -->
     {Priority > 0, next_priority(Priority, Next)},
     grammar_operator(Priority, yfx, Op, _, pos(L,C)),
     (grammar_expression(Next, Right, P1), ! ; {syntax_error(L, C, 'expression expected', Error), throw_exception(Error)}),
