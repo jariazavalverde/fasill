@@ -278,7 +278,7 @@ eval_builtin_predicate(catch/3, state(_, Subs), selected(ExprVar, Goal_, Term), 
         State = exception(Exception),
         !,
         fasill_environment:lattice_call_bot(Bot),
-        (fasill_unification:unify(Catcher, Exception, state(TD, _)), TD \= Bot ->
+        (fasill_unification:unify(Catcher, Exception, _, state(TD, _)), TD \= Bot ->
             Goal_ = term('&',[term('~',[Catcher,Exception]),Handler]),
             Subs_ = Subs ;
             fasill_exceptions:throw_exception(Exception))).
