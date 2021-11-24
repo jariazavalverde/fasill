@@ -45,6 +45,7 @@
     program_consult/1,
     program_import_prolog/1,
     program_has_predicate/1,
+    program_retractall/0,
     query_consult/2,
     sort_rules_by_id/0,
     fasill_print_rule/1,
@@ -206,8 +207,7 @@ program_rule_id(fasill_rule(_,_,Info), Id) :- member(id(Id), Info).
 %   environment. This predicate cleans the previous rules.
 
 program_consult(Path) :-
-    retractall(fasill_rule(_,_,_)),
-    retractall(fasill_predicate(_)),
+    program_retractall,
     fasill_parser:file_program(Path, Rules),
     (   member(Rule, Rules),
         assertz(Rule),
@@ -275,6 +275,15 @@ program_has_predicate(Name/Arity) :-
     TD \= Bot,
     fasill_predicate(Other/Arity)),
     !.
+
+%!  program_retractall
+%
+%   This predicate succeeds cleaning all the rules loaded in the current
+%   environment.
+
+program_retractall :-
+    retractall(fasill_rule(_,_,_)),
+    retractall(fasill_predicate(_)).
 
 %!  sort_rules_by_id
 %
