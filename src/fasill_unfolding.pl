@@ -39,6 +39,13 @@
     classic_unfold/2,
     classic_unfold_by_id/1,
     classic_unfold_by_id/2,
+    % safety conditions
+    bound_similarity/1,
+    bound_similarity_by_id/1,
+    head_preserving/1,
+    head_preserving_by_id/1,
+    body_overriding/1,
+    body_overriding_by_id/1,
     % guards-based unfolding
     guards_unfold/1,
     guards_unfold/2,
@@ -120,7 +127,7 @@ classic_unfold(R1) :-
 
 %!  classic_unfold(+Rule, ?Unfolded)
 %
-%   This predicate succeeds when +Rule is a FASILL rule and Unfolded is an
+%   This predicate succeeds when Rule is a FASILL rule and Unfolded is an
 %   unfolded rule of Rule.
 
 :- dynamic(unfolding_id/1).
@@ -141,6 +148,80 @@ classic_unfold(R1, R2) :-
       succ(R, N),
       assertz(unfolding_id(N)) ),
     R2 = fasill_rule(head(Head_), body(Expr), [id(Id2)|Info]).
+
+% SAFETY CONDITIONS
+
+%!  bound_similarity(+Rule)
+%
+%   This predicate succeeds when Rule is a FASILL rule that holds the 
+%   bound-similarity condition.
+bound_similarity(R) :-
+    R = fasill_rule(head(Head), body(Body), _),
+    fasill_substitution:init_substitution(Head, Sub0),
+    forall(
+        fasill_inference:inference(unfolding/0, state(Body, Sub0), state(_, Sub1), _),
+        is_bound_substitution(Sub1)
+    ).
+
+%!  bound_similarity_by_id(+Id)
+%
+%   This predicate succeeds when Id is the identifier of a FASILL rule that
+%   holds the bound-similarity condition.
+bound_similarity_by_id(Id) :-
+    fasill_environment:fasill_rule(Head, Body, Info),
+    member(id(Id), Info), !,
+    bound_similarity(fasill_rule(Head, Body, Info)).
+
+%!  head_preserving(+Rule)
+%
+%   This predicate succeeds when Rule is a FASILL rule that holds the 
+%   head-preserving condition.
+head_preserving(R) :-
+    R = fasill_rule(head(Head), body(Body), _),
+    fasill_substitution:init_substitution(Head, Sub0),
+    forall((
+        fasill_inference:inference(unfolding/0, state(Body, Sub0), state(_, Sub1), _),
+        fasill_substitution:apply(Sub1, Head, Head1)
+    ),
+        fasill_inference:is_rename(Head, Head1)
+    ).
+
+%!  bound_similarity_by_id(+Id)
+%
+%   This predicate succeeds when Id is the identifier of a FASILL rule that
+%   holds the head-preserving condition.
+head_preserving_by_id(Id) :-
+    fasill_environment:fasill_rule(Head, Body, Info),
+    member(id(Id), Info), !,
+    head_preserving(fasill_rule(Head, Body, Info)).
+
+%!  body_overriding(+Rule)
+%
+%   This predicate succeeds when Rule is a FASILL rule that holds the 
+%   body-overriding condition.
+body_overriding(R) :-
+    R = fasill_rule(head(Head), body(Body), _),
+    fasill_substitution:init_substitution(Head, Sub0),
+    fasill_environment:lattice_call_bot(Bot),
+    (fasill_inference:select_atom(Body, BodyBot, Bot, _) ->
+        forall(
+            fasill_inference:derivation(unfolding/0, state(BodyBot, Sub0), State, _),
+            ( State = exception(_)
+            ; State = state(TD, Sub1),
+              TD = Bot,
+              fasill_substitution:apply(Sub1, Head, Head1),
+              fasill_inference:is_rename(Head, Head1)
+            )
+        ) ; true).
+
+%!  body_overriding_by_id(+Id)
+%
+%   This predicate succeeds when Id is the identifier of a FASILL rule that
+%   holds the body-overriding condition.
+body_overriding_by_id(Id) :-
+    fasill_environment:fasill_rule(Head, Body, Info),
+    member(id(Id), Info), !,
+    body_overriding(fasill_rule(Head, Body, Info)).
 
 % GUARDS ON-BASED UNFOLDING
 
@@ -268,6 +349,14 @@ bound_substitution(Sub, BoundSub) :-
     fasill_substitution:substitution_to_list(Sub, Binds),
     include(is_bound, Binds, BoundBinds),
     fasill_substitution:list_to_substitution(BoundBinds, BoundSub).
+
+%!  is_bound_substitution(+Substitution)
+%
+%   Check if a substitution is bound.
+
+is_bound_substitution(Sub) :-
+    fasill_substitution:substitution_to_list(Sub, List),
+    forall(member(_-Term, List), is_bound(Term)).
 
 %!  is_bound(+Term)
 %

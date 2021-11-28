@@ -147,11 +147,20 @@ sandbox_classic_unfold(Program, Lattice, Sim, Rule) :-
         write('uncaught exception in similarities: '),
         fasill_term:fasill_print_term(Error2),
         nl)),
+    (fasill_unfolding:bound_similarity_by_id(Rule) ->
+        BoundSimilarity = yes ; BoundSimilarity = no),
+    (fasill_unfolding:head_preserving_by_id(Rule) ->
+        HeadPreserving = yes ; HeadPreserving = no),
+    (fasill_unfolding:body_overriding_by_id(Rule) ->
+        BodyOverriding = yes ; BodyOverriding = no),
     fasill_unfolding:classic_unfold_by_id(Rule),
     (	fasill_environment:fasill_rule(Head, Body, Info),
         fasill_environment:fasill_print_rule(fasill_rule(Head, Body, Info)),
         nl,
-        fail ; true).
+        fail ; true),
+    write('% bound-similarity condition: '), writeln(BoundSimilarity),
+    write('% head-preserving condition: '), writeln(HeadPreserving),
+    write('% body-overriding condition: '), writeln(BodyOverriding).
 
 %!  sandbox_unfold(+Program, +Lattice, +Sim, +Rule)
 % 
