@@ -466,7 +466,7 @@ eval_builtin_predicate(findall/4, state(_, Subs), selected(ExprVar, Var, Term), 
         fasill_inference:derivation(findall/4, state(Goal,GoalVars), State, _),
         (State = state(TD,Subs_) ->
             TD \= Bot,
-            fasill_substitution:apply(Template, Subs_, Template_) ;
+            fasill_substitution:apply(Subs_, Template, Template_) ;
             State = exception(Error), throw_exception(Error))
     ), List),
     maplist(nth0(0), List, TDs),
