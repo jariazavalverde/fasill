@@ -408,7 +408,9 @@ deep_interpret(top, Top) :-
     fasill_environment:lattice_call_top(Top).
 deep_interpret(sup(X, Y), Z) :-
     !,
-    fasill_environment:lattice_call_supremum(X, Y, Z).
+    deep_interpret(X, Ix),
+    deep_interpret(Y, Iy),
+    fasill_environment:lattice_call_supremum(Ix, Iy, Z).
 deep_interpret(term(Op, Args), Result) :-
     Op =.. [F|_],
     once(member(F, ['&','|','@','#&','#|','#@','#?'])),

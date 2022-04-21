@@ -60,6 +60,7 @@
     lattice_call_exclude/1,
     lattice_call_leq/2,
     lattice_call_distance/3,
+    lattice_call_supremum/3,
     lattice_call_connective/3,
     lattice_reduce_connective/3,
     lattice_consult/1,
