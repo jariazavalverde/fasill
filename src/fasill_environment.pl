@@ -676,62 +676,85 @@ similarity_closure :-
     lattice_call_bot(Bot),
     lattice_call_top(Top),
     similarity_retract,
-    (similarity_closure_check_equations(Domain, Scheme), false ; true),
-    (similarity_closure_reflexive(Domain, Scheme, Tnorm, Bot, Top), false ; true),
-    (similarity_closure_symmetric(Domain, Scheme, Tnorm, Bot, Top), false ; true),
-    (similarity_closure_transitive(Domain, Scheme, Tnorm, Bot, Top), false ; true),
+    similarity_closure_check_equations(Domain, Scheme),
+    similarity_closure_reflexive(Domain, Scheme, Tnorm, Bot, Top),
+    similarity_closure_symmetric(Domain, Scheme, Tnorm, Bot, Top),
+    similarity_closure_transitive(Domain, Scheme, Tnorm, Bot, Top),
     assertz(fasill_similarity_tnorm(Tnorm)).
 
 similarity_closure_check_equations(Dom, Scheme) :-
-    member(X/Arity, Dom),
-    member(Y/Arity, Dom),
-    X @< Y,
-    setof(TD, Sym^(
-        member(sim(X,Y,Arity,TD,Sym), Scheme);
-        member(sim(Y,X,Arity,TD,Sym), Scheme)
-    ), Set),
-    length(Set, Length),
-    from_prolog_list(Set, FSet),
-    (Length > 1 ->
-        fasill_exceptions:throw_warning(term(warning, [term(conflicting_equations, [term('/', [term(X, []), num(Arity)]), term('/', [term(Y, []), num(Arity)]), FSet])]))).
+    forall(
+      ( member(X/Arity, Dom),
+        member(Y/Arity, Dom),
+        X @< Y,
+        setof(TD, Sym^(
+            member(sim(X,Y,Arity,TD,Sym), Scheme);
+            member(sim(Y,X,Arity,TD,Sym), Scheme)
+        ), Set),
+        Set = [_,_|_]
+      ), (
+        from_prolog_list(Set, FSet),
+        fasill_exceptions:throw_warning(term(warning, [
+            term(conflicting_equations, [
+                term('/', [term(X, []), num(Arity)]),
+                term('/', [term(Y, []), num(Arity)]),
+                FSet
+            ])
+        ]))
+      )
+    ).
 
 similarity_closure_reflexive(Dom, _, _, _, Top) :-
-    member(X/Arity, Dom),
-    assertz(fasill_similarity(X/Arity,X/Arity,Top,no)).
+    forall(
+        member(X/Arity, Dom),
+        assertz(fasill_similarity(X/Arity,X/Arity,Top,no))
+    ).
 
 similarity_closure_symmetric(Dom, Scheme, _, _, _) :-
-    member(X/Arity, Dom),
-    member(Y/Arity, Dom),
-    \+(fasill_similarity(X/Arity,Y/Arity,_,_)),
-    once(member(sim(X,Y,Arity,TD,Sym), Scheme) ; member(sim(Y,X,Arity,TD,Sym), Scheme)),
-    assertz(fasill_similarity(X/Arity,Y/Arity,TD,Sym)),
-    assertz(fasill_similarity(Y/Arity,X/Arity,TD,Sym)).
+    forall(
+      ( member(X/Arity, Dom),
+        member(Y/Arity, Dom),
+        \+(fasill_similarity(X/Arity,Y/Arity,_,_)),
+        once( member(sim(X,Y,Arity,TD,Sym), Scheme)
+            ; member(sim(Y,X,Arity,TD,Sym), Scheme)
+        )
+      ), (
+        assertz(fasill_similarity(X/Arity,Y/Arity,TD,Sym)),
+        assertz(fasill_similarity(Y/Arity,X/Arity,TD,Sym))
+      )
+    ).
+    
+    
 
 similarity_closure_transitive(Dom, _, Tnorm, Bot, Top) :-
-    member(Y/Arity, Dom),
-    member(X/Arity, Dom), X \= Y,
-    member(Z/Arity, Dom), Z \= Y, X \= Z,
-    once(fasill_similarity(X/Arity,Z/Arity,TDxz,Sxz) ; (TDxz = Bot, Sxz = no)),
-    once(fasill_similarity(X/Arity,Y/Arity,TDxy,Sxy)),
-    once(fasill_similarity(Y/Arity,Z/Arity,TDyz,Syz)),
-    (TDxy == Top -> TDy = TDyz, Sy = Syz ;
-        (TDyz == Top -> TDy = TDxy, Sy = Sxy ;
-            ((Sxy == no, Syz == no, Tnorm = '&'(_)) ->
-                (lattice_call_connective(Tnorm, [TDxy,TDyz], TDy), Sy = no) ;
-                (TDy = term(Tnorm, [TDxy, TDyz]), Sy = yes)
+    forall(
+      ( member(Y/Arity, Dom),
+        member(X/Arity, Dom), X \= Y,
+        member(Z/Arity, Dom), Z \= Y, X \= Z,
+        once(fasill_similarity(X/Arity,Z/Arity,TDxz,Sxz) ; (TDxz = Bot, Sxz = no)),
+        once(fasill_similarity(X/Arity,Y/Arity,TDxy,Sxy)),
+        once(fasill_similarity(Y/Arity,Z/Arity,TDyz,Syz))
+      ), (
+        (TDxy == Top -> TDy = TDyz, Sy = Syz ;
+            (TDyz == Top -> TDy = TDxy, Sy = Sxy ;
+                ((Sxy == no, Syz == no, Tnorm = '&'(_)) ->
+                    (lattice_call_connective(Tnorm, [TDxy,TDyz], TDy), Sy = no) ;
+                    (TDy = term(Tnorm, [TDxy, TDyz]), Sy = yes)
+                )
             )
-        )
-    ),
-    (TDxz == Bot -> TD = TDy, S = Sy ;
-        (TDy == Bot -> TD = TDxz, S = Sxz ;
-            ((Sxz == no, Sy == no, Tnorm = '&'(_)) ->
-                (lattice_call_supremum(TDxz, TDy, TD), S = no) ;
-                (TD = sup(TDxz, TDy), S = yes)
+        ),
+        (TDxz == Bot -> TD = TDy, S = Sy ;
+            (TDy == Bot -> TD = TDxz, S = Sxz ;
+                ((Sxz == no, Sy == no, Tnorm = '&'(_)) ->
+                    (lattice_call_supremum(TDxz, TDy, TD), S = no) ;
+                    (TD = sup(TDxz, TDy), S = yes)
+                )
             )
-        )
-    ),
-    retractall(fasill_similarity(X/Arity,Z/Arity,_,_)),
-    assertz(fasill_similarity(X/Arity,Z/Arity,TD,S)).
+        ),
+        retractall(fasill_similarity(X/Arity,Z/Arity,_,_)),
+        assertz(fasill_similarity(X/Arity,Z/Arity,TD,S))
+      )
+    ).
 
 % TEST CASES
 
