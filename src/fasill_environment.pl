@@ -644,25 +644,42 @@ similarity_consult(Path) :-
         fail ; true),
     similarity_closure.
 
+%!  similarity_domain(?Domain)
+%
+%   This predicate computes the domain of the similarity relation asserted
+%   into the current environment.
+
+similarity_domain(Domain) :-
+    setof(Atom/Arity, Atom2^TD^Sym^(
+        similarity_between(Atom, Atom2, Arity, TD, Sym);
+        similarity_between(Atom2, Atom, Arity, TD, Sym)
+    ), Domain).
+
+%!  similarity_scheme(?Scheme)
+%
+%   This predicate computes the scheme from the similarity relation asserted
+%   into the current environment.
+
+similarity_scheme(Scheme) :-
+    findall(sim(Atom1,Atom2,Arity,TD,Sym),
+        similarity_between(Atom1,Atom2,Arity,TD,Sym), Scheme).
+
 %!  similarity_closure
 %
 %   This predicate computes the reflexive, symmetric and  transitive closure of
 %   the similarity scheme asserted into the current environment.
 
 similarity_closure :-
-    setof(Atom/Arity, Atom2^TD^Sym^(
-        similarity_between(Atom, Atom2, Arity, TD, Sym);
-        similarity_between(Atom2, Atom, Arity, TD, Sym)
-    ), Dom),
-    findall(sim(Atom1,Atom2,Arity,TD,Sym), similarity_between(Atom1,Atom2,Arity,TD,Sym), Scheme),
+    similarity_domain(Domain),
+    similarity_scheme(Scheme),
     similarity_tnorm(Tnorm),
     lattice_call_bot(Bot),
     lattice_call_top(Top),
     similarity_retract,
-    (similarity_closure_check_equations(Dom, Scheme), false ; true),
-    (similarity_closure_reflexive(Dom, Scheme, Tnorm, Bot, Top), false ; true),
-    (similarity_closure_symmetric(Dom, Scheme, Tnorm, Bot, Top), false ; true),
-    (similarity_closure_transitive(Dom, Scheme, Tnorm, Bot, Top), false ; true),
+    (similarity_closure_check_equations(Domain, Scheme), false ; true),
+    (similarity_closure_reflexive(Domain, Scheme, Tnorm, Bot, Top), false ; true),
+    (similarity_closure_symmetric(Domain, Scheme, Tnorm, Bot, Top), false ; true),
+    (similarity_closure_transitive(Domain, Scheme, Tnorm, Bot, Top), false ; true),
     assertz(fasill_similarity_tnorm(Tnorm)).
 
 similarity_closure_check_equations(Dom, Scheme) :-
