@@ -173,9 +173,8 @@ interpretable(Expr) :-
 %   goal Goal. A fca is a term of the form state(TD, Substitution), where TD is
 %   the truth degree.
 
-:- dynamic check_success/0, trace_derivation/1, trace_level/1.
+:- dynamic trace_derivation/1, trace_level/1.
 query(Goal, Answer) :-
-    retractall(check_success),
     retractall(trace_derivation),
     retractall(trace_level(_)),
     assertz(trace_level(0)),
@@ -260,13 +259,9 @@ inference(From, state(Goal,Subs), State_, Info) :-
 %   the derivation.
 
 operational_step(From, State1, State2, Info) :-
-    assertz(check_success),
-    success_step(From, State1, State2, Info),
-    retractall(check_success).
-operational_step(_, State1, State2, Info) :-
-    check_success,
-    retractall(check_success),
-    failure_step(State1, State2, Info).
+    ( success_step(From, State1, State2, Info) *->
+      true
+    ; failure_step(State1, State2, Info) ).
 
 %!  simplification_step(+From, +State1, ?State2, ?Info)
 %
@@ -318,7 +313,6 @@ success_step(From, state(Goal,Subs), state(Goal_,Subs_), Name2/Arity) :-
         ) ; (
             % Undefined predicate
             fasill_exceptions:existence_error(procedure, Name/Arity, From, Error),
-            retractall(check_success),
             fasill_exceptions:throw_exception(Error)
         ))
     )).

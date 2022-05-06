@@ -48,7 +48,6 @@
 ]).
 
 :- use_module(fasill_environment).
-:- use_module(fasill_inference).
 :- use_module(fasill_term).
 
 /** <module> Exceptions
@@ -85,7 +84,6 @@
 %
 %   This predicate throws the exception Exception.
 throw_exception(Exception) :-
-    fasill_inference:retractall(check_success),
     throw(Exception).
 
 %!  clear_warnings

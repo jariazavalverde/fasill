@@ -723,8 +723,6 @@ similarity_closure_symmetric(Dom, Scheme, _, _, _) :-
         assertz(fasill_similarity(Y/Arity,X/Arity,TD,Sym))
       )
     ).
-    
-    
 
 similarity_closure_transitive(Dom, _, Tnorm, Bot, Top) :-
     forall(
