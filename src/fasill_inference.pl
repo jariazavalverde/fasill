@@ -194,47 +194,48 @@ query(Goal, Answer) :-
 derivation(From, State1, State2, Info) :-
     fasill_environment:current_fasill_flag(depth_limit, num(Depth)),
     catch(
-        derivation(Depth, From, State1, State2, 0, _, Info),
+        derivation(From, State1, State2, Depth, 0, Info),
         exception(Error),
         (State2 = exception(Error), Info = [])).
 
-%!  derivation(+DepthLimit, +From, +State1, ?State2, +CurrentDepth, ?ResultDepth, ?Info)
+%!  derivation(+From, +State1, ?State2, +DepthLimit, +CurrentDepth, ?Info)
 %
 %   This predicate performs a complete derivation from an initial state State1
 %   to the final state State2. Info is a list containing the information of
 %   each step.
 
-derivation(Depth, _, State, State, N, Depth, []) :-
+derivation(_, State, State, Depth, N, []) :-
     Depth > 0,
     N >= Depth,
     !.
-derivation(_, _, exception(Error), exception(Error), N, N, []) :-
+derivation(_, exception(Error), exception(Error), _, _, []) :-
     throw(exception(Error)),
     !.
-derivation(_, _, state(Goal,Subs), State, N, N, []) :-
+derivation(_, state(Goal,Sub), state(Goal,Sub), _, _, []) :-
     is_fuzzy_computed_answer(Goal),
     !,
     fasill_environment:lattice_call_bot(Bot),
-    (Bot == Goal ->
-        fasill_environment:current_fasill_flag(failure_steps, term(true, [])) ;
-        true),
-    State = state(Goal, Subs).
-derivation(Depth, From, State, State_, N, P, [X|Xs]) :-
-    (trace_level(Level) ->
-        Level_ is Level+1 ;
-        Level_ = false),
+    ( Bot == Goal ->
+      fasill_environment:current_fasill_flag(failure_steps, term(true, []))
+    ; true ).
+derivation(From, State1, State3, Depth, N, [X|Xs]) :-
+    ( trace_level(Level) ->
+      Level_ is Level+1
+    ; Level_ = false ),
     catch(
-        inference(From, State, State1, X),
+        inference(From, State1, State2, X),
         Error,
-        (State1 = exception(Error), !)),
-    (fasill_environment:current_fasill_flag(trace, term(true,[])), State1 \= exception(_) ->
-        assertz(trace_derivation(trace(Level_, X, State1))) ;
-        true),
-    (Level_\= false ->
-        retractall(trace_level(_)), assertz(trace_level(Level_)) ;
-        true),
+        (State2 = exception(Error), !)),
+    ( fasill_environment:current_fasill_flag(trace, term(true,[])),
+      State2 \= exception(_) ->
+      assertz(trace_derivation(trace(Level_, X, State2)))
+    ; true ),
+    ( Level_ \= false ->
+      retractall(trace_level(_)),
+      assertz(trace_level(Level_))
+    ; true ),
     succ(N, M),
-    derivation(Depth, From, State1, State_, M, P, Xs).
+    derivation(From, State2, State3, Depth, M, Xs).
 
 %!  inference(+From, +State1, ?State2, ?Info)
 %
