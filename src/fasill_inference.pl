@@ -204,9 +204,8 @@ derivation(From, State1, State2, Info) :-
 %   to the final state State2. Info is a list containing the information of
 %   each step.
 
-derivation(_, State, State, Depth, N, []) :-
+derivation(_, State, State, Depth, Depth, []) :-
     Depth > 0,
-    N >= Depth,
     !.
 derivation(_, exception(Error), exception(Error), _, _, []) :-
     throw(exception(Error)),
