@@ -70,6 +70,7 @@ is_builtin_predicate(Name/Arity) :-
         % control constructs
         ','/2,
         ';'/2,
+        '->'/2,
         call/_,
         once/1,
         throw/1,
@@ -203,6 +204,32 @@ eval_builtin_predicate(','/2, state(_, Subs), selected(ExprVar, Var, Term), stat
 eval_builtin_predicate(';'/2, state(_, Subs), selected(ExprVar, Var, Term), state(ExprVar, Subs)) :-
     Term = term(';', [X,Y]),
     (Var = X ; Var = Y).
+
+%!  '->'(+callable_term, +callable_term)
+%
+%   If-Then.
+%   '->'(If, Then) is true if and only if If is true and Then is true for the
+%   first solution of If.
+
+eval_builtin_predicate('->'/2, state(_, S0), selected(ExprVar, Var, Term), state(ExprVar, S0)) :-
+    Term = term('->', [If,Then]),
+    ((fasill_term:fasill_var(If) ; fasill_term:fasill_var(Then)) ->
+        fasill_exceptions:instantiation_error(call/Arity, Error),
+        fasill_exceptions:throw_exception(Error) ;
+        true),
+    (\+fasill_term:fasill_callable(If) ->
+        fasill_exceptions:type_error(callable, If, call/Arity, Error),
+        fasill_exceptions:throw_exception(Error) ;
+        true),
+    (\+fasill_term:fasill_callable(Then) ->
+        fasill_exceptions:type_error(callable, Then, call/Arity, Error),
+        fasill_exceptions:throw_exception(Error) ;
+        true),
+    fasill_environment:lattice_call_bot(Bot),
+    ExprVar = term('&', [
+        term('+', [term(once, [If])]),
+        term(call, [Then])
+    ]).
 
 %!  call(+callable_term [, @term, ...])
 %
