@@ -198,25 +198,23 @@ parse_testcases(Input, Testcases) :-
 %   Initial operator table.
 
 :- dynamic current_op/4.
-current_op(1300, xfx, '#<-',  yes).
 current_op(1300, xfx, ':-',   no).
 current_op(1300, xfx, '<-',   no).
-current_op(1300, xfx, '<-',   yes).
 current_op(1300, fx,  '<-',   no).
 current_op(1300, fx,  ':-',   no).
 current_op(1200, xfx, 'with', no).
 current_op(1200, fx, 'guards',no).
-current_op(1150, xfx, 'on',   no).
 current_op(1100, xfy, ';',    no).
 current_op(1100, xfy, '#|',   yes).
 current_op(1100, xfy, '#/',   yes).
 current_op(1100, xfy, '|',    yes).
 current_op(1100, xfy, '|',     no).
+current_op(1050, xfx, '->',    no).
 current_op(1000, xfy, ',',    no).
-current_op(975, xfx, '->',    no).
-current_op(900, xfy, '#&',   yes).
-current_op(900, xfy, '&',    yes).
-current_op(900, xfy, '&',     no).
+current_op(1000, xfy, '#&',   yes).
+current_op(1000, xfy, '&',    yes).
+current_op(1000, xfy, '&',     no).
+current_op(900,  xfx, 'on',   no).
 current_op(700,  xfx, 'is',   no).
 current_op(700,  xfx, '=',    no).
 current_op(700,  xfx, '~',    no).
@@ -257,14 +255,11 @@ current_op(0,    f,   '#/',  yes).
 %   Gives the next priority to derivate an expression.
 
 next_priority(1300, 1200).
-next_priority(1200, 1150).
-next_priority(1150, 1125).
-next_priority(1125, 1100).
-next_priority(1100, 1000).
-next_priority(1000, 975).
-next_priority(999, 975).
-next_priority(975, 950).
-next_priority(950, 900).
+next_priority(1200, 1100).
+next_priority(1100, 1050).
+next_priority(1050, 1000).
+next_priority(1000, 999).
+next_priority(999, 900).
 next_priority(900, 700).
 next_priority(700, 500).
 next_priority(500, 400).

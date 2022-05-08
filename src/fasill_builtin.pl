@@ -76,6 +76,7 @@ is_builtin_predicate(Name/Arity) :-
         top/0,
         bot/0,
         truth_degree/2,
+        on/2,
         '+'/1,
         guards/1,
         % all solutions
@@ -314,6 +315,27 @@ eval_builtin_predicate(truth_degree/2, state(_, Subs), selected(ExprVar, Var, Te
         fasill_inference:assertz(trace_derivation(trace(Level_, truth_degree/2, state(Goal,Subs)))) ;
         true),
     fasill_inference:derivation(truth_degree/2, state(Goal,Subs), State, _),
+    (State = state(TD_,Subs_) ->
+        Var = term('~',[TD,TD_]) ;
+        State = exception(Error),
+        fasill_exceptions:throw_exception(Error)).
+
+%!  on(+callable_tem, ?term)
+%
+%   Truth degree.
+%   Infix form of truth_degree/2.
+
+eval_builtin_predicate(on/2, state(_, Subs), selected(ExprVar, Var, Term), state(ExprVar, Subs_)) :-
+    Term = term(on, [Goal,TD]),
+    (fasill_inference:trace_level(Level) ->
+        Level_ is Level+1,
+        fasill_inference:retractall(trace_level(_)),
+        fasill_inference:assertz(trace_level(Level_)) ;
+        true),
+    (fasill_environment:current_fasill_flag(trace, term(true,[])) ->
+        fasill_inference:assertz(trace_derivation(trace(Level_, on/2, state(Goal,Subs)))) ;
+        true),
+    fasill_inference:derivation(on/2, state(Goal,Subs), State, _),
     (State = state(TD_,Subs_) ->
         Var = term('~',[TD,TD_]) ;
         State = exception(Error),
