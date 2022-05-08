@@ -71,6 +71,7 @@ is_builtin_predicate(Name/Arity) :-
         ','/2,
         ';'/2,
         call/_,
+        once/1,
         throw/1,
         catch/3,
         top/0,
@@ -238,6 +239,35 @@ eval_builtin_predicate(call/Arity, state(_, Subs), selected(ExprVar, Var, Atom),
         fasill_exceptions:throw_exception(Error) ;
         true),
     Var = Term.
+
+%!  once(+callable_term)
+%
+%   Evaluate a term just once.
+%   once(Term) is true. once makes sure that Term fails or succeeds just once.
+
+eval_builtin_predicate(once/1, state(Goal, S0), selected(ExprVar, Var, Atom), state(ExprVar, S1)) :-
+    Atom = term(once, [Term]),
+    (fasill_term:fasill_var(Term) ->
+        fasill_exceptions:instantiation_error(once/1, Error),
+        fasill_exceptions:throw_exception(Error) ;
+        true),
+    (\+fasill_term:fasill_callable(Term) ->
+        fasill_exceptions:type_error(callable, Term, once/1, Error),
+        fasill_exceptions:throw_exception(Error) ;
+        true),
+    fasill_environment:lattice_call_bot(Bot),
+    once((
+        fasill_inference:derivation(once/1, state(Term,S0), State, _),
+        State = state(TD,S1),
+        TD \== Bot ;
+        TD = Bot,
+        S1 = S0
+    )),
+    ( State = state(TD,S1) ->
+      Var = TD
+    ; State = exception(Error),
+      fasill_exceptions:throw_exception(Error)
+    ).
 
 %!  throw(+term)
 %
