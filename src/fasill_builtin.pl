@@ -272,7 +272,7 @@ eval_builtin_predicate(call/Arity, state(_, Subs), selected(ExprVar, Var, Atom),
 %   Evaluate a term just once.
 %   once(Term) is true. once makes sure that Term fails or succeeds just once.
 
-eval_builtin_predicate(once/1, state(Goal, S0), selected(ExprVar, Var, Atom), state(ExprVar, S1)) :-
+eval_builtin_predicate(once/1, state(Goal, S0), selected(ExprVar, Var, Atom), state(ExprSub, S1)) :-
     Atom = term(once, [Term]),
     (fasill_term:fasill_var(Term) ->
         fasill_exceptions:instantiation_error(once/1, Error),
@@ -287,11 +287,11 @@ eval_builtin_predicate(once/1, state(Goal, S0), selected(ExprVar, Var, Atom), st
         fasill_inference:derivation(once/1, state(Term,S0), State, _),
         State = state(TD,S1),
         TD \== Bot ;
-        TD = Bot,
-        S1 = S0
+        State = exception(_)
     )),
     ( State = state(TD,S1) ->
-      Var = TD
+      Var = TD,
+      fasill_substitution:apply(S1, ExprVar, ExprSub)
     ; State = exception(Error),
       fasill_exceptions:throw_exception(Error)
     ).
@@ -321,26 +321,34 @@ eval_builtin_predicate(throw/1, _, selected(_, _, Term), _) :-
 %   system backtracks to the start of catch/3 while preserving the thrown
 %   exception term, and Handler is called as in call/1.
 
-eval_builtin_predicate(catch/3, state(_, Subs), selected(ExprVar, Goal_, Term), state(ExprVar, Subs_)) :-
+eval_builtin_predicate(catch/3, state(_,S0), selected(E0,Var,Term), state(E1,S1)) :-
     Term = term(catch, [Goal, Catcher, Handler]),
-    (fasill_inference:trace_level(Level) ->
-        Level_ is Level+1,
-        fasill_inference:retractall(trace_level(_)),
-        fasill_inference:assertz(trace_level(Level_)) ;
+    ((fasill_term:fasill_var(Goal) ; fasill_term:fasill_var(Handler)) ->
+        fasill_exceptions:instantiation_error(catch/3, Error),
+        fasill_exceptions:throw_exception(Error) ;
         true),
-    (fasill_environment:current_fasill_flag(trace, term(true,[])) ->
-        fasill_inference:assertz(trace_derivation(trace(Level_, catch/3, state(Goal,Subs)))) ;
+    (\+fasill_term:fasill_callable(Goal) ->
+        fasill_exceptions:type_error(callable, Goal, catch/3, Error),
+        fasill_exceptions:throw_exception(Error) ;
         true),
-    fasill_inference:derivation(catch/3, state(Goal,Subs), State, _),
-    (State = state(Goal_,Subs_) ->
-        true ;
-        State = exception(Exception),
-        !,
-        fasill_environment:lattice_call_bot(Bot),
-        (fasill_unification:unify(Catcher, Exception, _, state(TD, _)), TD \= Bot ->
-            Goal_ = term('&',[term('~',[Catcher,Exception]),Handler]),
-            Subs_ = Subs ;
-            fasill_exceptions:throw_exception(Exception))).
+    (\+fasill_term:fasill_callable(Handler) ->
+        fasill_exceptions:type_error(callable, Handler, catch/3, Error),
+        fasill_exceptions:throw_exception(Error) ;
+        true),
+    fasill_inference:derivation(catch/3, state(Goal,S0), State, _),
+    ( State = state(TD,S1) ->
+      Var = TD,
+      fasill_substitution:apply(S1, E0, E1)
+    ; State = exception(Exception),
+      !,
+      fasill_environment:lattice_call_bot(Bot),
+      ( fasill_unification:unify(Catcher, Exception, _, state(Bot,_)) ->
+        fasill_exceptions:throw_exception(Exception)
+      ; Var = term('&',[term('~',[Catcher,Exception]),Handler]),
+        E1 = E0,
+        S1 = S0
+      )
+    ).
 
 %!  top
 %
@@ -361,42 +369,46 @@ eval_builtin_predicate(bot/0, state(_, Subs), selected(ExprVar, bot, _), state(E
 %   Truth degree.
 %   truth_degree(Goal, TD) is true if TD is the truth degree for the goal Goal.
 
-eval_builtin_predicate(truth_degree/2, state(_, Subs), selected(ExprVar, Var, Term), state(ExprVar, Subs_)) :-
+eval_builtin_predicate(truth_degree/2, state(_, S0), selected(E0, Var, Term), state(E1, S1)) :-
     Term = term(truth_degree, [Goal,TD]),
-    (fasill_inference:trace_level(Level) ->
-        Level_ is Level+1,
-        fasill_inference:retractall(trace_level(_)),
-        fasill_inference:assertz(trace_level(Level_)) ;
+    (fasill_term:fasill_var(Goal) ->
+        fasill_exceptions:instantiation_error(truth_degree/2, Error),
+        fasill_exceptions:throw_exception(Error) ;
         true),
-    (fasill_environment:current_fasill_flag(trace, term(true,[])) ->
-        fasill_inference:assertz(trace_derivation(trace(Level_, truth_degree/2, state(Goal,Subs)))) ;
+    (\+fasill_term:fasill_callable(Goal) ->
+        fasill_exceptions:type_error(callable, Goal, truth_degree/2, Error),
+        fasill_exceptions:throw_exception(Error) ;
         true),
-    fasill_inference:derivation(truth_degree/2, state(Goal,Subs), State, _),
-    (State = state(TD_,Subs_) ->
-        Var = term('~',[TD,TD_]) ;
-        State = exception(Error),
-        fasill_exceptions:throw_exception(Error)).
+    fasill_inference:derivation(truth_degree/2, state(Goal,S0), State, _),
+    ( State = state(TD_,S1) ->
+      Var = term('~',[TD,TD_]),
+      fasill_substitution:apply(S1, E0, E1)
+    ; State = exception(Error),
+      fasill_exceptions:throw_exception(Error)
+    ).
 
 %!  on(+callable_tem, ?term)
 %
 %   Truth degree.
 %   Infix form of truth_degree/2.
 
-eval_builtin_predicate(on/2, state(_, Subs), selected(ExprVar, Var, Term), state(ExprVar, Subs_)) :-
+eval_builtin_predicate(on/2, state(_, S0), selected(E0, Var, Term), state(E1, S1)) :-
     Term = term(on, [Goal,TD]),
-    (fasill_inference:trace_level(Level) ->
-        Level_ is Level+1,
-        fasill_inference:retractall(trace_level(_)),
-        fasill_inference:assertz(trace_level(Level_)) ;
+    (fasill_term:fasill_var(Goal) ->
+        fasill_exceptions:instantiation_error(on/2, Error),
+        fasill_exceptions:throw_exception(Error) ;
         true),
-    (fasill_environment:current_fasill_flag(trace, term(true,[])) ->
-        fasill_inference:assertz(trace_derivation(trace(Level_, on/2, state(Goal,Subs)))) ;
+    (\+fasill_term:fasill_callable(Goal) ->
+        fasill_exceptions:type_error(callable, Goal, on/2, Error),
+        fasill_exceptions:throw_exception(Error) ;
         true),
-    fasill_inference:derivation(on/2, state(Goal,Subs), State, _),
-    (State = state(TD_,Subs_) ->
-        Var = term('~',[TD,TD_]) ;
-        State = exception(Error),
-        fasill_exceptions:throw_exception(Error)).
+    fasill_inference:derivation(on/2, state(Goal,S0), State, _),
+    ( State = state(TD_,S1) ->
+      Var = term('~',[TD,TD_]),
+      fasill_substitution:apply(S1, E0, E1)
+    ; State = exception(Error),
+      fasill_exceptions:throw_exception(Error)
+    ).
 
 %!  +(+callable_term)
 %
@@ -404,7 +416,7 @@ eval_builtin_predicate(on/2, state(_, Subs), selected(ExprVar, Var, Term), state
 %   +(Goal) is true if and only if Goal represents a goal which is true. If
 %   goal fails, the derivation fails instead of performing a failure step.
 
-eval_builtin_predicate('+'/1, state(_, Subs), selected(ExprVar, Goal_, Atom), state(ExprVar, Subs_)) :-
+eval_builtin_predicate('+'/1, state(_, S0), selected(E0, Goal_, Atom), state(E1, S1)) :-
     Atom = term('+', [Goal]),
     (fasill_term:fasill_var(Goal) ->
         fasill_exceptions:instantiation_error('+'/1, Error),
@@ -414,12 +426,14 @@ eval_builtin_predicate('+'/1, state(_, Subs), selected(ExprVar, Goal_, Atom), st
         fasill_exceptions:type_error(callable, Goal, '+'/1, Error),
         fasill_exceptions:throw_exception(Error) ;
         true),
-    fasill_inference:derivation('+'/1, state(Goal,Subs), State, _),
-    (State = state(Goal_,Subs_) ->
-        \+fasill_environment:lattice_call_bot(Goal_) ;
-        State = exception(Error),
-        !,
-        fasill_exceptions:throw_exception(Error)).
+    fasill_inference:derivation('+'/1, state(Goal,S0), State, _),
+    ( State = state(Goal_,S1) ->
+      \+fasill_environment:lattice_call_bot(Goal_),
+      fasill_substitution:apply(S1, E0, E1)
+    ; State = exception(Error),
+      !,
+      fasill_exceptions:throw_exception(Error)
+    ).
 
 %!  guards(on(+Guards, -TD))
 %
