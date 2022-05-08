@@ -454,7 +454,7 @@ eval_builtin_predicate(on/2, state(_, S0), selected(E0, Var, Term), state(E1, S1
 %   +(Goal) is true if and only if Goal represents a goal which is true. If
 %   goal fails, the derivation fails instead of performing a failure step.
 
-eval_builtin_predicate('+'/1, state(_, S0), selected(E0, Goal_, Atom), state(E1, S1)) :-
+eval_builtin_predicate('+'/1, state(_,S0), selected(E0,Goal_,Atom), state(E1,S1)) :-
     Atom = term('+', [Goal]),
     (fasill_term:fasill_var(Goal) ->
         fasill_exceptions:instantiation_error('+'/1, Error),
@@ -470,6 +470,35 @@ eval_builtin_predicate('+'/1, state(_, S0), selected(E0, Goal_, Atom), state(E1,
       fasill_substitution:apply(S1, E0, E1)
     ; State = exception(Error),
       !,
+      fasill_exceptions:throw_exception(Error)
+    ).
+
+%!  \+(+callable_term)
+%
+%   Not provable.
+%   \+(Goal) is true if and only if call(Goal) is false.
+
+eval_builtin_predicate('\\+'/1, state(_,S0), selected(E0,Var,Atom), state(E0,S0)) :-
+    Atom = term('\\+', [Goal]),
+    (fasill_term:fasill_var(Goal) ->
+        fasill_exceptions:instantiation_error('\\+'/1, Error),
+        fasill_exceptions:throw_exception(Error) ;
+        true),
+    (\+fasill_term:fasill_callable(Goal) ->
+        fasill_exceptions:type_error(callable, Goal, '\\+'/1, Error),
+        fasill_exceptions:throw_exception(Error) ;
+        true),
+    fasill_environment:lattice_call_bot(Bot),
+    once((
+        fasill_inference:derivation('\\+'/1, state(Goal,S0), State, _),
+        (State = exception(_) ; State = state(TD,_), TD \== Bot) ;
+        State = state(Bot,S0)
+    )),
+    ( State = state(TD,_) ->
+      ( TD == Bot -> 
+        Var = top
+      ; Var = bot )
+    ; State = exception(Error),
       fasill_exceptions:throw_exception(Error)
     ).
 
