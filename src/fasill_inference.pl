@@ -192,11 +192,12 @@ query(Goal, Answer) :-
 %   each step.
 
 derivation(From, State1, State2, Info) :-
-    (   fasill_environment:current_fasill_flag(depth_limit, num(Depth)),
-        catch(
+    fasill_environment:current_fasill_flag(depth_limit, num(Depth)),
+    (   catch(
             derivation(From, State1, State2, Depth, 0, Info),
             exception(Error),
-            (State2 = exception(Error), Info = []))
+            (State2 = exception(Error), Info = [])
+        )
     *-> true
     ;   fasill_environment:lattice_call_bot(Bot),
         State1 = state(_, S0),
