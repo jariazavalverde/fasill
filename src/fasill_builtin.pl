@@ -80,6 +80,7 @@ is_builtin_predicate(Name/Arity) :-
         truth_degree/2,
         on/2,
         '+'/1,
+        '\\+'/1,
         guards/1,
         % all solutions
         findall/3,
@@ -201,6 +202,44 @@ eval_builtin_predicate(','/2, state(_, Subs), selected(ExprVar, Var, Term), stat
 %   Disjunction.
 %   ';'(Either, Or) is true if and only if either Either or Or is true.
 
+eval_builtin_predicate(';'/2, state(_,S0), selected(E0,Var,Term), state(E1,S1)) :-
+    Term = term(';', [term('->', [If,Then]),Else]),
+    !,
+    ((fasill_term:fasill_var(If) ; fasill_term:fasill_var(Then) ; fasill_term:fasill_var(Else)) ->
+        fasill_exceptions:instantiation_error('->;'/3, Error),
+        fasill_exceptions:throw_exception(Error) ;
+        true),
+    (\+fasill_term:fasill_callable(If) ->
+        fasill_exceptions:type_error(callable, If, '->;'/3, Error),
+        fasill_exceptions:throw_exception(Error) ;
+        true),
+    (\+fasill_term:fasill_callable(Then) ->
+        fasill_exceptions:type_error(callable, Then, '->;'/3, Error),
+        fasill_exceptions:throw_exception(Error) ;
+        true),
+    (\+fasill_term:fasill_callable(Else) ->
+        fasill_exceptions:type_error(callable, Else, '->;'/3, Error),
+        fasill_exceptions:throw_exception(Error) ;
+        true),
+    fasill_environment:lattice_call_bot(Bot),
+    once((
+        fasill_inference:derivation('->;'/3, state(If,S0), State, _),
+        (State = exception(_) ; State = state(TD,_), TD \== Bot) ;
+        State = state(Bot,S0)
+    )),
+    ( State = state(TD,S2) ->
+      ( TD == Bot ->
+        Var = Else,
+        S1 = S0,
+        E1 = E0
+      ; Var = Then,
+        S1 = S2,
+        fasill_substitution:apply(S1, E0, E1)  
+      )
+    ; State = exception(Error),
+      fasill_exceptions:throw_exception(Error)
+    ).
+
 eval_builtin_predicate(';'/2, state(_, Subs), selected(ExprVar, Var, Term), state(ExprVar, Subs)) :-
     Term = term(';', [X,Y]),
     (Var = X ; Var = Y).
@@ -214,15 +253,15 @@ eval_builtin_predicate(';'/2, state(_, Subs), selected(ExprVar, Var, Term), stat
 eval_builtin_predicate('->'/2, state(_, S0), selected(ExprVar, Var, Term), state(ExprVar, S0)) :-
     Term = term('->', [If,Then]),
     ((fasill_term:fasill_var(If) ; fasill_term:fasill_var(Then)) ->
-        fasill_exceptions:instantiation_error(call/Arity, Error),
+        fasill_exceptions:instantiation_error('->'/2, Error),
         fasill_exceptions:throw_exception(Error) ;
         true),
     (\+fasill_term:fasill_callable(If) ->
-        fasill_exceptions:type_error(callable, If, call/Arity, Error),
+        fasill_exceptions:type_error(callable, If, '->'/2, Error),
         fasill_exceptions:throw_exception(Error) ;
         true),
     (\+fasill_term:fasill_callable(Then) ->
-        fasill_exceptions:type_error(callable, Then, call/Arity, Error),
+        fasill_exceptions:type_error(callable, Then, '->'/2, Error),
         fasill_exceptions:throw_exception(Error) ;
         true),
     fasill_environment:lattice_call_bot(Bot),
@@ -272,7 +311,7 @@ eval_builtin_predicate(call/Arity, state(_, Subs), selected(ExprVar, Var, Atom),
 %   Evaluate a term just once.
 %   once(Term) is true. once makes sure that Term fails or succeeds just once.
 
-eval_builtin_predicate(once/1, state(Goal, S0), selected(ExprVar, Var, Atom), state(ExprSub, S1)) :-
+eval_builtin_predicate(once/1, state(Goal,S0), selected(E0,Var,Atom), state(E1,S1)) :-
     Atom = term(once, [Term]),
     (fasill_term:fasill_var(Term) ->
         fasill_exceptions:instantiation_error(once/1, Error),
@@ -285,13 +324,12 @@ eval_builtin_predicate(once/1, state(Goal, S0), selected(ExprVar, Var, Atom), st
     fasill_environment:lattice_call_bot(Bot),
     once((
         fasill_inference:derivation(once/1, state(Term,S0), State, _),
-        State = state(TD,S1),
-        TD \== Bot ;
-        State = exception(_)
+        (State = exception(_) ; State = state(TD,S1), TD \== Bot) ;
+        State = state(Bot,S0)
     )),
     ( State = state(TD,S1) ->
       Var = TD,
-      fasill_substitution:apply(S1, ExprVar, ExprSub)
+      fasill_substitution:apply(S1, E0, E1)
     ; State = exception(Error),
       fasill_exceptions:throw_exception(Error)
     ).
