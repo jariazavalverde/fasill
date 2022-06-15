@@ -226,8 +226,10 @@ extend_term(term(X, Xs), term(Y, Ys), Lambda, CurrentTD, TD) :-
         X \== Y
     ),
     fasill_environment:similarity_tnorm(Tnorm),
-    fasill_environment:lattice_call_connective(Tnorm, [CurrentTD, Sim], TDnorm),
-    fasill_environment:lattice_call_leq(Lambda, TDnorm),
+    ( Tnorm = '&'(_) ->
+      fasill_environment:lattice_call_connective(Tnorm, [CurrentTD, Sim], TDnorm),
+      fasill_environment:lattice_call_leq(Lambda, TDnorm)
+    ; TDnorm = term(Tnorm, [CurrentTD, Sim])),
     extend_term(Xs, Ys, Lambda, TDnorm, TD).
 extend_term([], [], _, TD, TD).
 extend_term([X|Xs], [Y|Ys], Lambda, TD1, TD3) :-
@@ -265,7 +267,8 @@ extend_rule(R1, R2) :-
         (TD == Top ->
             BodyE = Body ;
             Body = body(Body_),
-            BodyE = body(term('&', [TD, Body_])))
+            fasill_environment:similarity_tnorm(Tnorm),
+            BodyE = body(term(Tnorm, [TD, Body_])))
     ),
     R2 = fasill_rule(head(HeadE), BodyE, [id(IdEx)|Info]).
 

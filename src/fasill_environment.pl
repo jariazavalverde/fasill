@@ -338,13 +338,16 @@ compare_rule_id(Delta, X, Y) :-
 %   environment.
 
 lattice_tnorm(Tnorm) :-
+    fasill_similarity_tnorm(Tnorm),
+    !.
+lattice_tnorm('&'(Tnorm)) :-
     catch(tnorm(Tnorm), _, fail),
     !.
-lattice_tnorm(Tnorm) :-
+lattice_tnorm('&'(Tnorm)) :-
     current_predicate(Name/3),
     atom_concat(and_, Tnorm, Name),
     !.
-lattice_tnorm(Tnorm) :-
+lattice_tnorm('&'(Tnorm)) :-
     atom_concat(and_, Tnorm, Name),
     fasill_exceptions:existence_error(procedure, Name/3, lattice/0, Error),
     fasill_exceptions:throw_exception(Error).
@@ -354,14 +357,14 @@ lattice_tnorm(Tnorm) :-
 %   This predicate succeeds when Tconorm is the current t-conorm asserted in
 %   the environment.
 
-lattice_tconorm(Tconorm) :-
+lattice_tconorm('|'(Tconorm)) :-
     catch(tconorm(Tconorm), _, fail),
     !.
-lattice_tconorm(Tconorm) :-
+lattice_tconorm('|'(Tconorm)) :-
     current_predicate(Name/3),
     atom_concat(or_, Tconorm, Name),
     !.
-lattice_tconorm(Tconorm) :-
+lattice_tconorm('|'(Tconorm)) :-
     atom_concat(or_, Tconorm, Name),
     fasill_exceptions:existence_error(procedure, Name/3, lattice/0, Error),
     fasill_exceptions:throw_exception(Error).
@@ -517,12 +520,12 @@ lattice_call_distance(_, _, _) :-
 
 lattice_call_connective('&', Args, Result) :-
     !,
-    lattice_tnorm(Name),
-    lattice_call_connective('&'(Name), Args, Result).
+    lattice_tnorm(Tnorm),
+    lattice_call_connective(Tnorm, Args, Result).
 lattice_call_connective('|', Args, Result) :-
     !,
-    lattice_tconorm(Name),
-    lattice_call_connective('|'(Name), Args, Result).
+    lattice_tconorm(Tconorm),
+    lattice_call_connective(Tconorm, Args, Result).
 lattice_call_connective(Op, Args, Result) :-
     Op =.. [Type,Name],
     !,
@@ -596,8 +599,6 @@ lattice_consult(Path) :-
 %   environment.
 
 similarity_tnorm(Tnorm) :-
-    fasill_similarity_tnorm(Tnorm), !.
-similarity_tnorm('&'(Tnorm)) :-
     lattice_tnorm(Tnorm).
 
 %!  similarity_tconorm(?Tconorm)
@@ -606,8 +607,6 @@ similarity_tnorm('&'(Tnorm)) :-
 %   the environment.
 
 similarity_tconorm(Tconorm) :-
-    fasill_similarity_tconorm(Tconorm), !.
-similarity_tconorm('|'(Tconorm)) :-
     lattice_tconorm(Tconorm).
 
 %!  similarity_between(?AtomA, ?AtomB, ?Arity, ?TD, ?Sym)

@@ -203,8 +203,8 @@ sfca_to_smtlib(term(X,Xs), [symbol(Con2),symbol(Name4)|Xs2]) :-
     atom_concat(Name3, Name, Name4),
     maplist(sfca_to_smtlib, Xs, Xs2).
 sfca_to_smtlib(term(X,Xs), [symbol(Con)|Xs2]) :-
-    ( (X = '&', Op = '&', lattice_tnorm(Name)) ;
-        (X = '|', Op = '|', lattice_tconorm(Name)) ;
+    ( (X = '&', Op = '&', lattice_tnorm('&'(Name))) ;
+        (X = '|', Op = '|', lattice_tconorm('|'(Name))) ;
         X =.. [Op,Name] ),
     !,
     member((Op,Pre), [

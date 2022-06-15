@@ -313,7 +313,7 @@ success_step(From, state(Goal,Subs), state(Goal_,Subs_), Name2/Arity) :-
                 (	BodyR = body(Body_),
                     (TD == Top ->
                         Var = Body_ ;
-                        Var = term('&'(Tnorm), [TD,Body_])))),
+                        Var = term(Tnorm, [TD,Body_])))),
             fasill_substitution:apply(SubsExpr, ExprVar, Goal_),
             fasill_substitution:compose(Subs, SubsExpr, Subs_)
         ) ; (
