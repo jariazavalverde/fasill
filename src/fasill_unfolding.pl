@@ -87,6 +87,26 @@
     similarities are involved.
 */
 
+% ULFONDING IDENTIFIER
+
+%!  last_unfolding_id(?Identifier)
+%
+%   This predicate stores the last identifier used in an unfolding step.
+
+:- dynamic(last_unfolding_id/1).
+last_unfolding_id(0).
+
+%!  next_unfolding_id(-Identifier)
+%
+%   This predicate updates and returns the identifier to be used in an
+%   unfolding step.
+
+next_unfolding_id(M) :-
+    last_unfolding_id(N), !,
+    retract(last_unfolding_id(N)),
+    succ(N, M),
+    asserta(last_unfolding_id(M)).
+
 % CLASSIC UNFOLDING
 
 %!  classic_unfold_by_id(?Id)
@@ -130,24 +150,16 @@ classic_unfold(R1) :-
 %   This predicate succeeds when Rule is a FASILL rule and Unfolded is an
 %   unfolded rule of Rule.
 
-:- dynamic(unfolding_id/1).
 classic_unfold(R1, R2) :-
-    retractall(unfolding_id(_)),
-    assertz(unfolding_id(1)),
-    R1 = fasill_rule(head(Head), body(Body), [id(Id)|Info]),
-    HeadR = Head, BodyR = Body,
-    fasill_substitution:init_substitution(BodyR, Vars),
-    fasill_inference:inference(unfolding/0, state(BodyR, Vars), state(Expr, Subs), _),
-    BodyR \= Expr,
-    fasill_substitution:apply(Subs, HeadR, Head_),
-    ( unfolding_id(R),
-      atom_number(Atom, R),
-      atom_concat(Id, '-', Id_),
-      atom_concat(Id_, Atom, Id2),
-      retractall(unfolding_id(_)),
-      succ(R, N),
-      assertz(unfolding_id(N)) ),
-    R2 = fasill_rule(head(Head_), body(Expr), [id(Id2)|Info]).
+    R1 = fasill_rule(head(Head1), body(Body1), Info1),
+    select(id(Id1), Info1, Info2),
+    fasill_substitution:init_substitution(Body1, Vars),
+    fasill_inference:inference(unfolding/0, state(Body1, Vars), state(Body2, Sub), _),
+    Body1 \= Body2,
+    fasill_substitution:apply(Sub, Head1, Head2),
+    next_unfolding_id(N),
+    atomic_list_concat([Id1, -, N], Id2),
+    R2 = fasill_rule(head(Head2), body(Body2), [id(Id2)|Info2]).
 
 % SAFETY CONDITIONS
 
@@ -155,6 +167,7 @@ classic_unfold(R1, R2) :-
 %
 %   This predicate succeeds when Rule is a FASILL rule that holds the 
 %   bound-similarity condition.
+
 bound_similarity(R) :-
     R = fasill_rule(head(Head), body(Body), _),
     fasill_substitution:init_substitution(Head, Sub0),
@@ -167,6 +180,7 @@ bound_similarity(R) :-
 %
 %   This predicate succeeds when Id is the identifier of a FASILL rule that
 %   holds the bound-similarity condition.
+
 bound_similarity_by_id(Id) :-
     fasill_environment:fasill_rule(Head, Body, Info),
     member(id(Id), Info), !,
@@ -176,6 +190,7 @@ bound_similarity_by_id(Id) :-
 %
 %   This predicate succeeds when Rule is a FASILL rule that holds the 
 %   head-preserving condition.
+
 head_preserving(R) :-
     R = fasill_rule(head(Head), body(Body), _),
     fasill_substitution:init_substitution(Head, Sub0),
@@ -190,6 +205,7 @@ head_preserving(R) :-
 %
 %   This predicate succeeds when Id is the identifier of a FASILL rule that
 %   holds the head-preserving condition.
+
 head_preserving_by_id(Id) :-
     fasill_environment:fasill_rule(Head, Body, Info),
     member(id(Id), Info), !,
@@ -199,6 +215,7 @@ head_preserving_by_id(Id) :-
 %
 %   This predicate succeeds when Rule is a FASILL rule that holds the 
 %   body-overriding condition.
+
 body_overriding(R) :-
     R = fasill_rule(head(Head), body(Body), _),
     fasill_substitution:init_substitution(Head, Sub0),
@@ -218,6 +235,7 @@ body_overriding(R) :-
 %
 %   This predicate succeeds when Id is the identifier of a FASILL rule that
 %   holds the body-overriding condition.
+
 body_overriding_by_id(Id) :-
     fasill_environment:fasill_rule(Head, Body, Info),
     member(id(Id), Info), !,
