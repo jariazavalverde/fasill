@@ -180,7 +180,7 @@ eval_builtin_predicate(unfold/1, state(_, Subs), selected(ExprVar, top, Term), s
         true),
     Id = term(Rule, []),
     (fasill_environment:fasill_rule(_, _, Info), member(id(Rule), Info) ->
-        fasill_unfolding:unfold_by_id(Rule) ;
+        fasill_unfolding:classic_unfold_by_id(Rule) ;
         fasill_exceptions:existence_error(rule, Rule, unfold/1, Error),
         fasill_exceptions:throw_exception(Error)).
 
