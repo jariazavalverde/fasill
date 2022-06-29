@@ -35,6 +35,7 @@
 
 :- module(fasill_tuning, [
     findall_symbolic_cons/1,
+    findall_symbolic_cons/2,
     tuning_thresholded/2,
     tuning_thresholded/3,
     fasill_print_symbolic_substitution/1
@@ -100,6 +101,11 @@ findall_symbolic_cons(Set) :-
 %   This predicate succeeds when Symbols is the set of symbolic constants
 %   contained in Expression.
 
+findall_symbolic_cons((X,Y), Sym) :-
+    !,
+    findall_symbolic_cons(X, SymX),
+    findall_symbolic_cons(Y, SymY),
+    append(SymX, SymY, Sym).
 findall_symbolic_cons([], []) :-
     !.
 findall_symbolic_cons([H|T], Sym) :-

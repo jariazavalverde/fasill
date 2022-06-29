@@ -3,7 +3,7 @@
     Author:        José Antonio Riaza Valverde
     E-mail:        riaza.valverde@gmail.com
     WWW:           https://dectau.uclm.es/fasill
-    Copyright (c)  2018 - 2021, José Antonio Riaza Valverde
+    Copyright (c)  2018 - 2022, José Antonio Riaza Valverde
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -38,7 +38,7 @@
 ]).
 
 :- use_module(library(smtlib)).
-:- use_module(fasill_tuning, [findall_symbolic_cons/1]).
+:- use_module(fasill_tuning).
 :- use_module(fasill_environment).
 :- use_module(fasill_inference).
 :- use_module(fasill_term).
@@ -78,12 +78,13 @@
 
 tuning_smt(Domain, LatFile, Substitution, Deviation) :-
     smtlib_read_script(LatFile, list(Lattice)),
-    findall_symbolic_cons(Cons),
+    tuning_smt_sfcas(ListOfSFCA),
+    findall_symbolic_cons(ListOfSFCA, Cons),
     tuning_smt_decl_const(Domain, Cons, Declarations),
     (member([reserved('define-fun'), symbol('lat!member')|_], Lattice) ->
         tuning_smt_members(Cons, Members);
         Members = []),
-    tuning_smt_minimize(Minimize),
+    tuning_smt_minimize(ListOfSFCA, Minimize),
     tuning_theory_options(Domain, TheoryOpts),
     GetModel = [[reserved('check-sat')], [reserved('get-model')]],
     append([Lattice, Declarations, Members, Minimize, TheoryOpts, GetModel], Script),
@@ -156,15 +157,27 @@ tuning_smt_members([sym(Type,Name,Arity)|Cons], [[reserved('assert'), [symbol(Do
     atom_concat(SymTypeArity_, Name, Sym),
     tuning_smt_members(Cons, Members).
 
-%!  tuning_smt(?Minimize)
+%!  tuning_smt_sfcas(?ListOfSFCA)
+%
+%   This predicate succeeds when ListOfSFCA is the list of symbolic fuzzy 
+%   computed answers.
+
+tuning_smt_sfcas(ListOfSFCA) :-
+    findall((SFCA,TD), (
+        fasill_testcase(TD, Goal),
+        ( query(Goal, state(SFCA, _)) ->
+          true
+        ; lattice_call_bot(SFCA))
+    ), ListOfSFCA).
+
+%!  tuning_smt(+ListOfSFCA, ?Minimize)
 %
 %   This predicate succeeds when Minimize is the command to minimize the set of
 %   tests cases w.r.t. the expected truth degrees.
 
-tuning_smt_minimize([Assert, Minimize]) :-
+tuning_smt_minimize(ListOfSFCA, [Assert, Minimize]) :-
     findall([symbol('lat!distance'), TD_, SMT], (
-        fasill_testcase(TD, Goal),
-        (query(Goal, state(SFCA, _)) -> true ; lattice_call_bot(SFCA)),
+        member((SFCA,TD), ListOfSFCA),
         sfca_to_smtlib(TD, TD_),
         sfca_to_smtlib(SFCA, SMT)
     ), Distances),
@@ -190,6 +203,10 @@ sfca_to_smtlib(term('#'(X),[]), symbol(Y)) :-
 sfca_to_smtlib(term(X,[]), symbol(X)) :-
     atomic(X),
     !.
+sfca_to_smtlib(sup(X,Y), [symbol('lat!supremum'), Ex, Ey]) :-
+    !,
+    sfca_to_smtlib(X, Ex),
+    sfca_to_smtlib(Y, Ey).
 sfca_to_smtlib(term(X,Xs), [symbol(Con2),symbol(Name4)|Xs2]) :-
     X =.. [Op,Name],
     member((Op,Pre), [('#&','and!'), ('#|','or!'), ('#@','agr!')]),
