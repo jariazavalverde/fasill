@@ -79,15 +79,17 @@
 tuning_smt(Domain, LatFile, Substitution, Deviation) :-
     smtlib_read_script(LatFile, list(Lattice)),
     tuning_smt_sfcas(ListOfSFCA),
-    findall_symbolic_cons(ListOfSFCA, Cons),
+    findall_symbolic_cons(ListOfSFCA, ListCons),
+    list_to_set(ListCons, Cons),
     tuning_smt_decl_const(Domain, Cons, Declarations),
     (member([reserved('define-fun'), symbol('lat!member')|_], Lattice) ->
         tuning_smt_members(Cons, Members);
         Members = []),
+    tuning_smt_preconditions(Pre),
     tuning_smt_minimize(ListOfSFCA, Minimize),
     tuning_theory_options(Domain, TheoryOpts),
     GetModel = [[reserved('check-sat')], [reserved('get-model')]],
-    append([Lattice, Declarations, Members, Minimize, TheoryOpts, GetModel], Script),
+    append([Lattice, Declarations, Members, Pre, Minimize, TheoryOpts, GetModel], Script),
     smtlib_write_to_file('.tuning.smt2', list(Script)),
     shell('z3 -smt2 .tuning.smt2 > .result.tuning.smt2', _),
     smtlib_read_expressions('.result.tuning.smt2', Z3answer),
@@ -167,8 +169,23 @@ tuning_smt_sfcas(ListOfSFCA) :-
         fasill_testcase(TD, Goal),
         ( query(Goal, state(SFCA, _)) ->
           true
-        ; lattice_call_bot(SFCA))
+        ; fasill_environment:lattice_call_bot(SFCA))
     ), ListOfSFCA).
+
+%!  tuning_smt_preconditions(?Preconditions)
+%
+%   This predicate succeeds when Preconditions is the list of asserts to check
+%   the preconditions of the current tuning problem.
+
+tuning_smt_preconditions(Pre) :-
+    fasill_environment:lattice_call_bot(Bot),
+    sfca_to_smtlib(Bot, BotSMT),
+    findall(Assert,
+      ( fasill_environment:similarity_between(_, _, _, TD, yes),
+        sfca_to_smtlib(TD, TDSMT),
+        Assert = [symbol(assert), [symbol(not), [symbol('lat!leq'), [TDSMT, BotSMT]]]]
+      ),
+    Pre).
 
 %!  tuning_smt(+ListOfSFCA, ?Minimize)
 %
