@@ -216,7 +216,7 @@ sandbox_tune(Program, Lattice, Sim, Tests, Limit, Options) :-
     (member(tuning_cut(Cut), Options) ->
         true ;
         Cut = 0.0),
-    fasill_tuning:tuning_thresholded(Cut, Subs, Deviation),
+    fasill_tuning:fasill_tuning(Cut, Subs, Deviation),
     statistics(runtime,[_,T1]),
     write('best symbolic substitution: '),
     fasill_tuning:fasill_print_symbolic_substitution(Subs),

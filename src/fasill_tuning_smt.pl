@@ -79,7 +79,7 @@
 tuning_smt(Domain, LatFile, Substitution, Deviation) :-
     smtlib_read_script(LatFile, list(Lattice)),
     tuning_smt_sfcas(ListOfSFCA),
-    findall_symbolic_cons(ListOfSFCA, ListCons),
+    fasill_findall_symbolic_cons(ListOfSFCA, ListCons),
     list_to_set(ListCons, Cons),
     tuning_smt_decl_const(Domain, Cons, Declarations),
     (member([reserved('define-fun'), symbol('lat!member')|_], Lattice) ->

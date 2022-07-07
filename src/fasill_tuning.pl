@@ -34,10 +34,9 @@
 */
 
 :- module(fasill_tuning, [
-    findall_symbolic_cons/1,
-    findall_symbolic_cons/2,
-    tuning_thresholded/2,
-    tuning_thresholded/3,
+    fasill_findall_symbolic_cons/2,
+    fasill_tuning/2,
+    fasill_tuning/3,
     fasill_print_symbolic_substitution/1
 ]).
 
@@ -81,74 +80,59 @@
 
 % UTILS
 
-%!  findall_symbolic_cons(?Symbols)
-%
-%   This predicate succeeds when Symbols is the set of symbolic constants
-%   contained in the FASILL rules asserted in the current environment.
-
-findall_symbolic_cons(Set) :-
-    findall([Head|BodyT], (
-        fasill_rule(head(Head), Body_, _),
-        (Body_ = body(Body) -> BodyT = [Body] ; BodyT = [])
-    ), Rules),
-    findall(Test, fasill_testcase(_, Test), Tests),
-    append(Rules, Tests, Search),
-    findall_symbolic_cons(Search, Symbols),
-    list_to_set(Symbols, Set).
-
-%!  findall_symbolic_cons(+Expression, ?Symbols)
+%!  fasill_findall_symbolic_cons(+Expression, ?Symbols)
 %
 %   This predicate succeeds when Symbols is the set of symbolic constants
 %   contained in Expression.
 
-findall_symbolic_cons((X,Y), Sym) :-
+fasill_findall_symbolic_cons((X,Y), Sym) :-
     !,
-    findall_symbolic_cons(X, SymX),
-    findall_symbolic_cons(Y, SymY),
+    fasill_findall_symbolic_cons(X, SymX),
+    fasill_findall_symbolic_cons(Y, SymY),
     append(SymX, SymY, Sym).
-findall_symbolic_cons([], []) :-
+fasill_findall_symbolic_cons([], []) :-
     !.
-findall_symbolic_cons([H|T], Sym) :-
+fasill_findall_symbolic_cons([H|T], Sym) :-
     !,
-    findall_symbolic_cons(H, SymH),
-    findall_symbolic_cons(T, SymT),
+    fasill_findall_symbolic_cons(H, SymH),
+    fasill_findall_symbolic_cons(T, SymT),
     append(SymH, SymT, Sym).
-findall_symbolic_cons(sup(X, Y), Sym) :-
+fasill_findall_symbolic_cons(sup(X, Y), Sym) :-
     !,
-    findall_symbolic_cons(X, SymX),
-    findall_symbolic_cons(Y, SymY),
+    fasill_findall_symbolic_cons(X, SymX),
+    fasill_findall_symbolic_cons(Y, SymY),
     append(SymX, SymY, Sym).
-findall_symbolic_cons(term('#'(Name),[]), [sym(td, Name, 0)]) :-
+fasill_findall_symbolic_cons(term('#'(Name),[]), [sym(td, Name, 0)]) :-
     !.
-findall_symbolic_cons(term(Term, Args), [sym(Type, Name, Arity)|Sym]) :-
+fasill_findall_symbolic_cons(term(Term, Args), [sym(Type, Name, Arity)|Sym]) :-
     Term =.. [Op,Name],
     member((Op,Type), [('#&',and),('#|',or),('#/',or),('#@',agr),('#?',con)]),
     !,
     length(Args, Arity),
-    findall_symbolic_cons(Args, Sym).
-findall_symbolic_cons(term(_, Args), Sym) :-
+    fasill_findall_symbolic_cons(Args, Sym).
+fasill_findall_symbolic_cons(term(_, Args), Sym) :-
     !,
-    findall_symbolic_cons(Args, Sym).
-findall_symbolic_cons(_, []).
+    fasill_findall_symbolic_cons(Args, Sym).
+fasill_findall_symbolic_cons(_, []).
 
-%!  symbolic_substitution(+Symbols, -Substitution)
+%!  fasill_symbolic_substitution(+Symbols, -Substitution)
 %
 %   This predicate succeeds when Symbols is a set of symbolic constants and
 %   Substitution is a possible symbolic substitution for constants Symbols.
 %   This predicate can be used for generating, by reevaluation, all possible
 %   symbolic substitutions for the constants.
 
-symbolic_substitution([], []).
-symbolic_substitution([ground|T], T_) :-
-    symbolic_substitution(T, T_).
-symbolic_substitution([H|T], [H/H_|T_]) :-
+fasill_symbolic_substitution([], []).
+fasill_symbolic_substitution([ground|T], T_) :-
+    fasill_symbolic_substitution(T, T_).
+fasill_symbolic_substitution([H|T], [H/H_|T_]) :-
     H \== ground,
-    symbolic_substitution(H, H_),
-    symbolic_substitution(T, T_).
-symbolic_substitution(sym(td,Sym,0), val(td,Value,0)) :-
+    fasill_symbolic_substitution(H, H_),
+    fasill_symbolic_substitution(T, T_).
+fasill_symbolic_substitution(sym(td,Sym,0), val(td,Value,0)) :-
     fasill_environment:lattice_call_members(Sym, Members),
     member(Value, Members).
-symbolic_substitution(sym(Type,_,Arity), val(Ty,Name,Arity)) :-
+fasill_symbolic_substitution(sym(Type,_,Arity), val(Ty,Name,Arity)) :-
     Arity > 0,
     Arity_ is Arity + 1,
     (Type == con -> (Ty = and ; Ty = or ; Ty = agr) ; Ty = Type),
@@ -157,66 +141,71 @@ symbolic_substitution(sym(Type,_,Arity), val(Ty,Name,Arity)) :-
     atom_concat(Type_, Name, Predicate),
     \+fasill_environment:lattice_call_exclude(Predicate/Arity_).
 
-%!  apply_symbolic_substitution(+ExpressionIn, +Substitution, -ExpressionOut)
+%!  fasill_apply_symbolic_substitution(+ExpressionIn, +Substitution, -ExpressionOut)
 %
 %   This predicate succeeds when ExpressionOut is the resulting expression
 %   after applying the symbolic substitution Substitution to the expression
 %   ExpressionIn.
 
-apply_symbolic_substitution(term('#'(Name),[]), Subs, Value) :-
+fasill_apply_symbolic_substitution(term('#'(Name),[]), Subs, Value) :-
     member(sym(td,Name,0)/val(td,Value,0), Subs),
     !.
-apply_symbolic_substitution(term(Term,Args), Subs, term(Term2,Args_)) :-
+fasill_apply_symbolic_substitution(term(Term,Args), Subs, term(Term2,Args_)) :-
     Term =.. [Op, Name],
     length(Args, Length),
     member((Op,Type), [('#&',and),('#|',or),('#/',or),('#@',agr),('#?',con)]),
     member(sym(Type,Name,Length)/val(Type2,Value,Length), Subs),
     member((Op2,Type2), [('&',and),('|',or),('@',agr)]),
     Term2 =.. [Op2, Value],
-    apply_symbolic_substitution(Args, Subs, Args_),
+    fasill_apply_symbolic_substitution(Args, Subs, Args_),
     !.
-apply_symbolic_substitution(term(Name,Args), Subs, term(Name,Args_)) :-
-    apply_symbolic_substitution(Args, Subs, Args_),
+fasill_apply_symbolic_substitution(term(Name,Args), Subs, term(Name,Args_)) :-
+    fasill_apply_symbolic_substitution(Args, Subs, Args_),
     !.
-apply_symbolic_substitution(sup(X, Y), Subs, sup(X_, Y_)) :-
-    apply_symbolic_substitution(X, Subs, X_),
-    apply_symbolic_substitution(Y, Subs, Y_),
+fasill_apply_symbolic_substitution(sup(X, Y), Subs, sup(X_, Y_)) :-
+    fasill_apply_symbolic_substitution(X, Subs, X_),
+    fasill_apply_symbolic_substitution(Y, Subs, Y_),
     !.
-apply_symbolic_substitution([H|T], Subs, [H_|T_]) :-
-    apply_symbolic_substitution(H, Subs, H_),
-    apply_symbolic_substitution(T, Subs, T_),
+fasill_apply_symbolic_substitution([H|T], Subs, [H_|T_]) :-
+    fasill_apply_symbolic_substitution(H, Subs, H_),
+    fasill_apply_symbolic_substitution(T, Subs, T_),
     !.
-apply_symbolic_substitution(X, _, X).
+fasill_apply_symbolic_substitution(X, _, X).
 
-%!  tuning_check_preconditions(+Preconditions, +Substitution)
+%!  fasill_tuning_check_preconditions(+Preconditions, +Substitution)
 %
 %   This predicate succeeds when the lists of goals Preconditions is satisfied
 %   for the symbolic substitution Substitution.
 
-tuning_check_preconditions([], _).
-tuning_check_preconditions([precondition(GoalS)|Preconditions], Subs) :-
-    apply_symbolic_substitution(GoalS, Subs, Goal),
+fasill_tuning_check_preconditions([], _).
+fasill_tuning_check_preconditions([precondition(GoalS)|Preconditions], Subs) :-
+    fasill_apply_symbolic_substitution(GoalS, Subs, Goal),
     fasill_inference:query(Goal, state(FCA, _)),
     fasill_environment:lattice_call_bot(Bot),
     \+fasill_environment:lattice_call_leq(FCA, Bot),
-    tuning_check_preconditions(Preconditions, Subs).
+    fasill_tuning_check_preconditions(Preconditions, Subs).
 
-%!  testcases_disjoint_sets(?Sets)
+%!  fasill_tuning_disjoint_sets(?Sets)
 %
 %   This predicate succeeds when ?Sets is the list of disjoint sets of test
 %   cases loaded into the current environment, in form of pairs Symbols-SFCAs.
 
-testcases_disjoint_sets(Sets, SetsCond) :-
-    findall(S-testcase(TD, SFCA), (
-        fasill_environment:fasill_testcase(TD, Goal),
-        (fasill_inference:query(Goal, state(SFCA, _)) ->
-            findall_symbolic_cons(SFCA, Symbols),
-            (Symbols \== [] -> S = Symbols ; S = [ground] )
+fasill_tuning_disjoint_sets(Sets, SetsCond) :-
+    findall(S-testcase(TD, SFCA),
+      ( fasill_environment:fasill_testcase(TD, Goal),
+        ( fasill_inference:query(Goal, state(SFCA, _)) ->
+            fasill_findall_symbolic_cons(SFCA, Symbols),
+            ( Symbols \== [] -> S = Symbols ; S = [ground] )
         )
-    ), Tests),
-    findall(S-precondition(X), (fasill_environment:fasill_testcase_precondition(X), findall_symbolic_cons(X, S)), PreconditionsUser),
-    findall(S-precondition(TD), (fasill_environment:similarity_between(_, _, _, TD, yes), findall_symbolic_cons(TD, S)), PreconditionsSym),
-    append(PreconditionsUser, PreconditionsSym, Preconditions),
+      ), Tests),
+    findall(S-precondition(X),
+      ( fasill_environment:fasill_testcase_precondition(X),
+        fasill_findall_symbolic_cons(X, S)
+      ), Preconditions, PreconditionsSym),
+    findall(S-precondition(TD),
+      ( fasill_environment:similarity_between(_, _, _, TD, yes),
+        fasill_findall_symbolic_cons(TD, S)
+      ), PreconditionsSym),
     findall(Symbols, member(Symbols-_, Tests), ListSymbolsTests),
     findall(Symbols, member(Symbols-_, Preconditions), ListSymbolsCond),
     append(ListSymbolsTests, Symbols0),
@@ -264,73 +253,83 @@ add_symbols_testcase([Set-Tests|Sets], Symbols-Test, [Set-[Test|Tests]|Sets]) :-
 add_symbols_testcase([Set|Sets0], Test, [Set|Sets1]) :-
     add_symbols_testcase(Sets0, Test, Sets1).
 
-% TUNING THRESHOLDED TECHNIQUE
+% TUNING TECHNIQUE
 
-%!  tuning_thresholded(?Substitution, ?Deviation)
+%!  fasill_tuning(?Substitution, ?Deviation)
 %
 %   This predicate succeeds when Substitution is the best symbolic substitution
 %   for the set of test cases loaded into the current environment, with
 %   deviation Deviation.
 
-tuning_thresholded(Substitution, Deviation) :-
-    tuning_thresholded(0.0, Substitution, Deviation).
+fasill_tuning(Substitution, Deviation) :-
+    fasill_tuning(0.0, Substitution, Deviation).
 
-%!  tuning_thresholded(+Cut, ?Substitution, ?Deviation)
+%!  fasill_tuning(+Cut, ?Substitution, ?Deviation)
 %
 %   This predicate succeeds when Substitution is the a symbolic substitution
 %   for the set of test cases loaded into the current environment, with
 %   deviation Deviation less than or equal to Cut. If Cut is set to 0.0,
 %   Substitution is the best symbolic substitution.
 
-tuning_thresholded(Cut, Substitution, Deviation) :-
-    testcases_disjoint_sets(Tests, Preconditions),
-    tuning_thresholded(Cut, Tests, Preconditions, Substitutions, _, 0.0, Deviation),
+fasill_tuning(Cut, Substitution, Deviation) :-
+    fasill_tuning_disjoint_sets(Tests, Preconditions),
+    fasill_tuning_loop(Cut, Tests, Preconditions, Substitutions, Deviation),
     append(Substitutions, Substitution).
 
-%!  tuning_thresholded(+Cut, +Tests, +Preconditions, -Substitutions, -Deviations, +Initial, -Cumulative)
+%!  fasill_tuning(+Cut, +Tests, +Preconditions, -Substitutions, -Deviation)
 %
 %   This predicate succeeds when Substitutions is the list of best symbolic
 %   substitutions for the sets of test cases Test, with deviations Deviations.
 
-tuning_thresholded(_, [], [], [], [], E, E).
-tuning_thresholded(Cut, [Sym-T], [_-P], [S], [D], E0, E1) :-
-    Margin is Cut - E0,
-    retractall(tuning_best_substitution(_,_)),
-    ( symbolic_substitution(Sym, Sub),
-        tuning_check_preconditions(P, Sub),
-        tuning_thresholded_do(T, Sub, 0.0),
-        tuning_best_substitution(S, D),
-        (D =< Margin -> ! ; fail) ; true ),
-    tuning_best_substitution(S, D),
-    E1 is E0 + D.
-tuning_thresholded(Cut, [Sym-T,T2|Ts], [_-P,P2|Ps], [S|Ss], [D|Ds], E0, E2) :-
-    retractall(tuning_best_substitution(_,_)),
-    ( symbolic_substitution(Sym, Sub),
-        tuning_check_preconditions(P, Sub),
-        tuning_thresholded_do(T, Sub, 0.0),
-        fail ; true ),
-    tuning_best_substitution(S, D),
-    E1 is E0 + D,
-    tuning_thresholded(Cut, [T2|Ts], [P2|Ps], Ss, Ds, E1, E2).
+fasill_tuning_loop(Cut, Tests, Preconditions, Substitutions, Deviation) :-
+    fasill_tuning_loop(Cut, Tests, Preconditions, Substitutions, 0.0, Deviation).
 
-%!  tuning_thresholded_do(+Tests, +Substitution, ?Error)
+fasill_tuning_loop(_, [], [], [], D, D).
+fasill_tuning_loop(Cut, [C-T], [C-P], [S], D0, D2) :-
+    Tolerance is Cut - D0,
+    fasill_tuning_best_substitution(Tolerance, C, T, P, S, D1),
+    D2 is D0 + D1.
+fasill_tuning_loop(Cut, [C-T,T2|Ts], [C-P,P2|Ps], [S|Ss], D0, D3) :-
+    fasill_tuning_best_substitution(0.0, C, T, P, S, D1),
+    D2 is D0 + D1,
+    fasill_tuning_loop(Cut, [T2|Ts], [P2|Ps], Ss, D2, D3).
+
+%!  fasill_tuning_best_substitution(+Tolerance, +Symbols, +Tests, +Preconditions, -Substitution, -Deviation)
+%
+%   This predicate succeeds when Substitution is the best symbolic substitution
+%   for the sets of test cases Test that satisfies the preconditions
+%   Preconditions, with deviation Deviation.
+
+fasill_tuning_best_substitution(Tolerance, Sym, Tests, Preconditions, S, D) :-
+    retractall(tuning_best_substitution(_, _)),
+    ( fasill_symbolic_substitution(Sym, S),
+      fasill_tuning_check_preconditions(Preconditions, S),
+      fasill_tuning_check_testcases(Tests, S),
+      tuning_best_substitution(_, D),
+      ( D =< Tolerance -> !, false ; false )
+    ; tuning_best_substitution(S, D) ).
+
+%!  fasill_tuning_check_testcases(+Tests, +Substitution)
 %
 %   This predicate succeeds when Substitution is the best symbolic substitution
 %   for the set of test cases loaded into the current environment, with
 %   deviation Deviation. Tests is the set of test cases with goal partially
 %   executed.
 
-tuning_thresholded_do([], Sub, Error) :- !,
-    (tuning_best_substitution(_, Best) -> Best > Error ; true),
-    retractall(tuning_best_substitution(_,_)),
-    asserta(tuning_best_substitution(Sub, Error)).
-tuning_thresholded_do([testcase(TD,SFCA)|Tests], Sub, Error) :-
-    (tuning_best_substitution(_, Best) -> Best > Error ; true),
-    apply_symbolic_substitution(SFCA, Sub, FCA),
-    fasill_inference:query(FCA, state(TD_, _)),
-    fasill_environment:lattice_call_distance(TD, TD_, num(Distance)),
-    Error_ is Error + Distance,
-    tuning_thresholded_do(Tests, Sub, Error_).
+fasill_tuning_check_testcases(Tests, S) :-
+    fasill_tuning_check_testcases(Tests, S, 0.0).
+
+fasill_tuning_check_testcases([], S, Deviation) :-
+    (tuning_best_substitution(_, Best) -> Best > Deviation ; true),
+    retractall(tuning_best_substitution(_, _)),
+    asserta(tuning_best_substitution(S, Deviation)).
+fasill_tuning_check_testcases([testcase(Expected,SFCA)|Tests], S, D0) :-
+    (tuning_best_substitution(_, Best) -> Best > D0 ; true),
+    fasill_apply_symbolic_substitution(SFCA, S, FCA),
+    fasill_inference:query(FCA, state(TD, _)),
+    fasill_environment:lattice_call_distance(Expected, TD, num(Distance)),
+    D1 is D0 + Distance,
+    fasill_tuning_check_testcases(Tests, S, D1).
 
 %!  fasill_print_symbolic_substitution(+Substitution)
 % 
