@@ -302,11 +302,11 @@ fasill_tuning_loop(Cut, [C-T,T2|Ts], [C-P,P2|Ps], [S|Ss], D0, D3) :-
 
 fasill_tuning_best_substitution(Tolerance, Sym, Tests, Preconditions, S, D) :-
     retractall(tuning_best_substitution(_, _)),
-    ( fasill_symbolic_substitution(Sym, S),
-      fasill_tuning_check_preconditions(Preconditions, S),
-      fasill_tuning_check_testcases(Tests, S),
-      tuning_best_substitution(_, D),
-      ( D =< Tolerance -> !, false ; false )
+    ( fasill_symbolic_substitution(Sym, Sub),
+      fasill_tuning_check_preconditions(Preconditions, Sub),
+      fasill_tuning_check_testcases(Tests, Sub),
+      tuning_best_substitution(S, D),
+      ( D =< Tolerance -> ! ; false )
     ; tuning_best_substitution(S, D) ).
 
 %!  fasill_tuning_check_testcases(+Tests, +Substitution)
