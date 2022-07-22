@@ -144,6 +144,7 @@ fasill_flag(interpretive_steps, [term(short,[]), term(long,[])], term(short,[]))
 fasill_flag(simplification_steps, [term(false,[]), term(true,[])], term(false,[])).
 fasill_flag(lambda_unification, [_], bot).
 fasill_flag(operators, [term(false,[]), term(true,[])], term(true,[])).
+fasill_flag(symbolic_substitution, [_], term('[]',[])).
 
 %!  current_fasill_flag(?Flag, ?Value)
 %

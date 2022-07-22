@@ -116,6 +116,17 @@ select_expression(top, Var, Var, top) :-
     !.
 select_expression(bot, Var, Var, bot) :-
     !.
+select_expression(term('#'(S), []), Var, Var, term('#', S)) :-
+    !,
+    fasill_environment:current_fasill_flag(symbolic_substitution, Sub),
+    fasill_term:fasill_member(term('-', [term('#'(S), []),_]), Sub).
+select_expression(term(Term, Args), Var, Var, term(Term, Args)) :-
+    functor(Term, Op, _),
+    once(member(Op, ['#@','#&','#|','#?'])),
+    fasill_environment:maplist(lattice_call_member, Args),
+    fasill_environment:current_fasill_flag(symbolic_substitution, Sub),
+    fasill_term:fasill_member(term('-', [term(Term, []), term(_, [])]), Sub),
+    !.
 select_expression(term(Term, Args), Var, Var, term(Term, Args)) :-
     functor(Term, Op, _),
     once(member(Op, ['@','&','|'])),
@@ -391,6 +402,17 @@ interpret(sup(X, Y), Z) :-
     fasill_environment:lattice_call_supremum(X, Y, Z).
 interpret(term(Op, Args), Result) :-
     fasill_environment:lattice_call_connective(Op, Args, Result).
+interpret(term('#'(S), []), Value) :-
+    fasill_environment:current_fasill_flag(symbolic_substitution, Sub),
+    fasill_term:fasill_member(term('-', [term('#'(S), []), Value]), Sub),
+    !.
+interpret(term(Term, Args), Result) :-
+    functor(Term, Op, _),
+    once(member(Op, ['#@','#&','#|','#?'])),
+    !,
+    fasill_environment:current_fasill_flag(symbolic_substitution, Sub),
+    fasill_term:fasill_member(term('-', [term(Term, []), term(Value, [])]), Sub),
+    interpret(term(Value, Args), Result).
 
 %!  deep_interpret(+Expression, ?Result)
 % 
@@ -406,11 +428,22 @@ deep_interpret(bot, Bot) :-
 deep_interpret(top, Top) :-
     !,
     fasill_environment:lattice_call_top(Top).
+deep_interpret(term('#'(S), []), Value) :-
+    fasill_environment:current_fasill_flag(symbolic_substitution, Sub),
+    fasill_term:fasill_member(term('-', [term('#'(S), []), Value]), Sub),
+    !.
 deep_interpret(sup(X, Y), Z) :-
     !,
     deep_interpret(X, Ix),
     deep_interpret(Y, Iy),
     fasill_environment:lattice_call_supremum(Ix, Iy, Z).
+deep_interpret(term(Term, Args), Result) :-
+    functor(Term, Op, _),
+    once(member(Op, ['#@','#&','#|','#?'])),
+    fasill_environment:current_fasill_flag(symbolic_substitution, Sub),
+    fasill_term:fasill_member(term('-', [term(Term, []), term(Value, [])]), Sub),
+    deep_interpret(term(Value, Args), Result),
+    !.
 deep_interpret(term(Op, Args), Result) :-
     Op =.. [F|_],
     once(member(F, ['&','|','@','#&','#|','#@','#?'])),

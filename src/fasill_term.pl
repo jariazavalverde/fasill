@@ -50,6 +50,7 @@
     fasill_callable/1,
     fasill_list/1,
     fasill_connective/1,
+    fasill_member/2,
     % variables
     fasill_term_variables/2,
     fasill_count_variables/2,
@@ -219,6 +220,13 @@ fasill_list(term('.',[_,T])) :-
 fasill_connective(term(Type,Arg)) :-
     (Type = '&' ; Type = '|' ; Type = '@'),
     (Arg = [] ; Arg = [_]).
+
+%!  fasill_member(?Member, +Term)
+%
+%   This predicate succeeds when Member is an element into Term.
+
+fasill_member(X, term('.',[X,_])).
+fasill_member(X, term('.',[_,T])) :- fasill_member(X, T).
 
 % VARIABLES
 
