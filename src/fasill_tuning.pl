@@ -258,7 +258,16 @@ add_symbols_testcase([Set|Sets0], Test, [Set|Sets1]) :-
 %!  fasill_symbolic_substitution_flag(?Substitution, ?Flag)
 
 fasill_symbolic_substitution_flag([], term('[]', [])).
-fasill_symbolic_substitution_flag([K/V|T], term('.', [term('-', [K,V]), L])) :-
+fasill_symbolic_substitution_flag([sym(td,Name,0)/val(td,Value,0)|T], term('.', [term('-', [K,Value]), L])) :-
+    K = term('#'(Name),[]),
+    fasill_symbolic_substitution_flag(T, L).
+fasill_symbolic_substitution_flag([sym(Con1,Name1,_)/val(Con2,Name2,_)|T], term('.', [term('-', [C1,C2]), L])) :-
+    member((Con1,Type1), [(con,'#?'), (agr,'#@'), (and,'#&'), (or,'#|')]),
+    member((Con2,Type2), [(agr,'@'), (and,'&'), (or,'|')]),
+    Op1 =.. [Type1, Name1],
+    Op2 =.. [Type2, Name2],
+    C1 = term(Op1, []),
+    C2 = term(Op2, []),
     fasill_symbolic_substitution_flag(T, L).
 
 % BASIC TUNING TECHNIQUE
@@ -277,10 +286,10 @@ fasill_basic_tuning(Substitution, Deviation) :-
 fasill_basic_tuning(Cut, S, D) :-
     fasill_environment:current_fasill_flag(symbolic_substitution, Flag),
     retractall(tuning_best_substitution(_, _)),
-    findall(Body, fasill_environment:fasill_rule(_, body(Body), _), ListSym, Sim),
+    findall(Body, fasill_environment:fasill_rule(_, body(Body), _), ExprSym, Sim),
     findall(TD, fasill_environment:similarity_between(_, _, _, TD, yes), Sim),
-    list_to_set(ListSym, SetSym),
-    fasill_findall_symbolic_cons(SetSym, Sym),
+    fasill_findall_symbolic_cons(ExprSym, ListSym),
+    list_to_set(ListSym, Sym),
     findall(testcase(TD, Goal),
         fasill_environment:fasill_testcase(TD, Goal), Tests),
     ( fasill_symbolic_substitution(Sym, Sub),
@@ -304,7 +313,7 @@ fasill_basic_tuning_check_testcases([testcase(Expected,Goal)|Tests], S, D0) :-
     fasill_inference:query(Goal, state(TD, _)),
     fasill_environment:lattice_call_distance(Expected, TD, num(Distance)),
     D1 is D0 + Distance,
-    fasill_tuning_check_testcases(Tests, S, D1).
+    fasill_basic_tuning_check_testcases(Tests, S, D1).
 
 % SYMBOLIC TUNING TECHNIQUE
 
