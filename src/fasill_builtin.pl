@@ -264,8 +264,7 @@ eval_builtin_predicate('->'/2, state(_, S0), selected(ExprVar, Var, Term), state
         fasill_exceptions:type_error(callable, Then, '->'/2, Error),
         fasill_exceptions:throw_exception(Error) ;
         true),
-    fasill_environment:lattice_call_bot(Bot),
-    ExprVar = term('&', [
+    Var = term('&', [
         term('+', [term(once, [If])]),
         term(call, [Then])
     ]).
@@ -311,7 +310,7 @@ eval_builtin_predicate(call/Arity, state(_, Subs), selected(ExprVar, Var, Atom),
 %   Evaluate a term just once.
 %   once(Term) is true. once makes sure that Term fails or succeeds just once.
 
-eval_builtin_predicate(once/1, state(Goal,S0), selected(E0,Var,Atom), state(E1,S1)) :-
+eval_builtin_predicate(once/1, state(_,S0), selected(E0,Var,Atom), state(E1,S1)) :-
     Atom = term(once, [Term]),
     (fasill_term:fasill_var(Term) ->
         fasill_exceptions:instantiation_error(once/1, Error),

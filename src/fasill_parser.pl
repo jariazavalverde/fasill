@@ -459,10 +459,10 @@ grammar_connective(term(Con, [X|Xs]), P1) -->
     grammar_expression(999, X, P0),
     grammar_term_args(Xs, P0, P1),
     {Con =.. [Type,Name]}.
-grammar_connective(term(Con, []), P1) -->
+grammar_connective(term(Con, []), P0) -->
     [token(atom, Type, [C1|_], _, false)], {C1 \= '\''},
     {member(Type, ['@','&','|','#@','#&','#|', '#/', '#?'])},
-    [token(atom, Name, [C2|_], _, false)], {C2 \= '\''},
+    [token(atom, Name, [C2|_], P0, false)], {C2 \= '\''},
     {Con =.. [Type,Name]}.
 
 % grammar_list/4

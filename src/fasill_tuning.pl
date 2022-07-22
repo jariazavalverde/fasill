@@ -3,7 +3,7 @@
     Author:        José Antonio Riaza Valverde
     E-mail:        riaza.valverde@gmail.com
     WWW:           https://dectau.uclm.es/fasill
-    Copyright (c)  2018 - 2021, José Antonio Riaza Valverde
+    Copyright (c)  2018 - 2022, José Antonio Riaza Valverde
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -35,6 +35,8 @@
 
 :- module(fasill_tuning, [
     fasill_findall_symbolic_cons/2,
+    fasill_basic_tuning/2,
+    fasill_basic_tuning/3,
     fasill_tuning/2,
     fasill_tuning/3,
     fasill_print_symbolic_substitution/1
@@ -253,7 +255,58 @@ add_symbols_testcase([Set-Tests|Sets], Symbols-Test, [Set-[Test|Tests]|Sets]) :-
 add_symbols_testcase([Set|Sets0], Test, [Set|Sets1]) :-
     add_symbols_testcase(Sets0, Test, Sets1).
 
-% TUNING TECHNIQUE
+%!  fasill_symbolic_substitution_flag(?Substitution, ?Flag)
+
+fasill_symbolic_substitution_flag([], term('[]', [])).
+fasill_symbolic_substitution_flag([K/V|T], term('.', [term('-', [K,V]), L])) :-
+    fasill_symbolic_substitution_flag(T, L).
+
+% BASIC TUNING TECHNIQUE
+
+%!  fasill_basic_tuning(?Substitution, ?Deviation)
+%
+%   This predicate succeeds when Substitution is the best symbolic substitution
+%   for the set of test cases loaded into the current environment, with
+%   deviation Deviation.
+%   Every symbolic substitution in applied to the program and to the goal before
+%   computing any derivation.
+
+fasill_basic_tuning(Substitution, Deviation) :-
+    fasill_basic_tuning(0.0, Substitution, Deviation).
+
+fasill_basic_tuning(Cut, S, D) :-
+    fasill_environment:current_fasill_flag(symbolic_substitution, Flag),
+    retractall(tuning_best_substitution(_, _)),
+    findall(Body, fasill_environment:fasill_rule(_, body(Body), _), ListSym, Sim),
+    findall(TD, fasill_environment:similarity_between(_, _, _, TD, yes), Sim),
+    list_to_set(ListSym, SetSym),
+    fasill_findall_symbolic_cons(SetSym, Sym),
+    findall(testcase(TD, Goal),
+        fasill_environment:fasill_testcase(TD, Goal), Tests),
+    ( fasill_symbolic_substitution(Sym, Sub),
+      fasill_basic_tuning_check_testcases(Tests, Sub),
+      tuning_best_substitution(S, D),
+      ( D =< Cut -> ! ; false )
+    ; tuning_best_substitution(S, D) ),
+    fasill_environment:set_fasill_flag(symbolic_substitution, Flag).
+
+fasill_basic_tuning_check_testcases(Tests, S) :-
+    fasill_basic_tuning_check_testcases(Tests, S, 0.0).
+
+fasill_basic_tuning_check_testcases([], S, Deviation) :-
+    (tuning_best_substitution(_, Best) -> Best > Deviation ; true),
+    retractall(tuning_best_substitution(_, _)),
+    asserta(tuning_best_substitution(S, Deviation)).
+fasill_basic_tuning_check_testcases([testcase(Expected,Goal)|Tests], S, D0) :-
+    (tuning_best_substitution(_, Best) -> Best > D0 ; true),
+    fasill_symbolic_substitution_flag(S, Flag),
+    fasill_environment:set_fasill_flag(symbolic_substitution, Flag),
+    fasill_inference:query(Goal, state(TD, _)),
+    fasill_environment:lattice_call_distance(Expected, TD, num(Distance)),
+    D1 is D0 + Distance,
+    fasill_tuning_check_testcases(Tests, S, D1).
+
+% SYMBOLIC TUNING TECHNIQUE
 
 %!  fasill_tuning(?Substitution, ?Deviation)
 %
