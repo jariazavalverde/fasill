@@ -286,8 +286,9 @@ fasill_basic_tuning(Substitution, Deviation) :-
 fasill_basic_tuning(Cut, S, D) :-
     fasill_environment:current_fasill_flag(symbolic_substitution, Flag),
     retractall(tuning_best_substitution(_, _)),
-    findall(Body, fasill_environment:fasill_rule(_, body(Body), _), ExprSym, Sim),
-    findall(TD, fasill_environment:similarity_between(_, _, _, TD, yes), Sim),
+    findall(Body, fasill_environment:fasill_rule(_, body(Body), _), ExprSym, GoalSym),
+    findall(Goal, fasill_environment:fasill_testcase(_, Goal), GoalSym, SimSym),
+    findall(TD, fasill_environment:similarity_between(_, _, _, TD, yes), SimSym),
     fasill_findall_symbolic_cons(ExprSym, ListSym),
     list_to_set(ListSym, Sym),
     findall(testcase(TD, Goal),
@@ -300,6 +301,8 @@ fasill_basic_tuning(Cut, S, D) :-
     fasill_environment:set_fasill_flag(symbolic_substitution, Flag).
 
 fasill_basic_tuning_check_testcases(Tests, S) :-
+    fasill_symbolic_substitution_flag(S, Flag),
+    fasill_environment:set_fasill_flag(symbolic_substitution, Flag),
     fasill_basic_tuning_check_testcases(Tests, S, 0.0).
 
 fasill_basic_tuning_check_testcases([], S, Deviation) :-
@@ -308,9 +311,7 @@ fasill_basic_tuning_check_testcases([], S, Deviation) :-
     asserta(tuning_best_substitution(S, Deviation)).
 fasill_basic_tuning_check_testcases([testcase(Expected,Goal)|Tests], S, D0) :-
     (tuning_best_substitution(_, Best) -> Best > D0 ; true),
-    fasill_symbolic_substitution_flag(S, Flag),
-    fasill_environment:set_fasill_flag(symbolic_substitution, Flag),
-    fasill_inference:query(Goal, state(TD, _)),
+    fasill_inference:once(query(Goal, state(TD, _))),
     fasill_environment:lattice_call_distance(Expected, TD, num(Distance)),
     D1 is D0 + Distance,
     fasill_basic_tuning_check_testcases(Tests, S, D1).
