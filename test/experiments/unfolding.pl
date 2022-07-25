@@ -340,9 +340,12 @@ program_selsort :-
         s/1 ~ p/1 = 1.0. ~tnorm = godel.
     ').
 
-unfold_selsort :-
+unfold_selsort(0).
+unfold_selsort(N) :-
+    succ(M, N),
     once(fasill_environment:fasill_rule(_, body(term(minmax, _)), [id(Id)|_])),
-    fasill_unfolding:classic_unfold_by_id(Id).
+    fasill_unfolding:classic_unfold_by_id(Id),
+    unfold_selsort(M).
 
 % ?- selsort([p(p(p(...))), p(p(...)), ..., p(z), z], [z, p(z), ..., p(p(...)), p(p(p(...)))]).
 goal_selsort(N, Selsort) :-
