@@ -170,9 +170,12 @@ program_palindrome :-
         a/0 ~ b/0 = 0.5. ~tnorm = godel.
     ').
 
-unfold_palindrome :-
+unfold_palindrome(0).
+unfold_palindrome(N) :-
+    succ(M, N),
     once(fasill_environment:fasill_rule(_, body(term(reverse, [_, term('.', _), _])), [id(Id)|_])),
-    fasill_unfolding:classic_unfold_by_id(Id).
+    fasill_unfolding:classic_unfold_by_id(Id),
+    unfold_palindrome(M).
 
 % ?- palindorme([a,...,a,c,b,...,b]).
 goal_palindrome(N, Palindrome) :-
@@ -198,12 +201,9 @@ program_flip :-
         a/0 ~ b/0 = 0.5. ~tnorm = godel.
     ').
 
-unfold_flip(0).
-unfold_flip(N) :-
-    succ(M, N),
+unfold_flip :-
     once(fasill_environment:fasill_rule(_, body(term(flip, _)), [id(Id)|_])),
-    fasill_unfolding:classic_unfold_by_id(Id),
-    unfold_flip(M).
+    fasill_unfolding:classic_unfold_by_id(Id).
 
 % ?- flip(tree(a, [...]), tree(b, [...])).
 goal_flip(B, N, Flip) :-
