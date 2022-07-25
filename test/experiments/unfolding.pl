@@ -269,9 +269,12 @@ program_fibonacci :-
         s/1 ~ p/1 = 1.0. ~tnorm = godel.
     ').
 
-unfold_fibonacci :-
+unfold_fibonacci(0).
+unfold_fibonacci(N) :-
+    succ(M, N),
     once(fasill_environment:fasill_rule(_, body(term(add, _)), [id(Id)|_])),
-    fasill_unfolding:classic_unfold_by_id(Id).
+    fasill_unfolding:classic_unfold_by_id(Id),
+    unfold_fibonacci(M).
 
 % ?- fibonacci(p(p(...)), _).
 goal_fibonacci(N, Fibonacci) :-
