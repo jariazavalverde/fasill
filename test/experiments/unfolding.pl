@@ -298,9 +298,12 @@ program_inorder :-
         a/0 ~ b/0 = 0.5. ~tnorm = godel.
     ').
 
-unfold_inorder :-
+unfold_inorder(0).
+unfold_inorder(N) :-
+    succ(M, N),
     once(fasill_environment:fasill_rule(_, body(term(append, _)), [id(Id)|_])),
-    fasill_unfolding:classic_unfold_by_id(Id).
+    fasill_unfolding:classic_unfold_by_id(Id),
+    unfold_inorder(M).
 
 % ?- inorder(tree(a, tree(a, ...), tree(a, ...)), [b,...,b]).
 goal_inorder(N, Inorder) :-
