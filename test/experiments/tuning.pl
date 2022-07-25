@@ -33,18 +33,20 @@
     POSSIBILITY OF SUCH DAMAGE.
 */
 
+:- use_module('../../src/fasill_term').
 :- use_module('../../src/fasill_environment').
 :- use_module('../../src/fasill_tuning').
+:- use_module('../../src/fasill_unfolding').
 
 /** <test> Tuning
     This library provides predicates for testing tuning techniques.
 */
 
-test_tuning(Repeat, Method, Steps, Substitutions, Min, Aver, Max) :-
+test_tuning(Repeat, Method, Program, Tests, Substitutions, Min, Aver, Max) :-
     fasill_environment:lattice_consult('../../sample/lat/unit.lat.pl'),
-    gen_program(Steps),
+    call(Program),
     gen_members(Substitutions),
-    gen_testcases,
+    call(Tests),
     test_tuning_loop(Repeat, Method, [], [], Times, Inferences),
     max_list(Times, MaxT),
     max_list(Inferences, MaxI),
@@ -99,3 +101,28 @@ gen_testcases :-
     fasill_environment:retractall(fasill_testcase(_,_)),
     fasill_environment:retractall(fasill_testcase_precondition(_)),
     fasill_environment:asserta(fasill_testcase(num(1.0), term(p, []))).
+
+program_peano(N) :-
+    fasill_environment:program_retractall,
+    fasill_environment:asserta(fasill_predicate(p/1)),
+    fasill_environment:asserta(fasill_rule(head(term(p, [term(z, [])])), empty, [id(1), syntax(fasill)])),
+    fasill_environment:asserta(fasill_rule(head(term(p, [term(s, [var('X')])])), body(term('&'(prod), [term(p, [var('X')]), term('#'(s), [])])), [id(2), syntax(fasill)])),
+    unfold_peano(N).
+
+unfold_peano(0).
+unfold_peano(N) :-
+    succ(M, N),
+    once((fasill_environment:fasill_rule(head(Head), _, [id(Id)|_]), \+fasill_ground(Head))),
+    fasill_unfolding:classic_unfold_by_id(Id),
+    unfold_peano(M).
+
+testcase_peano(N) :-
+    gen_peano(N, P),
+    fasill_environment:retractall(fasill_testcase(_,_)),
+    fasill_environment:retractall(fasill_testcase_precondition(_)),
+    fasill_environment:asserta(fasill_testcase(num(1.0), term(p, [P]))).
+
+gen_peano(0, term(z, [])).
+gen_peano(N, term(s, [P])) :-
+    succ(M, N),
+    gen_peano(M, P).
