@@ -3,7 +3,7 @@
     Author:        José Antonio Riaza Valverde
     E-mail:        riaza.valverde@gmail.com
     WWW:           https://dectau.uclm.es/fasill
-    Copyright (c)  2018 - 2022, José Antonio Riaza Valverde
+    Copyright (c)  2018 - 2023, José Antonio Riaza Valverde
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -229,6 +229,11 @@ sandbox_tune(Program, Lattice, Sim, Tests, Limit, Options) :-
         write('execution time: '),
         write(T1),
         write(' milliseconds') ;
+        true),
+    (member(check_substitution, Options) ->
+        nl,
+        writeln('checking deviation for the best symbolic substitution:'),
+        fasill_tuning:fasill_test_substitution_deviation(Subs) ;
         true).
 
 %!  sandbox_tune_smt(+Program, +Lattice, +Sim, +Tests, +Domain, +Limit, +Options)

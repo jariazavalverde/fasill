@@ -3,7 +3,7 @@
     Author:        José Antonio Riaza Valverde
     E-mail:        riaza.valverde@gmail.com
     WWW:           https://dectau.uclm.es/fasill
-    Copyright (c)  2018 - 2022, José Antonio Riaza Valverde
+    Copyright (c)  2018 - 2023, José Antonio Riaza Valverde
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -39,7 +39,8 @@
     fasill_basic_tuning/3,
     fasill_tuning/2,
     fasill_tuning/3,
-    fasill_print_symbolic_substitution/1
+    fasill_print_symbolic_substitution/1,
+    fasill_test_substitution_deviation/1
 ]).
 
 :- use_module(library(union_find_assoc)).
@@ -292,7 +293,7 @@ fasill_basic_tuning(Cut, S, D) :-
     fasill_findall_symbolic_cons(ExprSym, ListSym),
     list_to_set(ListSym, Sym),
     findall(testcase(TD, Goal),
-        fasill_environment:fasill_testcase(TD, Goal), Tests),
+    fasill_environment:fasill_testcase(TD, Goal), Tests),
     ( fasill_symbolic_substitution(Sym, Sub),
       fasill_basic_tuning_check_testcases(Tests, Sub),
       tuning_best_substitution(S, D),
@@ -429,3 +430,27 @@ fasill_print_symbolic_bindings([X|Xs]) :-
     write(','),
     fasill_print_symbolic_binding(X),
     fasill_print_symbolic_bindings(Xs).
+
+% TESTS
+
+%!  fasill_test_substitution_deviation(+Substitution)
+% 
+%   This predicate checks the deviation of a symbolic substitution.
+
+fasill_test_substitution_deviation(S) :-
+    fasill_environment:current_fasill_flag(symbolic_substitution, Flag),
+    fasill_symbolic_substitution_flag(S, NewFlag),
+    fasill_environment:set_fasill_flag(symbolic_substitution, NewFlag),
+    forall(fasill_environment:fasill_testcase(Expected, Goal), (
+        fasill_inference:once(query(Goal, state(TD, _))),
+        fasill_environment:lattice_call_distance(Expected, TD, num(Distance)),
+        fasill_term:fasill_print_term(Goal),
+        write(' '),
+        fasill_term:fasill_print_term(Expected),
+        write(' '),
+        fasill_term:fasill_print_term(TD),
+        write(' '),
+        write(Distance),
+        nl
+    )),
+    fasill_environment:set_fasill_flag(symbolic_substitution, Flag).
