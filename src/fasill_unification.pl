@@ -190,6 +190,7 @@ lambda_wmgu(term(X,Xs), term(Y,Ys), Lambda, OccursCheck, state(TD, Sub), WMGU) :
     ),
     fasill_environment:lattice_call_bot(Bot),
     TD2 \== Bot,
+    once((Tnorm \= '#&'(_) ; (TD \== Bot, TDxy \== Bot))),
     lambda_wmgu(Xs, Ys, Lambda, OccursCheck, state(TD2, Sub), WMGU).
 % List ~ List
 lambda_wmgu([], [], _, _, WMGU, WMGU) :-
